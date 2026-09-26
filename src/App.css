@@ -768,3 +768,49 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   font-size: 12px;
   font-weight: 700;
 }
+
+/* ComfyUI sleep / resume screen */
+.sleep-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #0d0f14;
+  color: #f3f4f6;
+}
+.sleep-card {
+  width: min(100%, 420px);
+  padding: 34px 24px;
+  text-align: center;
+  border: 1px solid #303540;
+  border-radius: 20px;
+  background: #171a20;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+.sleep-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #242832;
+  color: #9da6b5;
+  font-size: 24px;
+}
+.sleep-card h1 { margin: 0; font-size: 24px; }
+.sleep-card p { margin: 10px 0 22px; color: #9da6b5; line-height: 1.5; }
+.sleep-error { color: #ff9d9d !important; }
+.resume-btn {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: #4664aa;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.resume-btn:disabled { opacity: .55; cursor: default; }
