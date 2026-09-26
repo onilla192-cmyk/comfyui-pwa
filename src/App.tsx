@@ -11,6 +11,7 @@ interface PromptLabel { id: string; name: string; text: string; createdAt: numbe
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
+const SLEEP_TIMEOUT_SECONDS = 60
 
 function imagePath(name: string, subfolder = '') { return subfolder ? `${subfolder}/${name}` : name }
 
@@ -90,6 +91,7 @@ export default function App() {
   const [cancelling, setCancelling] = useState(false)
   const [comfySleeping, setComfySleeping] = useState(false)
   const [resuming, setResuming] = useState(false)
+  const [sleepSeconds, setSleepSeconds] = useState(SLEEP_TIMEOUT_SECONDS)
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid')
@@ -135,6 +137,14 @@ export default function App() {
     const timer = window.setInterval(check, 3000)
     return () => { cancelled = true; window.clearInterval(timer) }
   }, [isBusy])
+
+  useEffect(() => {
+    if (isBusy || comfySleeping) return
+    const timer = window.setInterval(() => {
+      setSleepSeconds((current) => Math.max(0, current - 1))
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [isBusy, comfySleeping])
 
 
 
@@ -304,6 +314,7 @@ export default function App() {
   async function handleGenerate() {
     if (!prompt.trim() || uploading.one || uploading.two) return
     setLatestResultId(null)
+    setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
     setErrorMsg(null); setStatus('queued'); setProgress({ value: 0, max: 1 })
     currentGenerationPrompt.current = { prompt, negativePrompt, cfg, steps, megapixels }
     try {
@@ -553,9 +564,28 @@ export default function App() {
     ? results.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
+  if (comfySleeping) {
+    return (
+      <div className="sleep-screen">
+        <div className="sleep-card">
+          <div className="sleep-icon">⏸</div>
+          <h1>ComfyUI is stopped</h1>
+          <p>The GPU is sleeping to save power and VRAM.</p>
+          {errorMsg && <p className="sleep-error">{errorMsg}</p>}
+          <button type="button" className="resume-btn" onClick={() => void handleResume()} disabled={resuming}>
+            {resuming ? 'Starting ComfyUI…' : 'Resume'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return <div className="app">
     <header className="app-header">
-      <div><h1>ComfyUI Console</h1><span className="status-dot" data-active={isBusy} /></div>
+      <div className="app-header-title"><h1>ComfyUI Console</h1><span className="status-dot" data-active={isBusy} /></div>
+      {!comfySleeping && <div className="sleep-timer" aria-live="polite">
+        {isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
+      </div>
       <div className="header-actions">
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
