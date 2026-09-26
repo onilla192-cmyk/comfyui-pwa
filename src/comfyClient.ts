@@ -39,8 +39,6 @@ export async function waitForComfyReady(timeoutMs = 120000): Promise<void> {
 }
 
 export async function startComfyUI(): Promise<void> {
-  const status = await getLauncherStatus()
-  if (status.comfyui === 'running') return
   const response = await fetch(`${LAUNCHER_BASE_URL}/start`, { method: 'POST' })
   if (!response.ok) {
     const text = await response.text()
