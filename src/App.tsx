@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, startComfyUI, waitForComfyReady } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, startComfyUI, waitForComfyReady, stopComfyUI } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import './App.css'
 
@@ -91,6 +91,8 @@ export default function App() {
   const [cancelling, setCancelling] = useState(false)
   const [comfySleeping, setComfySleeping] = useState(false)
   const [resuming, setResuming] = useState(false)
+  const [startingComfy, setStartingComfy] = useState(false)
+  const [startProgress, setStartProgress] = useState(0)
   const [sleepSeconds, setSleepSeconds] = useState(SLEEP_TIMEOUT_SECONDS)
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -140,12 +142,18 @@ export default function App() {
   }, [isBusy])
 
   useEffect(() => {
-    if (isBusy || comfySleeping) return
+    if (isBusy || comfySleeping || startingComfy) return
     const timer = window.setInterval(() => {
       setSleepSeconds((current) => Math.max(0, current - 1))
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [isBusy, comfySleeping])
+  }, [isBusy, comfySleeping, startingComfy])
+
+  useEffect(() => {
+    if (isBusy || comfySleeping || startingComfy || sleepSeconds > 0) return
+    setComfySleeping(true)
+    void stopComfyUI()
+  }, [isBusy, comfySleeping, startingComfy, sleepSeconds])
 
 
 
@@ -313,12 +321,27 @@ export default function App() {
   }
 
   async function handleGenerate() {
-    if (!prompt.trim() || uploading.one || uploading.two) return
+    if (!prompt.trim() || uploading.one || uploading.two || startingComfy) return
     setLatestResultId(null)
     setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
     setErrorMsg(null); setStatus('queued'); setProgress({ value: 0, max: 1 })
-    currentGenerationPrompt.current = { prompt, negativePrompt, cfg, steps, megapixels }
+    let startupTimer: number | null = null
     try {
+      const launcher = await getLauncherStatus()
+      if (launcher.comfyui === 'stopped' || comfySleeping) {
+        setStartingComfy(true)
+        setComfySleeping(false)
+        setStartProgress(5)
+        startupTimer = window.setInterval(() => {
+          setStartProgress((current) => Math.min(90, current + 5))
+        }, 1000)
+        await startComfyUI()
+        await waitForComfyReady()
+        if (startupTimer !== null) window.clearInterval(startupTimer)
+        setStartProgress(100)
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        setStartingComfy(false)
+      }
       const workflow = buildWorkflow({
         prompt, negativePrompt: negativePrompt || undefined,
         image1: imageOne?.comfyName, image2: imageTwo?.comfyName,
@@ -330,10 +353,11 @@ export default function App() {
       setProgress({ value: 0, max: 1 })
       void waitForResult(prompt_id)
     } catch (err) {
+      if (startupTimer !== null) window.clearInterval(startupTimer)
+      setStartingComfy(false)
       setStatus('error'); setErrorMsg(err instanceof Error ? err.message : 'Could not reach ComfyUI.')
     }
   }
-
   async function handleCancel() {
     if (!currentPromptId.current || cancelling) return
     setCancelling(true)
@@ -583,9 +607,9 @@ export default function App() {
   return <div className="app">
     <header className="app-header">
       <div className="app-header-title"><h1>ComfyUI Console</h1><span className="status-dot" data-active={isBusy} /></div>
-      {!comfySleeping && <div className="sleep-timer" aria-live="polite">
-        {isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
-      </div>}
+      <div className="sleep-timer" aria-live="polite">
+        {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : sleepSeconds === 0 || comfySleeping ? <span>ComfyUI stopped</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
+      </div>
       <div className="header-actions">
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
