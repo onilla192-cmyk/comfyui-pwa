@@ -19,6 +19,7 @@ export default defineConfig({
     '/view': { target: 'http://127.0.0.1:8188', changeOrigin: true },
     '/upload': { target: 'http://127.0.0.1:8188', changeOrigin: true },
     '/interrupt': { target: 'http://127.0.0.1:8188', changeOrigin: true },
+    '/launcher': { target: 'http://127.0.0.1:8190', changeOrigin: true },
     '/ws': { target: 'ws://127.0.0.1:8188', ws: true, changeOrigin: true, secure: false },
   } },
 })
