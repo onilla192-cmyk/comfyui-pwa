@@ -47,6 +47,11 @@ export async function startComfyUI(): Promise<void> {
   await waitForComfyReady()
 }
 
+export async function stopComfyUI(): Promise<void> {
+  const response = await fetch(`${LAUNCHER_BASE_URL}/stop`, { method: 'POST' })
+  if (!response.ok) throw new Error(`Could not stop ComfyUI (launcher ${response.status})`)
+}
+
 export async function ensureComfyRunning(): Promise<void> {
   await startComfyUI()
 }
