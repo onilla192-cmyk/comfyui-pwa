@@ -850,3 +850,5 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   }
   .sleep-timer strong { font-size: 13px; }
 }
+
+.sleep-start-bar{width:72px;height:5px;overflow:hidden;border-radius:99px;background:#292d35}.sleep-start-bar>div{height:100%;background:#6686d0;transition:width .4s ease}
