@@ -102,6 +102,7 @@ export default function App() {
   const currentGenerationPrompt = useRef<{ prompt: string; negativePrompt: string; cfg: number; steps: number; megapixels: number } | null>(null)
   const cleanupProgress = useRef<null | (() => void)>(null)
   const currentPromptId = useRef<string | null>(saved.promptId ?? null)
+  const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
   if (currentPromptId.current && !currentGenerationPrompt.current) {
     currentGenerationPrompt.current = { prompt: saved.prompt ?? '', negativePrompt: saved.negativePrompt ?? '', cfg: saved.cfg ?? 2.5, steps: saved.steps ?? 30, megapixels: saved.megapixels ?? 0.5 }
   }
@@ -354,7 +355,6 @@ export default function App() {
     setCancelling(false)
   }
 
-  const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
   const isUploading = uploading.one || uploading.two
   const percent = progress && progress.max > 0 ? Math.min(100, Math.round((progress.value / progress.max) * 100)) : 0
 
