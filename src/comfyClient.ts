@@ -8,6 +8,52 @@ const COMFY_BASE_URL = import.meta.env.PROD
   ? 'https://comfyui.tail84bda1.ts.net'
   : ''
 
+const LAUNCHER_BASE_URL = import.meta.env.PROD
+  ? 'https://comfyui.tail84bda1.ts.net/launcher'
+  : '/launcher'
+
+export type LauncherStatus = {
+  ok: boolean
+  comfyui: 'running' | 'starting' | 'stopped' | string
+  launcher: string
+  batFound: boolean
+  batPath: string
+}
+
+export async function getLauncherStatus(): Promise<LauncherStatus> {
+  const response = await fetch(`${LAUNCHER_BASE_URL}/status`, { cache: 'no-store' })
+  if (!response.ok) throw new Error(`Launcher returned ${response.status}`)
+  return response.json() as Promise<LauncherStatus>
+}
+
+export async function waitForComfyReady(timeoutMs = 120000): Promise<void> {
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(`${COMFY_BASE_URL}/system_stats`, { cache: 'no-store' })
+      if (response.ok) return
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  throw new Error('ComfyUI did not finish starting.')
+}
+
+export async function startComfyUI(): Promise<void> {
+  const status = await getLauncherStatus()
+  if (status.comfyui === 'running') return
+  const response = await fetch(`${LAUNCHER_BASE_URL}/start`, { method: 'POST' })
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(text || `Could not start ComfyUI (launcher ${response.status})`)
+  }
+  await waitForComfyReady()
+}
+
+export async function ensureComfyRunning(): Promise<void> {
+  const status = await getLauncherStatus()
+  if (status.comfyui === 'running') return
+  await startComfyUI()
+}
 function getClientId() {
   const key = 'comfy-client-id'
   const existing = localStorage.getItem(key)
@@ -18,6 +64,7 @@ function getClientId() {
 }
 
 export async function queuePrompt(prompt: WorkflowPrompt) {
+  await ensureComfyRunning()
   const response = await fetch(`${COMFY_BASE_URL}/prompt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
