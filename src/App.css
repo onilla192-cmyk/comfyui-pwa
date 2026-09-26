@@ -814,3 +814,37 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   cursor: pointer;
 }
 .resume-btn:disabled { opacity: .55; cursor: default; }
+
+.sleep-timer {
+  min-width: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid #303540;
+  border-radius: 10px;
+  background: #171a20;
+  color: #9da6b5;
+  font-size: 12px;
+  line-height: 1;
+}
+.sleep-timer strong {
+  color: #f3f4f6;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+.app-header-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+@media (max-width: 520px) {
+  .sleep-timer {
+    min-width: 0;
+    padding: 6px 8px;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .sleep-timer strong { font-size: 13px; }
+}
