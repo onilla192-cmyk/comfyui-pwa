@@ -48,8 +48,6 @@ export async function startComfyUI(): Promise<void> {
 }
 
 export async function ensureComfyRunning(): Promise<void> {
-  const status = await getLauncherStatus()
-  if (status.comfyui === 'running') return
   await startComfyUI()
 }
 function getClientId() {
