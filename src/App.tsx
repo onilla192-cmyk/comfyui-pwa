@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, startComfyUI, waitForComfyReady } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import './App.css'
 
@@ -88,6 +88,8 @@ export default function App() {
   const [megapixels, setMegapixels] = useState(saved.megapixels ?? 0.5)
   const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 720)
   const [cancelling, setCancelling] = useState(false)
+  const [comfySleeping, setComfySleeping] = useState(false)
+  const [resuming, setResuming] = useState(false)
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid')
@@ -119,6 +121,22 @@ export default function App() {
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
   }, [])
+  useEffect(() => {
+    let cancelled = false
+    const check = async () => {
+      try {
+        const launcher = await getLauncherStatus()
+        if (cancelled) return
+        if (launcher.comfyui === 'stopped' && !isBusy) setComfySleeping(true)
+        if (launcher.comfyui === 'running') setComfySleeping(false)
+      } catch {}
+    }
+    void check()
+    const timer = window.setInterval(check, 3000)
+    return () => { cancelled = true; window.clearInterval(timer) }
+  }, [isBusy])
+
+
 
   useEffect(() => {
     const locked = settingsOpen || historyOpen || ideasOpen || !!selectedPromptLabelId || !!editingPromptLabel
@@ -265,6 +283,21 @@ export default function App() {
       return false
     } finally {
       setUploading((p) => ({ ...p, [which]: false }))
+    }
+  }
+
+  async function handleResume() {
+    if (resuming) return
+    setErrorMsg(null)
+    setResuming(true)
+    try {
+      await startComfyUI()
+      await waitForComfyReady()
+      setComfySleeping(false)
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Could not start ComfyUI.')
+    } finally {
+      setResuming(false)
     }
   }
 
