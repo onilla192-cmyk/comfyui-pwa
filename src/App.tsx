@@ -155,11 +155,11 @@ export default function App() {
     if (which === 'one') {
       if (imageOne?.previewUrl.startsWith('blob:')) URL.revokeObjectURL(imageOne.previewUrl)
       setImageOne(null)
-      setPrompt((current) => removeImagePrompt(current, IMAGE_PROMPTS.one))
+      setPrompt((current: string) => removeImagePrompt(current, IMAGE_PROMPTS.one))
     } else {
       if (imageTwo?.previewUrl.startsWith('blob:')) URL.revokeObjectURL(imageTwo.previewUrl)
       setImageTwo(null)
-      setPrompt((current) => removeImagePrompt(current, IMAGE_PROMPTS.two))
+      setPrompt((current: string) => removeImagePrompt(current, IMAGE_PROMPTS.two))
     }
   }
 
@@ -173,10 +173,10 @@ export default function App() {
       const value = { previewUrl, comfyName: imagePath(uploaded.name, uploaded.subfolder), fileName: file.name }
       if (which === 'one') {
         setImageOne(value)
-        setPrompt((current) => addImagePrompt(current, IMAGE_PROMPTS.one))
+        setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.one))
       } else {
         setImageTwo(value)
-        setPrompt((current) => addImagePrompt(current, IMAGE_PROMPTS.two))
+        setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.two))
       }
     } catch (err) {
       URL.revokeObjectURL(previewUrl)
@@ -254,10 +254,10 @@ export default function App() {
       }
       if (which === 'one') {
         setImageOne(value)
-        setPrompt((current) => addImagePrompt(current, IMAGE_PROMPTS.one))
+        setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.one))
       } else {
         setImageTwo(value)
-        setPrompt((current) => addImagePrompt(current, IMAGE_PROMPTS.two))
+        setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.two))
       }
       return true
     } catch (err) {
@@ -577,7 +577,7 @@ export default function App() {
             {!promptLabels.length && <div className="prompt-label-empty">No prompt labels yet.<br />Tap “+ Add Prompt Label” to create one.</div>}
           </div>
         </> : <div className="prompt-label-list prompt-label-trash-list">
-          {promptLabelTrash.map((label, index) => <div className="prompt-label-trash-item" key={label.id}>
+          {promptLabelTrash.map((label) => <div className="prompt-label-trash-item" key={label.id}>
             <div><strong>{label.name}</strong><span>{label.text}</span></div>
             <div className="prompt-label-trash-actions">
               <button type="button" onClick={() => restorePromptLabel(label.id)}>Restore</button>
@@ -827,7 +827,7 @@ function SettingNumber({ label, value, min, max, step, onChange, suffix }: { lab
     onBlur={() => { if (text === '') setText(String(value)) }} /></label>
 }
 
-function ImagePicker({ slot, label, image, busy, disabled, glow, onChange, onClear }: { slot: string; label: string; image: CharacterImage | null; busy: boolean; disabled: boolean; glow: boolean; onChange: (file?: File) => void; onClear: () => void }) {
+function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: { slot: string; label: string; image: CharacterImage | null; busy: boolean; disabled: boolean; glow: boolean; onChange: (file?: File) => void; onClear: () => void }) {
   return (
     <div className={`image-picker ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''}`}>
       <div className="image-picker-title"><span>{label}</span></div>
@@ -842,3 +842,4 @@ function ImagePicker({ slot, label, image, busy, disabled, glow, onChange, onCle
     </div>
   )
 }
+
