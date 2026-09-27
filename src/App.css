@@ -1409,6 +1409,35 @@ html, body, #root {
   min-width: 0;
 }
 
+.prompt-builder-page-list.focus-mode {
+  padding: 22px;
+  display: flex;
+  align-items: flex-start;
+}
+.prompt-builder-page-list.focus-mode .prompt-builder-item {
+  width: 100%;
+  margin-bottom: 0;
+}
+.prompt-builder-page-list.focus-mode .prompt-builder-label {
+  min-height: 54px;
+  font-size: 16px;
+}
+.prompt-builder-page-list.focus-mode .prompt-builder-input-focused {
+  min-height: min(42vh, 320px);
+  height: min(42vh, 320px);
+  margin-top: 10px;
+  padding: 14px;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+}
+.prompt-builder-page-list.focus-mode .prompt-builder-control {
+  width: 100%;
+}
+.prompt-builder-page-list.focus-mode .prompt-builder-item {
+  display: block;
+}
+
 .prompt-builder-item {
   display: flex;
   flex-direction: column;
