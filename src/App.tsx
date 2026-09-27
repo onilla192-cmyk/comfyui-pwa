@@ -755,21 +755,6 @@ export default function App() {
   return <div className="app">
     <header className="app-header">
       <div className="header-subfooters">
-        {comfySleeping && (
-          <button
-            className={`start-comfy-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
-            type="button"
-            onClick={() => void handleRemoteStart()}
-            disabled={remoteStarting || startingComfy || comfyPowerState === 'active'}
-            aria-label={comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
-            title={comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2v10" />
-              <path d="M6.5 5.8a8 8 0 1 0 11 0" />
-            </svg>
-          </button>
-        )}
         <div className="sleep-timer" aria-live="polite">
           {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
         </div>
@@ -1016,6 +1001,22 @@ export default function App() {
     </main>
     <footer className="app-footer" aria-label="ComfyUI navigation">
       <div className="footer-actions">
+        <button
+          className={`start-comfy-btn footer-power-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
+          type="button"
+          onClick={() => void handleRemoteStart()}
+          disabled={remoteStarting || startingComfy || comfyPowerState === 'active'}
+          aria-label={remoteStarting || startingComfy ? 'ComfyUI is starting' : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
+          title={remoteStarting || startingComfy ? `ComfyUI loading ${startProgress}%` : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
+          style={{ '--power-progress': `${startProgress}%` } as React.CSSProperties}
+        >
+          <span className="power-progress-ring" aria-hidden="true" />
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v10" />
+            <path d="M6.5 5.8a8 8 0 1 0 11 0" />
+          </svg>
+          {(remoteStarting || startingComfy) && <span className="power-progress-text">{startProgress}%</span>}
+        </button>
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
         </button>
