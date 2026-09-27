@@ -139,6 +139,28 @@ export default function App() {
   const cleanupProgress = useRef<null | (() => void)>(null)
   const currentPromptId = useRef<string | null>(saved.promptId ?? null)
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
+
+  function movePromptBuilderLabel(label: string, clientY: number) {
+    const target = document.elementFromPoint(window.innerWidth / 2, clientY)?.closest('[data-prompt-builder-label]') as HTMLElement | null
+    const targetLabel = target?.dataset.promptBuilderLabel
+    if (!targetLabel || targetLabel === label) return
+
+    const rect = target.getBoundingClientRect()
+    const insertBefore = clientY < rect.top + rect.height / 2
+
+    setPromptBuilderLabels((current) => {
+      const next = [...current]
+      const fromIndex = next.indexOf(label)
+      const targetIndex = next.indexOf(targetLabel)
+      if (fromIndex < 0 || targetIndex < 0) return current
+      next.splice(fromIndex, 1)
+      let insertIndex = next.indexOf(targetLabel)
+      if (!insertBefore) insertIndex += 1
+      next.splice(insertIndex, 0, label)
+      return next
+    })
+  }
+
   if (currentPromptId.current && !currentGenerationPrompt.current) {
     currentGenerationPrompt.current = { prompt: saved.prompt ?? '', negativePrompt: saved.negativePrompt ?? '', cfg: saved.cfg ?? 2.5, steps: saved.steps ?? 30, megapixels: saved.megapixels ?? 0.5 }
   }
@@ -1066,35 +1088,47 @@ export default function App() {
                 <div
                   className={`prompt-builder-item${hasValue ? ' has-value' : ''}${draggingPromptBuilderLabel === label ? ' dragging' : ''}`}
                   key={label}
-                  draggable={!isBusy}
-                  onDragStart={(event) => {
-                    if (isBusy) return
-                    setDraggingPromptBuilderLabel(label)
-                    event.dataTransfer.effectAllowed = 'move'
-                    event.dataTransfer.setData('text/plain', label)
-                  }}
-                  onDragOver={(event) => {
-                    event.preventDefault()
-                    event.dataTransfer.dropEffect = 'move'
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault()
-                    const from = event.dataTransfer.getData('text/plain') || draggingPromptBuilderLabel
-                    if (!from || from === label) return
-                    setPromptBuilderLabels((current) => {
-                      const next = [...current]
-                      const fromIndex = next.indexOf(from)
-                      const toIndex = next.indexOf(label)
-                      if (fromIndex < 0 || toIndex < 0) return current
-                      next.splice(fromIndex, 1)
-                      next.splice(toIndex, 0, from)
-                      return next
-                    })
-                    setDraggingPromptBuilderLabel(null)
-                  }}
-                  onDragEnd={() => setDraggingPromptBuilderLabel(null)}
+                  data-prompt-builder-label={label}
                 >
-                  <div className="prompt-builder-drag-handle" aria-hidden="true">⋮⋮</div>
+                  <div
+                    className="prompt-builder-drag-handle"
+                    role="button"
+                    tabIndex={isBusy ? -1 : 0}
+                    aria-label={'Reorder ' + label}
+                    onPointerDown={(event) => {
+                      if (isBusy) return
+                      event.preventDefault()
+                      event.currentTarget.setPointerCapture(event.pointerId)
+                      setDraggingPromptBuilderLabel(label)
+                    }}
+                    onPointerMove={(event) => {
+                      if (draggingPromptBuilderLabel !== label) return
+                      event.preventDefault()
+                      movePromptBuilderLabel(label, event.clientY)
+                    }}
+                    onPointerUp={(event) => {
+                      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                        event.currentTarget.releasePointerCapture(event.pointerId)
+                      }
+                      setDraggingPromptBuilderLabel(null)
+                    }}
+                    onPointerCancel={() => setDraggingPromptBuilderLabel(null)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                        event.preventDefault()
+                        setPromptBuilderLabels((current) => {
+                          const next = [...current]
+                          const index = next.indexOf(label)
+                          const target = event.key === 'ArrowUp' ? index - 1 : index + 1
+                          if (index < 0 || target < 0 || target >= next.length) return current
+                          ;[next[index], next[target]] = [next[target], next[index]]
+                          return next
+                        })
+                      }
+                    }}
+                  >
+                    ⋮⋮
+                  </div>
                   <div className="prompt-builder-control">
                     <button
                       type="button"
