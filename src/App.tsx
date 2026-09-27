@@ -150,61 +150,52 @@ export default function App() {
   const cleanupProgress = useRef<null | (() => void)>(null)
   const currentPromptId = useRef<string | null>(saved.promptId ?? null)
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
+  const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
   function movePromptBuilderLabel(label: string, clientY: number) {
     const list = promptBuilderListRef.current
     if (!list) return
 
     const rect = list.getBoundingClientRect()
-    const edge = 72
+    const edge = 88
     const distanceFromTop = clientY - rect.top
     const distanceFromBottom = rect.bottom - clientY
+
     if (distanceFromTop < edge) {
-      list.scrollTop -= Math.max(3, Math.round((edge - distanceFromTop) / 8))
+      const speed = Math.min(18, Math.max(3, Math.round((edge - distanceFromTop) / 4)))
+      list.scrollTop -= speed
     } else if (distanceFromBottom < edge) {
-      list.scrollTop += Math.max(3, Math.round((edge - distanceFromBottom) / 8))
+      const speed = Math.min(18, Math.max(3, Math.round((edge - distanceFromBottom) / 4)))
+      list.scrollTop += speed
     }
 
-    const items = Array.from(list.querySelectorAll<HTMLElement>('[data-prompt-builder-label]'))
+    const items = Array.from(list.querySelectorAll<HTMLElement>("[data-prompt-builder-label]"))
       .filter((item) => item.dataset.promptBuilderLabel !== label)
-    let targetLabel: string | null = null
-    let bestDistance = Number.POSITIVE_INFINITY
 
+    // Use item midpoints for both directions so the dragged label crosses
+    // the same threshold going down as it does going up.
+    let insertIndex = 0
     for (const item of items) {
       const itemRect = item.getBoundingClientRect()
-      if (clientY >= itemRect.top && clientY <= itemRect.bottom) {
-        targetLabel = item.dataset.promptBuilderLabel ?? null
+      const midpoint = itemRect.top + itemRect.height / 2
+      if (clientY >= midpoint) {
+        insertIndex += 1
+      } else {
         break
-      }
-      const distance = Math.abs(clientY - (itemRect.top + itemRect.height / 2))
-      if (distance < bestDistance) {
-        bestDistance = distance
-        targetLabel = item.dataset.promptBuilderLabel ?? null
       }
     }
 
-    if (!targetLabel || targetLabel === promptBuilderLastTargetRef.current) return
-    promptBuilderLastTargetRef.current = targetLabel
-
-    const target = items.find((item) => item.dataset.promptBuilderLabel === targetLabel)
-    if (!target) return
-    const targetRect = target.getBoundingClientRect()
-    const insertBefore = clientY < targetRect.top + targetRect.height / 2
+    if (insertIndex === promptBuilderLastInsertIndexRef.current) return
+    promptBuilderLastInsertIndexRef.current = insertIndex
+    promptBuilderLastTargetRef.current = items[insertIndex]?.dataset.promptBuilderLabel ?? null
 
     setPromptBuilderLabels((current) => {
-      const next = [...current]
-      const fromIndex = next.indexOf(label)
-      const targetIndex = next.indexOf(targetLabel)
-      if (fromIndex < 0 || targetIndex < 0) return current
-      next.splice(fromIndex, 1)
-      let insertIndex = next.indexOf(targetLabel)
-      if (!insertBefore) insertIndex += 1
-      if (insertIndex > next.length) insertIndex = next.length
-      next.splice(insertIndex, 0, label)
+      const next = current.filter((item) => item !== label)
+      const clampedIndex = Math.min(insertIndex, next.length)
+      next.splice(clampedIndex, 0, label)
       return next
     })
   }
-
   function stopPromptBuilderDrag() {
     if (promptBuilderDragTimer.current !== null) {
       window.clearInterval(promptBuilderDragTimer.current)
@@ -222,6 +213,7 @@ export default function App() {
     promptBuilderDragLabelRef.current = null
     promptBuilderDragPointerRef.current = null
     promptBuilderLastTargetRef.current = null
+    promptBuilderLastInsertIndexRef.current = null
     setDraggingPromptBuilderLabel(null)
     setPromptBuilderDragPosition(null)
   }
@@ -233,6 +225,7 @@ export default function App() {
     promptBuilderDragY.current = event.clientY
     promptBuilderDragX.current = event.clientX
     promptBuilderLastTargetRef.current = null
+    promptBuilderLastInsertIndexRef.current = null
     setDraggingPromptBuilderLabel(label)
     setPromptBuilderDragPosition({ x: event.clientX, y: event.clientY })
     movePromptBuilderLabel(label, event.clientY)
@@ -241,7 +234,7 @@ export default function App() {
       const activeLabel = promptBuilderDragLabelRef.current
       if (!activeLabel || !promptBuilderDragActiveRef.current) return
       movePromptBuilderLabel(activeLabel, promptBuilderDragY.current)
-    }, 50)
+    }, 30)
   }
 
   if (currentPromptId.current && !currentGenerationPrompt.current) {
@@ -1111,7 +1104,7 @@ export default function App() {
             <div className="prompt-builder">
               <button
                 type="button"
-                className="prompt-builder-open-btn"
+                className={`prompt-builder-open-btn${promptBuilderHasValues ? ' has-active-labels' : ''}`}
                 onClick={() => setPromptBuilderPageOpen(true)}
                 disabled={isBusy}
               >
@@ -1252,7 +1245,7 @@ export default function App() {
                       {hasValue ? label + ': ' + value : label}
                     </button>
                     {activePromptBuilderLabel === label && (
-                      <input
+                      <textarea
                         id={inputId}
                         className="prompt-builder-input prompt-builder-input-focused"
                         value={value}
@@ -1261,6 +1254,7 @@ export default function App() {
                         placeholder={'Enter ' + label.toLowerCase() + '...'}
                         disabled={isBusy}
                         autoFocus
+                        rows={8}
                       />
                     )}
                   </div>
