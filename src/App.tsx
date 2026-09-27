@@ -67,6 +67,7 @@ export default function App() {
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(() => saved.promptBuilderOpen ?? false)
   const [promptBuilderValues, setPromptBuilderValues] = useState<Record<string, string>>(() => saved.promptBuilderValues && typeof saved.promptBuilderValues === 'object' ? saved.promptBuilderValues : {})
   const [activePromptBuilderLabel, setActivePromptBuilderLabel] = useState<string | null>(null)
+  const [promptBuilderPageOpen, setPromptBuilderPageOpen] = useState(false)
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -937,36 +938,14 @@ export default function App() {
           </div>
           {promptBuilderOpen ? (
             <div className="prompt-builder">
-              <div className="prompt-builder-list">
-                {PROMPT_BUILDER_LABELS.map((label) => {
-                  const value = promptBuilderValues[label] ?? ''
-                  const hasValue = value.trim().length > 0
-                  const inputId = 'prompt-builder-' + label.replace(/[^A-Z0-9]+/g, '-').toLowerCase()
-                  return (
-                    <div className={`prompt-builder-item${hasValue ? ' has-value' : ''}`} key={label}>
-                      <button
-                        type="button"
-                        className={`prompt-builder-label${hasValue ? ' has-value' : ''}`}
-                        onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)}
-                        disabled={isBusy}
-                      >
-                        {hasValue ? label + ': ' + value : label}
-                      </button>
-                      {activePromptBuilderLabel === label && (
-                        <input
-                          id={inputId}
-                          className="prompt-builder-input"
-                          value={value}
-                          onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))}
-                          placeholder={'Enter ' + label.toLowerCase() + '...'}
-                          disabled={isBusy}
-                          autoFocus
-                        />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              <button
+                type="button"
+                className="prompt-builder-open-btn"
+                onClick={() => setPromptBuilderPageOpen(true)}
+                disabled={isBusy}
+              >
+                Prompt Builder
+              </button>
             </div>
           ) : (
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
@@ -992,6 +971,58 @@ export default function App() {
           </button>
         </div>
       </section>
+
+      {promptBuilderPageOpen && (
+        <section className="prompt-builder-page" aria-label="Prompt Builder">
+          <div className="prompt-builder-page-header">
+            <div>
+              <h2>Prompt Builder</h2>
+              <span>Build the prompt from individual labels</span>
+            </div>
+            <button
+              className="close-btn"
+              type="button"
+              onClick={() => {
+                setPromptBuilderPageOpen(false)
+                setActivePromptBuilderLabel(null)
+              }}
+              aria-label="Close Prompt Builder"
+            >
+              ×
+            </button>
+          </div>
+          <div className="prompt-builder-page-list">
+            {PROMPT_BUILDER_LABELS.map((label) => {
+              const value = promptBuilderValues[label] ?? ''
+              const hasValue = value.trim().length > 0
+              const inputId = 'prompt-builder-page-' + label.replace(/[^A-Z0-9]+/g, '-').toLowerCase()
+              return (
+                <div className={`prompt-builder-item${hasValue ? ' has-value' : ''}`} key={label}>
+                  <button
+                    type="button"
+                    className={`prompt-builder-label${hasValue ? ' has-value' : ''}`}
+                    onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)}
+                    disabled={isBusy}
+                  >
+                    {hasValue ? label + ': ' + value : label}
+                  </button>
+                  {activePromptBuilderLabel === label && (
+                    <input
+                      id={inputId}
+                      className="prompt-builder-input"
+                      value={value}
+                      onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))}
+                      placeholder={'Enter ' + label.toLowerCase() + '...'}
+                      disabled={isBusy}
+                      autoFocus
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {status === 'cancelling' && <p className="cancel-text">Cancelling generation…</p>}
       {errorMsg && <p className="error-text">{errorMsg}</p>}
