@@ -2312,3 +2312,33 @@ html, body, #root {
     grid-template-columns: 1fr;
   }
 }
+
+.master-prompt-row.disabled .master-prompt-button {
+  border-color: #303540;
+  background: #111318;
+  color: #68717f;
+  opacity: .62;
+}
+.master-prompt-row.disabled .master-prompt-button span {
+  color: #59616e;
+}
+.master-prompt-toggle {
+  width: 46px;
+  min-width: 46px;
+  border: 1px solid #3a3f49;
+  border-radius: 9px;
+  background: #151820;
+  color: #747d8b;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.master-prompt-toggle.enabled {
+  border-color: rgba(56,217,139,.55);
+  background: rgba(56,217,139,.1);
+  color: #38d98b;
+}
+.master-prompt-toggle:disabled {
+  opacity: .45;
+  cursor: default;
+}
