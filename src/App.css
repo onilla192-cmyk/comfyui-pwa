@@ -4172,3 +4172,56 @@ body,
     border-radius: 16px !important;
   }
 }
+
+
+/* Final mobile sizing: compact prompt fields so the generation action row
+   remains visible above the detached footer. */
+@media (max-width: 600px) {
+  .generation-embed {
+    max-height: none !important;
+    overflow: hidden !important;
+    padding: 10px !important;
+  }
+
+  .generation-embed > .field {
+    margin-bottom: 7px !important;
+  }
+
+  .generation-embed > .field > .prompt-field-header,
+  .generation-embed > .field > label {
+    margin-bottom: 4px !important;
+  }
+
+  .generation-embed > .field:first-child textarea,
+  .generation-embed > .field:nth-child(2) textarea {
+    min-height: 0 !important;
+    height: auto !important;
+    resize: none !important;
+    overflow-y: auto !important;
+    padding: 9px 10px !important;
+    border-radius: 11px !important;
+  }
+
+  /* Main prompt: compact but still comfortable for typing. */
+  .generation-embed > .field:first-child textarea {
+    height: 76px !important;
+    max-height: 76px !important;
+  }
+
+  /* Negative prompt is intentionally shorter. */
+  .generation-embed > .field:nth-child(2) textarea {
+    height: 50px !important;
+    max-height: 50px !important;
+  }
+
+  .generation-embed > .field:first-child .prompt-builder-open-btn {
+    min-height: 60px !important;
+    height: 60px !important;
+    max-height: 60px !important;
+  }
+
+  .generation-actions {
+    margin-top: 2px !important;
+    min-height: 44px !important;
+  }
+}
