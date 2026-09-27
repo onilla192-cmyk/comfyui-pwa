@@ -1413,24 +1413,23 @@ export default function App() {
             ))}
             {!masterPrompts.length && <div className="prompt-builder-empty">No master prompts yet. Add one above.</div>}
           </div>
+          {masterPromptEditing && (
+            <div className="master-prompt-editor-backdrop" onClick={() => setMasterPromptEditing(null)}>
+              <section className="master-prompt-editor" onClick={(event) => event.stopPropagation()}>
+                <div className="master-prompt-editor-header">
+                  <div><h2>{masterPromptEditing.id ? 'Edit Master Prompt' : 'New Master Prompt'}</h2><span>Master prompts are always placed first.</span></div>
+                  <button className="close-btn" type="button" onClick={() => setMasterPromptEditing(null)} aria-label="Close master prompt editor">×</button>
+                </div>
+                <label>Button name<input value={masterPromptEditing.name} onChange={(e) => setMasterPromptEditing((current) => current ? { ...current, name: e.target.value } : current)} placeholder="Example: Lighting" autoFocus /></label>
+                <label>Prompt text<textarea value={masterPromptEditing.text} onChange={(e) => setMasterPromptEditing((current) => current ? { ...current, text: e.target.value } : current)} placeholder="Enter the prompt text..." rows={8} /></label>
+                <div className="master-prompt-editor-actions">
+                  <button type="button" onClick={() => setMasterPromptEditing(null)}>Cancel</button>
+                  <button type="button" className="primary" onClick={saveMasterPrompt} disabled={!masterPromptEditing.name.trim() || !masterPromptEditing.text.trim()}>Save</button>
+                </div>
+              </section>
+            </div>
+          )}
         </section>
-      )}
-
-      {masterPromptEditing && (
-        <div className="master-prompt-editor-backdrop" onClick={() => setMasterPromptEditing(null)}>
-          <section className="master-prompt-editor" onClick={(event) => event.stopPropagation()}>
-            <div className="master-prompt-editor-header">
-              <div><h2>{masterPromptEditing.id ? 'Edit Master Prompt' : 'New Master Prompt'}</h2><span>Master prompts are always placed first.</span></div>
-              <button className="close-btn" type="button" onClick={() => setMasterPromptEditing(null)} aria-label="Close master prompt editor">×</button>
-            </div>
-            <label>Button name<input value={masterPromptEditing.name} onChange={(e) => setMasterPromptEditing((current) => current ? { ...current, name: e.target.value } : current)} placeholder="Example: Lighting" autoFocus /></label>
-            <label>Prompt text<textarea value={masterPromptEditing.text} onChange={(e) => setMasterPromptEditing((current) => current ? { ...current, text: e.target.value } : current)} placeholder="Enter the prompt text..." rows={8} /></label>
-            <div className="master-prompt-editor-actions">
-              <button type="button" onClick={() => setMasterPromptEditing(null)}>Cancel</button>
-              <button type="button" className="primary" onClick={saveMasterPrompt} disabled={!masterPromptEditing.name.trim() || !masterPromptEditing.text.trim()}>Save</button>
-            </div>
-          </section>
-        </div>
       )}
 
       {promptBuilderPreviewOpen && (
