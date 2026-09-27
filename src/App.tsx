@@ -96,6 +96,7 @@ export default function App() {
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
   const [remoteStarting, setRemoteStarting] = useState(false)
+  const [comfyPowerState, setComfyPowerState] = useState<'off' | 'idle' | 'active'>('off')
   const standbyReleased = useRef(false)
   const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
   const [logsOpen, setLogsOpen] = useState(false)
@@ -191,8 +192,10 @@ export default function App() {
 
         if (remote.comfyui === 'running') {
           setComfySleeping(false)
+          setComfyPowerState('active')
         } else {
           setComfySleeping(true)
+          setComfyPowerState('off')
           standbyReleased.current = false
         }
 
@@ -726,6 +729,7 @@ export default function App() {
       setStartProgress(100)
       standbyReleased.current = false
       setComfySleeping(false)
+      setComfyPowerState('active')
       setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
       setStatus('idle')
       await new Promise((resolve) => setTimeout(resolve, 250))
@@ -753,12 +757,17 @@ export default function App() {
       <div className="header-subfooters">
         {comfySleeping && (
           <button
-            className="start-comfy-btn"
+            className={`start-comfy-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
             type="button"
             onClick={() => void handleRemoteStart()}
-            disabled={remoteStarting}
+            disabled={remoteStarting || startingComfy || comfyPowerState === 'active'}
+            aria-label={comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
+            title={comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
           >
-            {remoteStarting ? `Starting… ${startProgress}%` : 'Start ComfyUI'}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2v10" />
+              <path d="M6.5 5.8a8 8 0 1 0 11 0" />
+            </svg>
           </button>
         )}
         <div className="sleep-timer" aria-live="polite">
