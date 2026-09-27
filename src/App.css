@@ -1016,19 +1016,16 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 
 .footer-power-btn .power-progress-ring {
   position: absolute;
-  inset: 5px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: conic-gradient(currentColor var(--power-progress, 0%), rgba(255,255,255,.08) 0);
-  opacity: .9;
+  background: conic-gradient(
+    currentColor var(--power-progress, 0%),
+    rgba(255,255,255,.08) var(--power-progress, 0%)
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
   pointer-events: none;
-}
-
-.footer-power-btn .power-progress-ring::after {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 50%;
-  background: #171a20;
 }
 
 .footer-power-btn svg {
@@ -1036,27 +1033,8 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   z-index: 2;
 }
 
-.footer-power-btn .power-progress-text {
-  position: absolute;
-  z-index: 3;
-  right: 9px;
-  bottom: 6px;
-  padding: 1px 4px;
-  border-radius: 5px;
-  background: rgba(11,13,17,.9);
-  color: currentColor;
-  font-size: 8px;
-  font-weight: 800;
-  line-height: 1.2;
-  font-variant-numeric: tabular-nums;
-}
-
 .footer-power-btn.starting .power-progress-ring {
-  animation: power-ring-spin 1.2s linear infinite;
-}
-
-@keyframes power-ring-spin {
-  to { transform: rotate(360deg); }
+  animation: none;
 }
 
 .app-footer .icon-btn.history-icon {
