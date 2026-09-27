@@ -59,7 +59,15 @@ while ($listener.IsListening) {
       $context.Response.Close(); continue
     }
     if ($path -eq '/status' -and $context.Request.HttpMethod -eq 'GET') {
-      Json $context 200 @{ ok=$true; listener='running'; launcher=if(PortOpen 8190){'running'}else{'stopped'}; comfyui=if(ComfyRunning){'running'}else{'stopped'} }; continue
+      $launcherRunning = PortOpen 8190
+      $comfyRunning = ComfyRunning
+      Json $context 200 @{
+        ok=$true
+        listener='running'
+        launcher=if($launcherRunning){'running'}else{'stopped'}
+        comfyui=if($comfyRunning){'running'}else{'stopped'}
+      }
+      continue
     }
     if ($path -eq '/start' -and $context.Request.HttpMethod -eq 'POST') {
       StartComfy
