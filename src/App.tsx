@@ -68,6 +68,7 @@ export default function App() {
   const [promptBuilderValues, setPromptBuilderValues] = useState<Record<string, string>>(() => saved.promptBuilderValues && typeof saved.promptBuilderValues === 'object' ? saved.promptBuilderValues : {})
   const [activePromptBuilderLabel, setActivePromptBuilderLabel] = useState<string | null>(null)
   const [promptBuilderPageOpen, setPromptBuilderPageOpen] = useState(false)
+  const [promptHeaderMenuOpen, setPromptHeaderMenuOpen] = useState(false)
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -902,38 +903,91 @@ export default function App() {
             <div className="prompt-header-actions">
               <button
                 type="button"
-                className={`image-node-toggle${showImageTwo ? ' remove' : ''}`}
-                onClick={() => {
-                  if (showImageTwo) {
-                    clearImage('two')
-                    setShowImageTwo(false)
-                  } else {
-                    setShowImageTwo(true)
-                  }
-                }}
-                disabled={isBusy}
-                aria-label={showImageTwo ? 'Remove Figure B image node' : 'Add Figure B image node'}
+                className={`prompt-menu-btn${promptHeaderMenuOpen ? ' active' : ''}`}
+                onClick={() => setPromptHeaderMenuOpen((open) => !open)}
+                aria-label="Open prompt options"
+                aria-expanded={promptHeaderMenuOpen}
+                title="Prompt options"
               >
-                {showImageTwo ? '- image node' : '+ image node'}
-              </button>
-              <button
-                type="button"
-                className={`image-node-toggle prompt-builder-toggle${promptBuilderOpen ? ' active' : ''}`}
-                onClick={() => setPromptBuilderOpen((open: boolean) => !open)}
-                disabled={isBusy}
-                aria-label={promptBuilderOpen ? 'Disable prompt builder' : 'Enable prompt builder'}
-                title={promptBuilderOpen ? 'Disable prompt builder' : 'Enable prompt builder'}
-              >
-                prompt builder
-              </button>
-              <button className="idea-btn prompt-idea-btn" type="button" onClick={() => setIdeasOpen(true)} aria-label="Open prompt labels" title="Prompt labels">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 18h6"/>
-                  <path d="M10 21h4"/>
-                  <path d="M8.7 15.2C7.6 14.3 7 13 7 11.5A5 5 0 0 1 17 11.5c0 1.5-.6 2.8-1.7 3.7-.8.7-1.3 1.5-1.3 2.8h-4c0-1.3-.5-2.1-1.3-2.8Z"/>
-                  <path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4M22 12h-2"/>
+                  <path d="M4 7h16M4 12h16M4 17h16" />
                 </svg>
               </button>
+              {promptHeaderMenuOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="prompt-header-menu-backdrop"
+                    aria-label="Close prompt options"
+                    onClick={() => setPromptHeaderMenuOpen(false)}
+                  />
+                  <div className="prompt-header-menu" role="menu">
+                    <button
+                      type="button"
+                      className={`prompt-header-menu-item${showImageTwo ? ' active' : ''}`}
+                      onClick={() => {
+                        if (showImageTwo) {
+                          clearImage('two')
+                          setShowImageTwo(false)
+                        } else {
+                          setShowImageTwo(true)
+                        }
+                        setPromptHeaderMenuOpen(false)
+                      }}
+                      disabled={isBusy}
+                      role="menuitem"
+                    >
+                      <span className="prompt-menu-item-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <rect x="3" y="4" width="18" height="16" rx="2" />
+                          <circle cx="8" cy="9" r="1.4" />
+                          <path d="m5 17 4.5-4.5 3 3 2.5-2.5L19 17" />
+                          <path d="M19 3v5M16.5 5.5h5" />
+                        </svg>
+                      </span>
+                      <span>{showImageTwo ? 'Remove Figure B' : 'Add Figure B'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`prompt-header-menu-item${promptBuilderOpen ? ' active' : ''}`}
+                      onClick={() => {
+                        setPromptBuilderOpen((open: boolean) => !open)
+                        setPromptHeaderMenuOpen(false)
+                      }}
+                      disabled={isBusy}
+                      role="menuitem"
+                    >
+                      <span className="prompt-menu-item-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M5 19 16.5 7.5" />
+                          <path d="m14 5 2-2 5 5-2 2" />
+                          <path d="M5 19h5" />
+                        </svg>
+                      </span>
+                      <span>{promptBuilderOpen ? 'Disable Prompt Builder' : 'Prompt Builder'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="prompt-header-menu-item"
+                      onClick={() => {
+                        setIdeasOpen(true)
+                        setPromptHeaderMenuOpen(false)
+                      }}
+                      role="menuitem"
+                    >
+                      <span className="prompt-menu-item-icon idea" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M9 18h6" />
+                          <path d="M10 21h4" />
+                          <path d="M8.7 15.2C7.6 14.3 7 13 7 11.5A5 5 0 0 1 17 11.5c0 1.5-.6 2.8-1.7 3.7-.8.7-1.3 1.5-1.3 2.8h-4c0-1.3-.5-2.1-1.3-2.8Z" />
+                          <path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4M22 12h-2" />
+                        </svg>
+                      </span>
+                      <span>Prompt Labels</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           {promptBuilderOpen ? (
