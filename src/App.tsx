@@ -84,6 +84,7 @@ export default function App() {
   const [promptBuilderDragPosition, setPromptBuilderDragPosition] = useState<{ x: number; y: number } | null>(null)
   const promptBuilderListRef = useRef<HTMLDivElement | null>(null)
   const promptBuilderDragTimer = useRef<number | null>(null)
+  const promptBuilderDragRaf = useRef<number | null>(null)
   const promptBuilderHoldTimer = useRef<number | null>(null)
   const promptBuilderDragY = useRef(0)
   const promptBuilderDragX = useRef(0)
@@ -212,6 +213,10 @@ export default function App() {
     if (promptBuilderHoldTimer.current !== null) {
       window.clearTimeout(promptBuilderHoldTimer.current)
       promptBuilderHoldTimer.current = null
+    }
+    if (promptBuilderDragRaf.current !== null) {
+      window.cancelAnimationFrame(promptBuilderDragRaf.current)
+      promptBuilderDragRaf.current = null
     }
     promptBuilderDragActiveRef.current = false
     promptBuilderDragLabelRef.current = null
@@ -1204,7 +1209,12 @@ export default function App() {
                       event.preventDefault()
                       promptBuilderDragY.current = event.clientY
                       promptBuilderDragX.current = event.clientX
-                      setPromptBuilderDragPosition({ x: event.clientX, y: event.clientY })
+                      if (promptBuilderDragRaf.current === null) {
+                        promptBuilderDragRaf.current = window.requestAnimationFrame(() => {
+                          promptBuilderDragRaf.current = null
+                          setPromptBuilderDragPosition({ x: promptBuilderDragX.current, y: promptBuilderDragY.current })
+                        })
+                      }
                       movePromptBuilderLabel(label, event.clientY)
                     }}
                     onPointerUp={(event) => {
@@ -1214,7 +1224,8 @@ export default function App() {
                       stopPromptBuilderDrag()
                     }}
                     onPointerCancel={stopPromptBuilderDrag}
-                      onKeyDown={(event) => {
+                    onLostPointerCapture={stopPromptBuilderDrag}
+                    onKeyDown={(event) => {
                         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                           event.preventDefault()
                           setPromptBuilderLabels((current) => {
