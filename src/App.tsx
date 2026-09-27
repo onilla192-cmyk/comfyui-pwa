@@ -489,7 +489,7 @@ export default function App() {
 
   async function handleGenerate() {
     const generationPrompt = promptBuilderOpen
-      ? PROMPT_BUILDER_LABELS.map((label) => {
+      ? promptBuilderLabels.map((label) => {
           const value = promptBuilderValues[label]?.trim()
           return value ? label + ': ' + value : ''
         }).filter(Boolean).join('\\n')
