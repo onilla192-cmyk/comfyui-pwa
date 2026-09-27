@@ -77,6 +77,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ideasOpen, setIdeasOpen] = useState(false)
   const [resultsOpen, setResultsOpen] = useState(false)
+  const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
+  const completedTapTimer = useRef<number | null>(null)
   const [promptLabelsSection, setPromptLabelsSection] = useState<'labels' | 'trash'>('labels')
   const [selectedPromptLabelId, setSelectedPromptLabelId] = useState<string | null>(null)
   const [editingPromptLabel, setEditingPromptLabel] = useState<{ id: string | null; name: string; text: string } | null>(null)
@@ -526,6 +528,9 @@ export default function App() {
 
   useEffect(() => () => cleanupProgress.current?.(), [])
   useEffect(() => () => {
+    if (completedTapTimer.current !== null) window.clearTimeout(completedTapTimer.current)
+  }, [])
+  useEffect(() => () => {
     if (imageOne?.previewUrl.startsWith('blob:')) URL.revokeObjectURL(imageOne.previewUrl)
     if (imageTwo?.previewUrl.startsWith('blob:')) URL.revokeObjectURL(imageTwo.previewUrl)
   }, [imageOne?.previewUrl, imageTwo?.previewUrl])
@@ -690,6 +695,18 @@ export default function App() {
 
   function copyHistoryPrompt(value: string) {
     void navigator.clipboard?.writeText(value)
+  }
+
+  function handleCompletedImageTap() {
+    if (completedTapTimer.current !== null) {
+      window.clearTimeout(completedTapTimer.current)
+      completedTapTimer.current = null
+      setCompletedPromptId(latestResultId)
+      return
+    }
+    completedTapTimer.current = window.setTimeout(() => {
+      completedTapTimer.current = null
+    }, 700)
   }
 
   function openHistory() {
@@ -928,6 +945,9 @@ export default function App() {
         src={latestResult.url}
         alt="Generated result"
         loading="lazy"
+        draggable={false}
+        onClick={handleCompletedImageTap}
+        onContextMenu={(event) => event.preventDefault()}
         onLoad={(event) => {
           const width = event.currentTarget.naturalWidth
           const height = event.currentTarget.naturalHeight
@@ -956,6 +976,34 @@ export default function App() {
           </div>
         </section>
       )}
+
+      {completedPromptId && (() => {
+        const completed = results.find((item) => item.id === completedPromptId)
+        if (!completed) return null
+        return (
+          <div className="completed-prompt-backdrop" onClick={() => setCompletedPromptId(null)}>
+            <section className="completed-prompt-embed" onClick={(event) => event.stopPropagation()}>
+              <div className="completed-prompt-header">
+                <div><h2>Generation Prompt</h2><span>Prompt saved with this image</span></div>
+                <button className="close-btn" type="button" onClick={() => setCompletedPromptId(null)} aria-label="Close generation prompt">×</button>
+              </div>
+              <div className="completed-prompt-body">
+                <div className="completed-prompt-text">{completed.prompt || 'Prompt not saved for this generation.'}</div>
+                <div className="completed-prompt-actions">
+                  <button type="button" onClick={() => {
+                    if (completed.prompt) setPrompt((current) => addImagePrompt(current, completed.prompt!))
+                    setCompletedPromptId(null)
+                  }} disabled={!completed.prompt}>Send to main prompt</button>
+                  <button type="button" className="danger" onClick={() => {
+                    if (completed.prompt) setPrompt((current) => removeImagePrompt(current, completed.prompt!))
+                    setCompletedPromptId(null)
+                  }} disabled={!completed.prompt}>Remove from main prompt</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        )
+      })()}
 
       {selectedPromptLabelId && (() => {
         const label = promptLabels.find((x) => x.id === selectedPromptLabelId)
