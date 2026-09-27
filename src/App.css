@@ -5530,3 +5530,64 @@ body:has(.results-page) {
   background: #f5c542 !important;
   box-shadow: 0 0 0 3px rgba(245,197,66,.2) !important;
 }
+
+
+
+/* Prompt Builder button — lifted 3D control + RGB active state */
+.prompt-builder-open-btn {
+  position: relative !important;
+  transform: translateY(-2px) !important;
+  border: 2px solid #4c4c4c !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #3b3b3b 0%, #292929 100%) !important;
+  color: #fff !important;
+  box-shadow:
+    0 5px 0 #111 !important,
+    0 8px 14px rgba(0,0,0,.28) !important,
+    inset 0 1px 0 rgba(255,255,255,.16) !important;
+  transition: transform .08s ease, box-shadow .08s ease !important;
+}
+
+.prompt-builder-open-btn:active {
+  transform: translateY(2px) !important;
+  box-shadow:
+    0 1px 0 #111 !important,
+    0 3px 7px rgba(0,0,0,.22) !important,
+    inset 0 1px 0 rgba(255,255,255,.1) !important;
+}
+
+.prompt-builder-open-btn.has-active-labels {
+  border-color: transparent !important;
+  background:
+    linear-gradient(#292929, #292929) padding-box,
+    linear-gradient(
+      90deg,
+      #ff1744,
+      #ff8a00,
+      #ffe600,
+      #39ff14,
+      #00e5ff,
+      #2979ff,
+      #d500f9,
+      #ff1744
+    ) border-box !important;
+  background-size: 100% 100%, 300% 100% !important;
+  animation: prompt-builder-rgb-border 2.2s linear infinite !important;
+  box-shadow:
+    0 5px 0 #111 !important,
+    0 8px 20px rgba(0,0,0,.34),
+    0 0 18px rgba(0,229,255,.16),
+    inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+
+.prompt-builder-open-btn.has-active-labels:active {
+  transform: translateY(2px) !important;
+  box-shadow:
+    0 1px 0 #111 !important,
+    0 3px 8px rgba(0,0,0,.24) !important;
+}
+
+@keyframes prompt-builder-rgb-border {
+  0% { background-position: 0 0, 0% 50%; }
+  100% { background-position: 0 0, 300% 50%; }
+}
