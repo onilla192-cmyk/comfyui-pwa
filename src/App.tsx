@@ -722,8 +722,13 @@ export default function App() {
   return <div className="app">
     <header className="app-header">
       <div className="app-header-title"><h1>ComfyUI Console</h1><span className="status-dot" data-active={isBusy} /></div>
-      <div className="sleep-timer" aria-live="polite">
-        {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
+      <div className="header-subfooters">
+        <div className="sleep-timer" aria-live="polite">
+          {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
+        </div>
+        <div className={`vram-status ${isBusy || startingComfy ? 'active' : comfySleeping ? 'free' : 'active'}`} aria-live="polite">
+          <span>{isBusy || startingComfy ? 'VRAM active' : comfySleeping ? 'VRAM free' : 'VRAM active'}</span>
+        </div>
       </div>
       <div className="header-actions">
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
