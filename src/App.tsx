@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, stopComfyUI } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
-import { cacheImage, getCachedImage, deleteCachedImage } from './imageCache'
+import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 5
-interface CharacterImage { previewUrl: string; comfyName: string; fileName: string }
+interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
@@ -276,8 +276,9 @@ export default function App() {
     setUploading((p) => ({ ...p, [which]: true }))
     const previewUrl = URL.createObjectURL(file)
     try {
-      const uploaded = await uploadImage(file)
-      const value = { previewUrl, comfyName: imagePath(uploaded.name, uploaded.subfolder), fileName: file.name }
+      const cacheKey = `input-${which}`
+      await cacheFile(cacheKey, file)
+      const value = { previewUrl, cacheKey, fileName: file.name }
       if (which === 'one') {
         setImageOne(value)
         setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.one))
@@ -359,10 +360,11 @@ export default function App() {
       const mime = blob.type || 'image/png'
       const extension = mime.includes('jpeg') || mime.includes('jpg') ? 'jpg' : mime.includes('webp') ? 'webp' : 'png'
       const file = new File([blob], `generated_${Date.now()}_${which}.${extension}`, { type: mime })
-      const uploaded = await uploadImage(file)
+      const cacheKey = `input-${which}`
+      await cacheFile(cacheKey, file)
       const value: CharacterImage = {
-        previewUrl: viewImageUrl(uploaded.name, uploaded.subfolder, uploaded.type || 'input'),
-        comfyName: imagePath(uploaded.name, uploaded.subfolder),
+        previewUrl: URL.createObjectURL(blob),
+        cacheKey,
         fileName: `Generated image (${which === 'one' ? 'Figure A' : 'Figure B'})`,
       }
       if (which === 'one') {
@@ -404,9 +406,25 @@ export default function App() {
         await new Promise((resolve) => setTimeout(resolve, 250))
         setStartingComfy(false)
       }
+      let imageOneName = imageOne?.comfyName
+      let imageTwoName = imageTwo?.comfyName
+      if (imageOne?.cacheKey) {
+        const blob = await getCachedFile(imageOne.cacheKey)
+        if (!blob) throw new Error('Figure A image is no longer available. Please choose it again.')
+        const file = new File([blob], imageOne.fileName, { type: blob.type || 'image/png' })
+        const uploaded = await uploadImage(file)
+        imageOneName = imagePath(uploaded.name, uploaded.subfolder)
+      }
+      if (imageTwo?.cacheKey) {
+        const blob = await getCachedFile(imageTwo.cacheKey)
+        if (!blob) throw new Error('Figure B image is no longer available. Please choose it again.')
+        const file = new File([blob], imageTwo.fileName, { type: blob.type || 'image/png' })
+        const uploaded = await uploadImage(file)
+        imageTwoName = imagePath(uploaded.name, uploaded.subfolder)
+      }
       const workflow = buildWorkflow({
         prompt, negativePrompt: negativePrompt || undefined,
-        image1: imageOne?.comfyName, image2: imageTwo?.comfyName,
+        image1: imageOneName, image2: imageTwoName,
         seed: Math.floor(Math.random() * 1_000_000_000), cfg, steps, scheduler,
         aspectRatio, megapixels, maxDimension,
       })
