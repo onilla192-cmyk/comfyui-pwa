@@ -1302,20 +1302,25 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 9px;
+  min-height: 0;
 }
 .prompt-builder-note {
+  flex: 0 0 auto;
   color: #7f8795;
   font-size: 11px;
   line-height: 1.4;
 }
 .prompt-builder-list {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 6px;
+  min-height: 0;
   max-height: 280px;
   overflow-y: auto;
   padding-right: 2px;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .prompt-builder-item {
   display: flex;
