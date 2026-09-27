@@ -5482,3 +5482,23 @@ body:has(.results-page) {
   max-height: calc(100dvh - 150px) !important;
   object-fit: contain !important;
 }
+
+
+/* Match each image node border to its colored header. */
+.image-picker:nth-child(1) .image-picker-box {
+  border-color: #b4000e !important;
+  box-shadow: inset 0 0 0 1px rgba(230,0,18,.2) !important;
+}
+
+.image-picker:nth-child(2) .image-picker-box {
+  border-color: #08799f !important;
+  box-shadow: inset 0 0 0 1px rgba(0,168,232,.2) !important;
+}
+
+.image-picker:nth-child(1) .image-picker-name {
+  color: #ff6874 !important;
+}
+
+.image-picker:nth-child(2) .image-picker-name {
+  color: #55d3ff !important;
+}
