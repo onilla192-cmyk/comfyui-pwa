@@ -138,14 +138,20 @@ export default function App() {
       if (!uncached.length) return
 
       let sourceAvailable = true
+      let wokeComfy = false
       try {
         const launcher = await getLauncherStatus()
         if (launcher.comfyui === 'stopped') {
+          wokeComfy = true
+          setStartingComfy(true)
+          setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
           await startComfyUI()
           await waitForComfyReady()
         }
       } catch {
         sourceAvailable = false
+      } finally {
+        if (wokeComfy) setStartingComfy(false)
       }
 
       for (const item of uncached) {
