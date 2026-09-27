@@ -3863,3 +3863,177 @@ button:active:not(:disabled) {
     min-height: 57px;
   }
 }
+
+
+/* Main screen: fixed viewport, no page scrolling. */
+html,
+body,
+#root,
+.app {
+  width: 100%;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.app-main {
+  height: calc(100dvh - 8px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding-bottom: 0 !important;
+  overscroll-behavior: none;
+  touch-action: pan-x;
+}
+
+/* Keep the normal prompt card fully inside the visible app area. */
+@media (max-width: 600px) {
+  .app-main {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .generation-embed {
+    max-height: calc(100dvh - 390px) !important;
+    overflow: hidden !important;
+  }
+
+  .generation-embed .field textarea {
+    min-height: 58px !important;
+  }
+
+  .generation-embed .field:first-child textarea {
+    max-height: 105px !important;
+  }
+
+  .generation-embed .field:nth-child(2) textarea {
+    max-height: 76px !important;
+  }
+
+  .generation-actions {
+    flex: 0 0 auto !important;
+  }
+}
+
+/* Full-screen prompt editor. The textarea itself remains the same React
+   control, so draft text, focus and generation state are preserved. */
+.prompt-expanded {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 180 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: max(18px, env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: rgba(17,17,19,.98) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+}
+
+.prompt-expanded .field:first-child {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.prompt-expanded .prompt-field-header {
+  display: none !important;
+}
+
+.prompt-expanded .prompt-expanded-header {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 0 2px 12px;
+  flex: 0 0 auto;
+}
+
+.prompt-expanded-title {
+  display: block;
+  color: #f5f5f7;
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -.035em;
+}
+
+.prompt-expanded-subtitle {
+  display: block;
+  margin-top: 3px;
+  color: #8e8e93;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.prompt-expanded-close {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 50%;
+  background: rgba(118,118,128,.12);
+  color: #f5f5f7;
+  font-size: 27px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.prompt-expanded-close:active {
+  background: rgba(118,118,128,.22);
+  transform: scale(.95);
+}
+
+.prompt-expanded .field:first-child textarea {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  resize: none !important;
+  padding: 18px !important;
+  border: 1px solid rgba(255,255,255,.09) !important;
+  border-radius: 19px !important;
+  background: rgba(44,44,46,.8) !important;
+  color: #f5f5f7 !important;
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+  caret-color: #0a84ff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+  -webkit-overflow-scrolling: touch;
+}
+
+.prompt-expanded > .field:not(:first-child),
+.prompt-expanded > .generation-actions {
+  display: none !important;
+}
+
+/* The navigation dock is not part of builder/editor pages. */
+.app-footer.app-footer-hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.prompt-builder-page,
+.master-prompts-page {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 170 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-height: none !important;
+}
+
+/* Builder gets the whole screen, including its own safe-area padding. */
+.prompt-builder-page,
+.master-prompts-page {
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
