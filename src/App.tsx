@@ -79,6 +79,7 @@ export default function App() {
   const [resultsOpen, setResultsOpen] = useState(false)
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
   const completedTapTimer = useRef<number | null>(null)
+  const [completedTapState, setCompletedTapState] = useState<'idle' | 'armed' | 'confirmed'>('idle')
   const [promptLabelsSection, setPromptLabelsSection] = useState<'labels' | 'trash'>('labels')
   const [selectedPromptLabelId, setSelectedPromptLabelId] = useState<string | null>(null)
   const [editingPromptLabel, setEditingPromptLabel] = useState<{ id: string | null; name: string; text: string } | null>(null)
@@ -701,11 +702,18 @@ export default function App() {
     if (completedTapTimer.current !== null) {
       window.clearTimeout(completedTapTimer.current)
       completedTapTimer.current = null
-      setCompletedPromptId(latestResultId)
+      setCompletedTapState('confirmed')
+      if (navigator.vibrate) navigator.vibrate(35)
+      window.setTimeout(() => setCompletedPromptId(latestResultId), 120)
+      window.setTimeout(() => setCompletedTapState('idle'), 260)
       return
     }
+
+    setCompletedTapState('armed')
+    if (navigator.vibrate) navigator.vibrate(12)
     completedTapTimer.current = window.setTimeout(() => {
       completedTapTimer.current = null
+      setCompletedTapState('idle')
     }, 700)
   }
 
@@ -941,6 +949,7 @@ export default function App() {
   const latestResult = results.find((item) => item.id === latestResultId)
   return latestResult ? (
     <section className="latest-result">
+      <div className={`completed-image-tap-area completed-image-tap-${completedTapState}`}>
       <img
         src={latestResult.url}
         alt="Generated result"
@@ -956,6 +965,7 @@ export default function App() {
           }
         }}
       />
+      </div>
       <div className="latest-result-info">
         <span>Dimension <b>{latestResult.width && latestResult.height ? `${latestResult.width} × ${latestResult.height}px` : 'Loading…'}</b></span>
         <span>CFG <b>{latestResult.cfg ?? '—'}</b></span>
