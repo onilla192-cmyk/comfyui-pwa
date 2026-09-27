@@ -59,6 +59,18 @@ export async function stopComfyUI(): Promise<void> {
   if (!response.ok) throw new Error(`Could not stop ComfyUI (launcher ${response.status})`)
 }
 
+export async function freeComfyMemory(): Promise<void> {
+  const response = await fetch(`${COMFY_BASE_URL}/free`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ unload_models: true, free_memory: true }),
+  })
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(text || `Could not free ComfyUI memory (${response.status})`)
+  }
+}
+
 export async function ensureComfyRunning(): Promise<void> {
   await startComfyUI()
 }
