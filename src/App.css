@@ -852,3 +852,15 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 }
 
 .sleep-start-bar{width:72px;height:5px;overflow:hidden;border-radius:99px;background:#292d35}.sleep-start-bar>div{height:100%;background:#6686d0;transition:width .4s ease}
+
+
+.logs-backdrop{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.68);padding:10px;display:flex;align-items:center;justify-content:center}
+.logs-panel{width:min(100%,760px);height:min(82vh,700px);overflow:hidden;display:flex;flex-direction:column;background:#0b0d11;border:1px solid #30343d;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.logs-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2a2e37;background:#171a20}
+.logs-header h2{margin:0;font-size:19px}
+.logs-header span{display:block;margin-top:3px;color:#7f8795;font-size:12px}
+.logs-body{flex:1;overflow:auto;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.55;-webkit-overflow-scrolling:touch}
+.log-line{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.035);white-space:pre-wrap;overflow-wrap:anywhere;color:#cfd3da}
+.logs-empty{display:grid;place-items:center;height:100%;color:#7f8795}
+.logs-icon svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.logs-panel .close-btn{flex:0 0 auto}
