@@ -1333,7 +1333,6 @@ export default function App() {
                       onPointerDown={(event) => {
                         if (isBusy) return
                         event.currentTarget.dataset.holdTriggered = '0'
-                        const pointerId = event.pointerId
                         const target = event.currentTarget
                         const timer = window.setTimeout(() => {
                           target.dataset.holdTriggered = '1'
