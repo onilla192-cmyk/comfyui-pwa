@@ -220,8 +220,10 @@ export default function App() {
           })
           .catch((err) => addStandbyLog(`Standby: WARNING — memory release failed: ${err instanceof Error ? err.message : 'unknown error'}`))
           .finally(() => {
-            setComfySleeping(false)
-            setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
+            // Remain in standby until the user starts another generation.
+            // The server stays alive; only its models/VRAM are unloaded.
+            setComfySleeping(true)
+            setSleepSeconds(0)
           })
       })
   }, [isBusy, comfySleeping, startingComfy, sleepSeconds])
@@ -417,6 +419,11 @@ export default function App() {
     let startupTimer: number | null = null
     try {
       const launcher = await getLauncherStatus()
+      // A running server with unloaded models is standby, not stopped.
+      // Wake the app-side standby state without restarting ComfyUI.
+      if (comfySleeping && launcher.comfyui !== 'stopped') {
+        setComfySleeping(false)
+      }
       if (launcher.comfyui === 'stopped') {
         setStartingComfy(true)
         setComfySleeping(false)
