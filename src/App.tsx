@@ -13,6 +13,10 @@ interface PromptLabel { id: string; name: string; text: string; createdAt: numbe
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
 const SLEEP_TIMEOUT_SECONDS = 60
+const PROMPT_BUILDER_LABELS = [
+  'BODY EFFECTS', 'CLOTHING', 'NIPPLES', 'BREASTS', 'HEAD ANGLE', 'LIPS', 'HAIR DETAILS', 'HANDS',
+  'EYES', 'CAMERA', 'PRESERVATION', 'MOUTH', 'POSTURE', 'BODY DIRECTION', 'IMAGE EDIT', 'WATERMARKS',
+]
 
 function imagePath(name: string, subfolder = '') { return subfolder ? `${subfolder}/${name}` : name }
 
@@ -60,6 +64,8 @@ export default function App() {
     return isReload ? (saved.prompt ?? '') : ''
   })
   const [promptLabelBlock, setPromptLabelBlock] = useState('')
+  const [promptBuilderOpen, setPromptBuilderOpen] = useState(() => saved.promptBuilderOpen ?? false)
+  const [promptBuilderValues, setPromptBuilderValues] = useState<Record<string, string>>(() => saved.promptBuilderValues && typeof saved.promptBuilderValues === 'object' ? saved.promptBuilderValues : {})
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -151,7 +157,7 @@ export default function App() {
 
   useEffect(() => {
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash,
+      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
@@ -159,7 +165,7 @@ export default function App() {
       promptId: currentPromptId.current, progress,
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
+  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
@@ -445,7 +451,13 @@ export default function App() {
 
 
   async function handleGenerate() {
-    if (!prompt.trim() || uploading.one || uploading.two || startingComfy) return
+    const generationPrompt = promptBuilderOpen
+      ? PROMPT_BUILDER_LABELS.map((label) => {
+          const value = promptBuilderValues[label]?.trim()
+          return value ? label + ': ' + value : ''
+        }).filter(Boolean).join('\\n')
+      : prompt.trim()
+    if (!generationPrompt || uploading.one || uploading.two || startingComfy) return
     setLatestResultId(null)
     standbyReleased.current = false
     setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
@@ -488,8 +500,9 @@ export default function App() {
         const uploaded = await uploadImage(file)
         imageTwoName = imagePath(uploaded.name, uploaded.subfolder)
       }
+      currentGenerationPrompt.current = { prompt: generationPrompt, negativePrompt, cfg, steps, megapixels }
       const workflow = buildWorkflow({
-        prompt, negativePrompt: negativePrompt || undefined,
+        prompt: generationPrompt, negativePrompt: negativePrompt || undefined,
         image1: imageOneName, image2: imageTwoName,
         seed: Math.floor(Math.random() * 1_000_000_000), cfg, steps, scheduler,
         aspectRatio, megapixels, maxDimension,
@@ -901,7 +914,17 @@ export default function App() {
               >
                 {showImageTwo ? '- image node' : '+ image node'}
               </button>
-              <button className="idea-btn prompt-idea-btn" type="button" onClick={() => setIdeasOpen(true)} aria-label="Open ideas" title="Ideas">
+              <button
+                type="button"
+                className={`image-node-toggle prompt-builder-toggle${promptBuilderOpen ? ' active' : ''}`}
+                onClick={() => setPromptBuilderOpen((open) => !open)}
+                disabled={isBusy}
+                aria-label={promptBuilderOpen ? 'Disable prompt builder' : 'Enable prompt builder'}
+                title={promptBuilderOpen ? 'Disable prompt builder' : 'Enable prompt builder'}
+              >
+                prompt builder
+              </button>
+              <button className="idea-btn prompt-idea-btn" type="button" onClick={() => setIdeasOpen(true)} aria-label="Open prompt labels" title="Prompt labels">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M9 18h6"/>
                   <path d="M10 21h4"/>
@@ -911,7 +934,28 @@ export default function App() {
               </button>
             </div>
           </div>
-          <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} /></div>
+          {promptBuilderOpen ? (
+            <div className="prompt-builder">
+              <div className="prompt-builder-note">Choose a label, then enter its value. Only labels with text are sent to ComfyUI.</div>
+              <div className="prompt-builder-list">
+                {PROMPT_BUILDER_LABELS.map((label) => {
+                  const value = promptBuilderValues[label] ?? ''
+                  const hasValue = value.trim().length > 0
+                  const inputId = 'prompt-builder-' + label.replace(/[^A-Z0-9]+/g, '-').toLowerCase()
+                  return (
+                    <div className={`prompt-builder-item${hasValue ? ' has-value' : ''}`} key={label}>
+                      <button type="button" className={`prompt-builder-label${hasValue ? ' has-value' : ''}`} onClick={() => document.getElementById(inputId)?.focus()} disabled={isBusy}>
+                        {hasValue ? label + ': ' + value : label}
+                      </button>
+                      <input id={inputId} className="prompt-builder-input" value={value} onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))} placeholder={'Enter ' + label.toLowerCase() + '...'} disabled={isBusy} />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
+          )}</div>
         <div className="field"><label htmlFor="negative">Negative prompt (optional)</label><textarea id="negative" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} /></div>
 
         <div className="generation-actions">
@@ -920,7 +964,7 @@ export default function App() {
               {cancelling ? 'Cancelling...' : 'Stop Generation'}
             </button>
           ) : (
-            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !prompt.trim()}>
+            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !(promptBuilderOpen ? PROMPT_BUILDER_LABELS.some((label) => promptBuilderValues[label]?.trim()) : prompt.trim())}>
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
