@@ -723,9 +723,9 @@ export default function App() {
       setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
       setStatus('idle')
       await new Promise((resolve) => setTimeout(resolve, 250))
-      // The remote start endpoint returns only after ComfyUI is ready.
-      // Hand the phone directly to the ComfyUI interface.
-      window.location.assign('https://comfyui.tail84bda1.ts.net/')
+      // Return to the PWA we started from, not the raw ComfyUI interface.
+      // Keep the current origin so this works on the production Vercel app.
+      window.location.assign(window.location.origin)
     } catch (err) {
       window.clearInterval(timer)
       setErrorMsg(err instanceof Error ? err.message : 'Could not start ComfyUI from the phone.')
