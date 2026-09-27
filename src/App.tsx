@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, freeComfyMemory, getComfySystemStats, startComfyFromPhone } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, getRemoteControlStatus, startComfyUI, waitForComfyReady, freeComfyMemory, getComfySystemStats, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
@@ -90,7 +90,7 @@ export default function App() {
   const [megapixels, setMegapixels] = useState(saved.megapixels ?? 0.5)
   const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 720)
   const [cancelling, setCancelling] = useState(false)
-  const [comfySleeping, setComfySleeping] = useState(false)
+  // Start on the off screen until the phone-control endpoint confirms ComfyUI is running.\n  // This makes a refresh immediately reflect a stopped laptop without waiting for a timer.\n  const [comfySleeping, setComfySleeping] = useState(true)
   const [exploreMode, setExploreMode] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
@@ -184,11 +184,19 @@ export default function App() {
     let cancelled = false
     const check = async () => {
       try {
-        const launcher = await getLauncherStatus()
+        const remote = await getRemoteControlStatus()
         if (cancelled) return
-        if (launcher.comfyui === 'stopped' && !isBusy && !startingComfy) setComfySleeping(true)
-      } catch {}
+        if (remote.comfyui === 'running') {
+          if (!isBusy && !startingComfy) setComfySleeping(false)
+        } else {
+          setComfySleeping(true)
+        }
+      } catch {
+        if (!cancelled) setComfySleeping(true)
+      }
     }
+
+    // Check immediately on every page load/refresh, then keep the state current.
     void check()
     const timer = window.setInterval(check, 3000)
     return () => { cancelled = true; window.clearInterval(timer) }
