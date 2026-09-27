@@ -920,3 +920,86 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   opacity: .6;
   cursor: default;
 }
+
+
+/* Fixed ComfyUI navigation footer */
+.app {
+  padding-bottom: 0;
+}
+.app-main {
+  padding-bottom: 116px;
+}
+.app-footer {
+  position: fixed;
+  left: 50%;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 20;
+  width: min(calc(100% - 20px), 760px);
+  transform: translateX(-50%);
+  padding: 7px;
+  border: 1px solid #303540;
+  border-radius: 18px;
+  background: rgba(23, 26, 32, .94);
+  box-shadow:
+    0 12px 35px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.footer-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.app-footer .icon-btn {
+  width: 100%;
+  height: 48px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: transparent;
+  transition: background .18s ease, border-color .18s ease, transform .12s ease;
+}
+.app-footer .icon-btn svg {
+  width: 22px;
+  height: 22px;
+}
+.app-footer .icon-btn:hover {
+  background: #242832;
+  border-color: #343a46;
+}
+.app-footer .icon-btn:active {
+  transform: translateY(1px);
+}
+.app-footer .icon-btn.history-icon {
+  color: #62a5ff;
+}
+.app-footer .icon-btn.logs-icon {
+  color: #79d7ff;
+}
+.app-footer .icon-btn.settings-icon {
+  color: #c59cff;
+}
+.app-footer .icon-btn.history-icon:active {
+  background: rgba(98,165,255,.14);
+}
+.app-footer .icon-btn.logs-icon:active {
+  background: rgba(121,215,255,.14);
+}
+.app-footer .icon-btn.settings-icon:active {
+  background: rgba(197,156,255,.14);
+}
+@media (max-width: 600px) {
+  .app-main {
+    padding-bottom: 112px;
+  }
+  .app-footer {
+    width: calc(100% - 16px);
+    bottom: max(8px, env(safe-area-inset-bottom));
+    padding: 6px;
+    border-radius: 16px;
+  }
+  .app-footer .icon-btn {
+    height: 46px;
+    border-radius: 12px;
+  }
+}
