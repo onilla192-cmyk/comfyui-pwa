@@ -1315,6 +1315,12 @@ html, body, #root {
   font-weight: 700;
   cursor: pointer;
 }
+.prompt-builder-open-btn.has-active-labels {
+  border-color: rgba(56,217,139,.65);
+  background: rgba(56,217,139,.12);
+  color: #38d98b;
+  box-shadow: inset 0 0 0 1px rgba(56,217,139,.08);
+}
 .prompt-builder-open-btn:active:not(:disabled) {
   background: #1d222b;
   transform: translateY(1px);
@@ -1466,13 +1472,17 @@ html, body, #root {
   font-size: 16px;
 }
 .prompt-builder-page-list.focus-mode .prompt-builder-input-focused {
+  display: block;
   min-height: min(42vh, 320px);
   height: min(42vh, 320px);
   margin-top: 10px;
   padding: 14px;
   font-size: 16px;
   line-height: 1.5;
+  text-align: left;
+  vertical-align: top;
   resize: none;
+  overflow-y: auto;
 }
 .prompt-builder-page-list.focus-mode .prompt-builder-control {
   width: 100%;
@@ -1516,6 +1526,7 @@ html, body, #root {
   cursor: default;
 }
 .prompt-builder-input {
+  display: block;
   width: 100%;
   min-height: 42px;
   border: 1px solid #3b604b;
@@ -1524,6 +1535,9 @@ html, body, #root {
   color: #f3f4f6;
   padding: 9px 10px;
   outline: none;
+  box-sizing: border-box;
+  text-align: left;
+  vertical-align: top;
 }
 .prompt-builder-input:focus {
   border-color: #38d98b;
