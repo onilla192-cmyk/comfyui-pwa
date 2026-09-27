@@ -157,27 +157,10 @@ export default function App() {
     let cancelled = false
     const restoreImages = async () => {
       const items = [...savedResults, ...savedTrash]
-      const uncached = items.filter((item) => !item.url.startsWith('blob:'))
-      if (!uncached.length) return
 
-      let sourceAvailable = true
-      let wokeComfy = false
-      try {
-        const launcher = await getLauncherStatus()
-        if (launcher.comfyui === 'stopped') {
-          wokeComfy = true
-          setStartingComfy(true)
-          setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
-          await startComfyUI()
-          await waitForComfyReady()
-        }
-      } catch {
-        sourceAvailable = false
-      } finally {
-        if (wokeComfy) setStartingComfy(false)
-      }
-
-      for (const item of uncached) {
+      // Generated images are stored locally in IndexedDB. Restore from that
+      // local copy first so history never depends on ComfyUI being online.
+      for (const item of items) {
         if (cancelled) return
         const cached = await getCachedImage(item.id)
         if (cancelled) return
@@ -185,24 +168,16 @@ export default function App() {
           const apply = (list: ResultImage[]) => list.map((entry) => entry.id === item.id ? { ...entry, url: cached } : entry)
           setResults((prev) => apply(prev))
           setTrash((prev) => apply(prev))
-          continue
         }
-        if (!sourceAvailable) continue
-        try {
-          const localUrl = await cacheImage(item.id, item.url)
-          if (cancelled) {
-            URL.revokeObjectURL(localUrl)
-            return
-          }
-          const apply = (list: ResultImage[]) => list.map((entry) => entry.id === item.id ? { ...entry, url: localUrl } : entry)
-          setResults((prev) => apply(prev))
-          setTrash((prev) => apply(prev))
-        } catch {}
       }
+
+      // Older history entries may predate local image caching. Leave those
+      // remote URLs alone; new generations are always cached before display.
     }
     void restoreImages()
     return () => { cancelled = true }
   }, [])
+
   useEffect(() => {
     let cancelled = false
     const check = async () => {
