@@ -5591,3 +5591,55 @@ body:has(.results-page) {
   0% { background-position: 0 0, 0% 50%; }
   100% { background-position: 0 0, 300% 50%; }
 }
+
+
+
+/* Universal tactile button press interaction */
+button:not(:disabled) {
+  transition:
+    transform .08s ease,
+    box-shadow .08s ease,
+    filter .08s ease,
+    background-color .08s ease !important;
+}
+
+button:not(:disabled):active {
+  transform: translateY(3px) !important;
+  filter: brightness(.94) !important;
+}
+
+button:not(:disabled):focus-visible {
+  outline: 2px solid rgba(0,168,232,.75) !important;
+  outline-offset: 2px !important;
+}
+
+/* Preserve the RGB border while giving Prompt Builder a clearly colored 3D lift. */
+.prompt-builder-open-btn {
+  transform: translateY(-3px) !important;
+  border-width: 3px !important;
+  border-color: #00e5ff !important;
+  box-shadow:
+    0 7px 0 #d500f9,
+    0 10px 18px rgba(0,0,0,.5),
+    0 0 16px rgba(0,229,255,.28),
+    inset 0 2px 0 rgba(255,255,255,.2) !important;
+}
+
+.prompt-builder-open-btn.has-active-labels {
+  border-color: transparent !important;
+  box-shadow:
+    0 7px 0 #d500f9,
+    0 10px 22px rgba(0,0,0,.55),
+    0 0 22px rgba(255,23,68,.2),
+    0 0 22px rgba(0,229,255,.2),
+    inset 0 2px 0 rgba(255,255,255,.22) !important;
+}
+
+.prompt-builder-open-btn:active,
+.prompt-builder-open-btn.has-active-labels:active {
+  transform: translateY(3px) !important;
+  box-shadow:
+    0 1px 0 #8a008f,
+    0 3px 8px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
