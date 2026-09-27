@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, freeComfyMemory } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, freeComfyMemory, getComfySystemStats } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
@@ -97,6 +97,7 @@ export default function App() {
   const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
   const [logsOpen, setLogsOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
+  const [standbyLogs, setStandbyLogs] = useState<string[]>([])
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid')
@@ -197,11 +198,31 @@ export default function App() {
     // Standby: keep the ComfyUI server alive, but unload models and release
     // cached GPU memory so other software can use the VRAM.
     setComfySleeping(true)
-    void freeComfyMemory()
+    const stamp = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const addStandbyLog = (message: string) => setStandbyLogs((current) => [...current.slice(-49), `[${stamp()}] ${message}`])
+    addStandbyLog('Standby: unloading ComfyUI models and releasing GPU memory...')
+    void getComfySystemStats()
+      .then((before) => {
+        const device = before?.devices?.[0]
+        if (device?.vram_used != null) addStandbyLog(`GPU memory before: ${Math.round(Number(device.vram_used) / 1048576)} MB`)
+      })
       .catch(() => {})
       .finally(() => {
-        setComfySleeping(false)
-        setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
+        void freeComfyMemory()
+          .then(async () => {
+            addStandbyLog('Standby: ComfyUI memory release request completed.')
+            await new Promise((resolve) => setTimeout(resolve, 750))
+            try {
+              const after = await getComfySystemStats()
+              const device = after?.devices?.[0]
+              if (device?.vram_used != null) addStandbyLog(`GPU memory after: ${Math.round(Number(device.vram_used) / 1048576)} MB`)
+            } catch {}
+          })
+          .catch((err) => addStandbyLog(`Standby: WARNING — memory release failed: ${err instanceof Error ? err.message : 'unknown error'}`))
+          .finally(() => {
+            setComfySleeping(false)
+            setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
+          })
       })
   }, [isBusy, comfySleeping, startingComfy, sleepSeconds])
 
@@ -219,7 +240,7 @@ export default function App() {
     const loadLogs = async () => {
       try {
         const logs = await getLauncherLogs()
-        if (!cancelled) setLauncherLogs(logs)
+        if (!cancelled) setLauncherLogs([...logs, ...standbyLogs])
       } catch {}
     }
     void loadLogs()
@@ -228,7 +249,7 @@ export default function App() {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [logsOpen])
+  }, [logsOpen, standbyLogs])
 
 
   useEffect(() => {
