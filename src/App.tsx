@@ -78,6 +78,7 @@ export default function App() {
   const [ideasOpen, setIdeasOpen] = useState(false)
   const [resultsOpen, setResultsOpen] = useState(false)
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
+  const [completedImageVisible, setCompletedImageVisible] = useState(true)
   const completedTapTimer = useRef<number | null>(null)
   const [completedTapState, setCompletedTapState] = useState<'idle' | 'armed' | 'confirmed'>('idle')
   const [promptLabelsSection, setPromptLabelsSection] = useState<'labels' | 'trash'>('labels')
@@ -942,29 +943,63 @@ export default function App() {
               <h2>Completed Generations</h2>
               <span>{results.length} completed image{results.length === 1 ? '' : 's'}</span>
             </div>
-            <button className="close-btn" type="button" onClick={() => setResultsOpen(false)} aria-label="Return to generation UI">×</button>
+            <div className="results-page-header-actions">
+              <button
+                className={`results-image-toggle${completedImageVisible ? ' active' : ''}`}
+                type="button"
+                onClick={() => setCompletedImageVisible((visible) => !visible)}
+                aria-label="Toggle generated image"
+                title="Toggle generated image"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  {completedImageVisible ? (
+                    <>
+                      <rect x="3" y="5" width="18" height="14" rx="2"/>
+                      <circle cx="8.5" cy="10" r="1.3"/>
+                      <path d="M4.5 17l5-5 3.5 3.5 2.5-2.5 4 4"/>
+                    </>
+                  ) : (
+                    <>
+                      <rect x="3" y="5" width="18" height="14" rx="2"/>
+                      <circle cx="8.5" cy="10" r="1.3"/>
+                      <path d="M4.5 17l5-5 3.5 3.5 2.5-2.5 4 4"/>
+                      <path d="M4 4l16 16"/>
+                    </>
+                  )}
+                </svg>
+              </button>
+              <button className="close-btn" type="button" onClick={() => setResultsOpen(false)} aria-label="Return to generation UI">×</button>
+            </div>
           </div>
           <div className="results-page-body">
             {latestResultId && results.length > 0 && (() => {
   const latestResult = results.find((item) => item.id === latestResultId)
   return latestResult ? (
     <section className="latest-result">
-      <div className={`completed-image-tap-area completed-image-tap-${completedTapState}`}>
-      <img
-        src={latestResult.url}
-        alt="Generated result"
-        loading="lazy"
-        draggable={false}
-        onClick={handleCompletedImageTap}
-        onContextMenu={(event) => event.preventDefault()}
-        onLoad={(event) => {
-          const width = event.currentTarget.naturalWidth
-          const height = event.currentTarget.naturalHeight
-          if (width && height && (latestResult.width !== width || latestResult.height !== height)) {
-            setResults((prev) => prev.map((item) => item.id === latestResult.id ? { ...item, width, height } : item))
-          }
-        }}
-      />
+      <div className={`completed-image-tap-area completed-image-tap-${completedTapState}${completedImageVisible ? '' : ' completed-image-tap-hidden'}`}>
+        {completedImageVisible ? (
+          <img
+            src={latestResult.url}
+            alt="Generated result"
+            loading="lazy"
+            draggable={false}
+            onClick={handleCompletedImageTap}
+            onContextMenu={(event) => event.preventDefault()}
+            onLoad={(event) => {
+              const width = event.currentTarget.naturalWidth
+              const height = event.currentTarget.naturalHeight
+              if (width && height && (latestResult.width !== width || latestResult.height !== height)) {
+                setResults((prev) => prev.map((item) => item.id === latestResult.id ? { ...item, width, height } : item))
+              }
+            }}
+          />
+        ) : (
+          <svg className="completed-image-placeholder" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <circle cx="8.5" cy="10" r="1.3"/>
+            <path d="M4.5 17l5-5 3.5 3.5 2.5-2.5 4 4"/>
+          </svg>
+        )}
       </div>
       <div className="latest-result-info">
         <span>Dimension <b>{latestResult.width && latestResult.height ? `${latestResult.width} × ${latestResult.height}px` : 'Loading…'}</b></span>
