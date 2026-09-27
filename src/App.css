@@ -1411,6 +1411,36 @@ html, body, #root {
   min-width: 0;
 }
 
+.prompt-builder-drag-ghost {
+  position: fixed;
+  z-index: 200;
+  width: min(420px, calc(100vw - 56px));
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid rgba(126,157,224,.85);
+  border-radius: 11px;
+  background: rgba(31,36,47,.96);
+  color: #f1f3f7;
+  box-shadow: 0 16px 36px rgba(0,0,0,.48), 0 0 0 2px rgba(126,157,224,.12);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: scale(1.035) rotate(1deg);
+  transform-origin: top left;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.prompt-builder-page-list .prompt-builder-item.dragging {
+  opacity: .18;
+  transition: opacity .12s ease;
+}
+.prompt-builder-page-list .prompt-builder-item:not(.dragging) {
+  transition: transform .16s ease, opacity .16s ease;
+}
+
 .prompt-builder-page-list.focus-mode {
   padding: 22px;
   display: flex;
