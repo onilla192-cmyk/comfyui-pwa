@@ -21,6 +21,7 @@ export type LauncherStatus = {
 }
 
 export async function getLauncherLogs(): Promise<string[]> {
+  if (import.meta.env.PROD) return []
   const response = await fetch(`${LAUNCHER_BASE_URL}/logs`, { cache: 'no-store' })
   if (!response.ok) throw new Error(`Launcher logs returned ${response.status}`)
   const data = await response.json() as { logs?: string[] }
@@ -28,6 +29,17 @@ export async function getLauncherLogs(): Promise<string[]> {
 }
 
 export async function getLauncherStatus(): Promise<LauncherStatus> {
+  if (import.meta.env.PROD) {
+    const remote = await getRemoteControlStatus()
+    return {
+      ok: remote.ok === true,
+      comfyui: remote.comfyui ?? 'stopped',
+      launcher: remote.launcher ?? 'unknown',
+      batFound: true,
+      batPath: '',
+    }
+  }
+
   const response = await fetch(`${LAUNCHER_BASE_URL}/status`, { cache: 'no-store' })
   if (!response.ok) throw new Error(`Launcher returned ${response.status}`)
   return response.json() as Promise<LauncherStatus>
