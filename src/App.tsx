@@ -937,7 +937,6 @@ export default function App() {
           </div>
           {promptBuilderOpen ? (
             <div className="prompt-builder">
-              <div className="prompt-builder-note">Choose a label, then enter its value. Only labels with text are sent to ComfyUI.</div>
               <div className="prompt-builder-list">
                 {PROMPT_BUILDER_LABELS.map((label) => {
                   const value = promptBuilderValues[label] ?? ''
