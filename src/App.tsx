@@ -1203,14 +1203,16 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <div className="prompt-expanded-header">
-              <div>
-                <span className="prompt-expanded-title">Prompt</span>
-                <span className="prompt-expanded-subtitle">Full-screen editor</span>
+            <>
+              <div className="prompt-expanded-header">
+                <div>
+                  <span className="prompt-expanded-title">Prompt</span>
+                  <span className="prompt-expanded-subtitle">Full-screen editor</span>
+                </div>
+                <button type="button" className="prompt-expanded-close" onClick={() => setPromptExpanded(false)} aria-label="Close expanded prompt">×</button>
               </div>
-              <button type="button" className="prompt-expanded-close" onClick={() => setPromptExpanded(false)} aria-label="Close expanded prompt">×</button>
-            </div>
-            <textarea id="prompt" value={prompt} onFocus={() => setPromptExpanded(true)} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
+              <textarea id="prompt" value={prompt} onFocus={() => setPromptExpanded(true)} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
+            </>
           )}</div>
         <div className="field"><label htmlFor="negative">Negative prompt (optional)</label><textarea id="negative" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} /></div>
 
