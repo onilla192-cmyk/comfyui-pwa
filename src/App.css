@@ -4040,3 +4040,88 @@ body,
 
 
 .prompt-expanded-header { display: none; }
+
+
+/* Mobile: keep the complete generation card inside the visible viewport.
+   Image inputs consume their natural space; the generation card gets the
+   remaining height and its controls compress rather than being clipped. */
+@media (max-width: 600px) {
+  .app-main {
+    display: flex !important;
+    flex-direction: column !important;
+    height: calc(100dvh - 8px) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+
+  .image-pickers {
+    flex: 0 0 auto !important;
+    margin-bottom: 8px !important;
+  }
+
+  .generation-embed {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    margin-top: 0 !important;
+    padding: 10px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .generation-embed .field {
+    flex: 0 0 auto !important;
+    margin-bottom: 8px !important;
+  }
+
+  .generation-embed .field > label {
+    margin-bottom: 4px !important;
+    font-size: 12px !important;
+  }
+
+  .generation-embed .field textarea {
+    min-height: 48px !important;
+    height: 48px !important;
+    max-height: 48px !important;
+    padding: 9px 10px !important;
+    resize: none !important;
+    border-radius: 11px !important;
+  }
+
+  .generation-embed .field:first-child textarea {
+    min-height: 64px !important;
+    height: 64px !important;
+    max-height: 64px !important;
+  }
+
+  .generation-embed .field:nth-child(2) textarea {
+    min-height: 48px !important;
+    height: 48px !important;
+    max-height: 48px !important;
+  }
+
+  .generation-embed .prompt-builder-open-btn {
+    min-height: 64px !important;
+    height: 64px !important;
+    max-height: 64px !important;
+  }
+
+  .generation-actions {
+    flex: 0 0 auto !important;
+    min-height: 44px !important;
+    margin-top: 2px !important;
+    gap: 7px !important;
+  }
+
+  .generation-actions .generate-btn,
+  .generation-actions .cancel-btn,
+  .generation-actions .idea-btn,
+  .generation-actions .results-btn {
+    min-height: 44px !important;
+    height: 44px !important;
+    max-height: 44px !important;
+  }
+}
