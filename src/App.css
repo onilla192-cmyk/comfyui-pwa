@@ -5502,3 +5502,31 @@ body:has(.results-page) {
 .image-picker:nth-child(2) .image-picker-name {
   color: #55d3ff !important;
 }
+
+
+/* Prompt Builder — distinct Nintendo action colors */
+.prompt-builder-page .prompt-builder-tool-btn.master {
+  border-color: #b8860b !important;
+  background: linear-gradient(180deg, #f5c542, #d4a017) !important;
+  color: #171717 !important;
+  box-shadow: 0 4px 0 #8c6508 !important;
+}
+
+.prompt-builder-page .prompt-builder-tool-btn.preview {
+  border-color: #b4000e !important;
+  background: linear-gradient(180deg, #e60012, #c90010) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 0 #8d000a !important;
+}
+
+.prompt-builder-page .prompt-builder-page-list:not(.focus-mode)::after {
+  border-color: #348c38 !important;
+  background: linear-gradient(180deg, #3fae46, #2f8f36) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 0 #216525 !important;
+}
+
+.prompt-builder-page .prompt-builder-label.has-value::before {
+  background: #f5c542 !important;
+  box-shadow: 0 0 0 3px rgba(245,197,66,.2) !important;
+}
