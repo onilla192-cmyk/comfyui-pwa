@@ -193,6 +193,19 @@ export default function App() {
   }, [isBusy, startingComfy])
 
   useEffect(() => {
+    if (isBusy || comfySleeping || startingComfy || sleepSeconds > 0) return
+    // Standby: keep the ComfyUI server alive, but unload models and release
+    // cached GPU memory so other software can use the VRAM.
+    setComfySleeping(true)
+    void freeComfyMemory()
+      .catch(() => {})
+      .finally(() => {
+        setComfySleeping(false)
+        setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
+      })
+  }, [isBusy, comfySleeping, startingComfy, sleepSeconds])
+
+  useEffect(() => {
     if (isBusy || comfySleeping || startingComfy) return
     const timer = window.setInterval(() => {
       setSleepSeconds((current: number) => Math.max(0, current - 1))
