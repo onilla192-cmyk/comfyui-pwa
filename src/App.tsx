@@ -918,7 +918,7 @@ export default function App() {
               <button
                 type="button"
                 className={`image-node-toggle prompt-builder-toggle${promptBuilderOpen ? ' active' : ''}`}
-                onClick={() => setPromptBuilderOpen((open) => !open)}
+                onClick={() => setPromptBuilderOpen((open: boolean) => !open)}
                 disabled={isBusy}
                 aria-label={promptBuilderOpen ? 'Disable prompt builder' : 'Enable prompt builder'}
                 title={promptBuilderOpen ? 'Disable prompt builder' : 'Enable prompt builder'}
