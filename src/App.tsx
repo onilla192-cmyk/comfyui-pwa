@@ -93,6 +93,7 @@ export default function App() {
   // Start on the off screen until the phone-control endpoint confirms ComfyUI is running.
   // This makes a refresh immediately reflect a stopped laptop without waiting for a timer.
   const [comfySleeping, setComfySleeping] = useState(true)
+  const [comfyStatusChecked, setComfyStatusChecked] = useState(false)
   const [exploreMode, setExploreMode] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
@@ -184,21 +185,39 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false
+    let firstCheck = true
+
     const check = async () => {
       try {
         const remote = await getRemoteControlStatus()
         if (cancelled) return
+
         if (remote.comfyui === 'running') {
           if (!isBusy && !startingComfy) setComfySleeping(false)
         } else {
           setComfySleeping(true)
         }
+
+        // Do not render either page until the first status check has settled.
+        // This prevents the sleep/Explore screen from flashing over the main UI.
+        if (firstCheck) {
+          firstCheck = false
+          setComfyStatusChecked(true)
+        }
       } catch {
-        if (!cancelled) setComfySleeping(true)
+        if (cancelled) return
+
+        // Only the initial failure determines the initial screen. After that,
+        // keep the current UI state through transient network/Tailscale errors
+        // instead of flashing back to the sleep/Explore screen.
+        if (firstCheck) {
+          firstCheck = false
+          setComfySleeping(true)
+          setComfyStatusChecked(true)
+        }
       }
     }
 
-    // Check immediately on every page load/refresh, then keep the state current.
     void check()
     const timer = window.setInterval(check, 3000)
     return () => { cancelled = true; window.clearInterval(timer) }
@@ -741,6 +760,10 @@ export default function App() {
   const activeItems = historySection === 'history'
     ? results.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
+
+  if (!comfyStatusChecked) {
+    return <div className="sleep-screen" aria-hidden="true" />
+  }
 
   if (comfySleeping && !exploreMode) {
     return (
