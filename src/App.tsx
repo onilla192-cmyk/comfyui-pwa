@@ -201,14 +201,6 @@ export default function App() {
   }, [isBusy, comfySleeping, startingComfy])
 
   useEffect(() => {
-    if (isBusy || comfySleeping || startingComfy || sleepSeconds > 0) return
-    // Sleep is app-side standby only. Keep ComfyUI running so the next
-    // generation can start immediately without paying the GPU startup cost.
-    setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
-  }, [isBusy, comfySleeping, startingComfy, sleepSeconds])
-
-
-  useEffect(() => {
     if (!logsOpen) return
     let cancelled = false
     const loadLogs = async () => {
