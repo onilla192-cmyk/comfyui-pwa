@@ -831,6 +831,16 @@ export default function App() {
     </div>}
 
     <main className="app-main">
+      {isBusy && progress && (
+        <div className="progress-wrap" aria-label="Generation progress">
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${percent}%` }} />
+            <span className="progress-current" style={{ left: `${Math.min(100, Math.max(0, percent))}%` }}>{progress.value}</span>
+            <span className="progress-total">{progress.max}</span>
+          </div>
+        </div>
+      )}
+
       <section className="image-pickers">
         <ImagePicker glow={isBusy || fadeImageGlow} slot="image_1" label="Figure A" image={imageOne} busy={uploading.one} disabled={isBusy} onChange={(file) => void handleImageChange('one', file)} onClear={() => clearImage('one')} />
         <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />
@@ -861,7 +871,6 @@ export default function App() {
         </div>
       </section>
 
-      {isBusy && <div className="progress-wrap"><div className="progress-label"><span>Generation progress</span><strong>{percent}%</strong></div><div className="progress-bar"><div className="progress-fill" style={{ width: `${percent}%` }} /></div>{progress && <div className="progress-detail">Step {progress.value} of {progress.max}</div>}</div>}
       {status === 'cancelling' && <p className="cancel-text">Cancelling generation…</p>}
       {errorMsg && <p className="error-text">{errorMsg}</p>}
       {latestResultId && results.length > 0 && (() => {
