@@ -1373,7 +1373,8 @@ html, body, #root {
 }
 .prompt-builder-page-list .prompt-builder-item {
   display: flex;
-  align-items: stretch;
+  flex-direction: row;
+  align-items: flex-start;
   gap: 7px;
   touch-action: manipulation;
 }
@@ -1381,18 +1382,19 @@ html, body, #root {
   opacity: .65;
 }
 .prompt-builder-drag-handle {
-  width: 30px;
-  min-width: 30px;
-  flex: 0 0 30px;
+  width: 32px;
+  min-width: 32px;
+  flex: 0 0 32px;
+  height: 46px;
   display: grid;
   place-items: center;
   align-self: flex-start;
-  min-height: 46px;
   border: 1px solid #303540;
   border-radius: 9px;
   background: #151820;
-  color: #7f8795;
-  font-size: 17px;
+  color: #68717f;
+  font-size: 16px;
+  line-height: 1;
   letter-spacing: -3px;
   cursor: grab;
   touch-action: none;
