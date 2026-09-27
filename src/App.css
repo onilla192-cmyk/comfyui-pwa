@@ -1105,3 +1105,33 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
     font-size: 7px;
   }
 }
+
+
+/* Footer status strip */
+.footer-status {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: calc(100% + 14px);
+  margin: -7px -7px 7px;
+  border-bottom: 1px solid #303540;
+}
+.footer-status-bubble {
+  min-height: 28px;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 0;
+  background: rgba(17,19,24,.5);
+}
+.footer-status-bubble + .footer-status-bubble {
+  border-left: 1px solid #303540;
+}
+.footer-status .sleep-timer {
+  gap: 6px;
+  font-size: 11px;
+}
+.footer-status .sleep-timer strong {
+  font-size: 13px;
+}
+.footer-status .vram-status {
+  font-size: 10px;
+}
