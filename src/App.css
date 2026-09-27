@@ -4037,3 +4037,6 @@ body,
 .master-prompts-page {
   padding-bottom: env(safe-area-inset-bottom) !important;
 }
+
+
+.prompt-expanded-header { display: none; }
