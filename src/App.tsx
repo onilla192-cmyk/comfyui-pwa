@@ -119,6 +119,7 @@ export default function App() {
 
   const [imageOne, setImageOne] = useState<CharacterImage | null>(() => null)
   const [imageTwo, setImageTwo] = useState<CharacterImage | null>(() => null)
+  const [showImageTwo, setShowImageTwo] = useState(() => saved.showImageTwo ?? !!saved.imageTwo)
 
   useEffect(() => {
     let cancelled = false
@@ -148,11 +149,12 @@ export default function App() {
       prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
+      showImageTwo,
       cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, sleepSeconds,
       promptId: currentPromptId.current, progress,
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash, imageOne, imageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
+  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
@@ -845,13 +847,33 @@ export default function App() {
         </div>
       )}
 
-      <section className="image-pickers">
+      <section className={`image-pickers${showImageTwo ? '' : ' single'}`}>
         <ImagePicker glow={isBusy || fadeImageGlow} slot="image_1" label="Figure A" image={imageOne} busy={uploading.one} disabled={isBusy} onChange={(file) => void handleImageChange('one', file)} onClear={() => clearImage('one')} />
-        <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />
+        {showImageTwo && <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />}
       </section>
 
       <section className="generation-embed">
-        <div className="field"><label htmlFor="prompt">Prompt</label><textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} /></div>
+        <div className="field">
+          <div className="prompt-field-header">
+            <label htmlFor="prompt">Prompt</label>
+            <button
+              type="button"
+              className={`image-node-toggle${showImageTwo ? ' remove' : ''}`}
+              onClick={() => {
+                if (showImageTwo) {
+                  clearImage('two')
+                  setShowImageTwo(false)
+                } else {
+                  setShowImageTwo(true)
+                }
+              }}
+              disabled={isBusy}
+              aria-label={showImageTwo ? 'Remove Figure B image node' : 'Add Figure B image node'}
+            >
+              {showImageTwo ? '- image node' : '+ image node'}
+            </button>
+          </div>
+          <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} /></div>
         <div className="field"><label htmlFor="negative">Negative prompt (optional)</label><textarea id="negative" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} /></div>
 
         <div className="generation-actions">
