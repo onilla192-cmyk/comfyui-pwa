@@ -182,11 +182,14 @@ const REMOTE_CONTROL_URL = import.meta.env.PROD
 
 export async function startComfyFromPhone(): Promise<void> {
   const response = await fetch(`${REMOTE_CONTROL_URL}/start`, { method: 'POST' })
+  const text = await response.text()
   if (!response.ok) {
-    const text = await response.text()
     throw new Error(text || `Remote start failed (${response.status})`)
   }
-  await waitForComfyReady()
+
+  // The remote control listener only returns 200 after ComfyUI is ready.
+  // Do not perform a second readiness poll from the phone; that can hang
+  // behind the Tailscale proxy even though the remote start succeeded.
 }
 
 export async function getRemoteControlStatus(): Promise<any> {
