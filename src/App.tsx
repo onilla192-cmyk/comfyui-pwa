@@ -722,7 +722,7 @@ export default function App() {
   }
 
   async function handleRemoteStart() {
-    if (remoteStarting || startingComfy) return
+    if (remoteStarting || startingComfy || comfyPowerState !== 'off') return
     setRemoteStarting(true)
     setErrorMsg(null)
     setStartProgress(5)
@@ -1012,9 +1012,9 @@ export default function App() {
           className={`start-comfy-btn footer-power-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
           type="button"
           onClick={() => void handleRemoteStart()}
-          disabled={remoteStarting || startingComfy || comfyPowerState === 'active'}
-          aria-label={remoteStarting || startingComfy ? 'ComfyUI is starting' : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
-          title={remoteStarting || startingComfy ? `ComfyUI loading ${startProgress}%` : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'Wake ComfyUI' : 'Start ComfyUI'}
+          disabled={remoteStarting || startingComfy || comfyPowerState !== 'off'}
+          aria-label={remoteStarting || startingComfy ? 'ComfyUI is starting' : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'ComfyUI standby' : 'Start ComfyUI'}
+          title={remoteStarting || startingComfy ? `ComfyUI loading ${startProgress}%` : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'ComfyUI standby' : 'Start ComfyUI'}
           style={{ '--power-progress': `${startProgress}%` } as React.CSSProperties}
         >
           <span className="power-progress-ring" aria-hidden="true" />
