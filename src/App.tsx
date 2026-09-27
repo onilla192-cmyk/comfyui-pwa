@@ -582,7 +582,7 @@ export default function App() {
           <h1>ComfyUI is stopped</h1>
           <p>The GPU is sleeping to save power and VRAM.</p>
           {errorMsg && <p className="sleep-error">{errorMsg}</p>}
-          <button type="button" className="resume-btn" onClick={() => setExploreMode(true)} disabled={resuming}>
+          <button type="button" className="resume-btn" onClick={() => setExploreMode(true)}>
             Explore
           </button>
         </div>
