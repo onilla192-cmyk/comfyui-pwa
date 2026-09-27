@@ -1318,7 +1318,37 @@ export default function App() {
                     >⋮⋮</div>
                   )}
                   <div className="prompt-builder-control">
-                    <button type="button" className={'prompt-builder-label' + (hasValue ? ' has-value' : '') + (activePromptBuilderLabel === label ? ' focused' : '')} onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)} disabled={isBusy}>
+                    <button
+                      type="button"
+                      className={'prompt-builder-label' + (hasValue ? ' has-value' : '') + (activePromptBuilderLabel === label ? ' focused' : '')}
+                      onClick={() => {
+                        if (isBusy) return
+                        setPromptBuilderValues((current) => ({ ...current, [label]: '' }))
+                      }}
+                      onContextMenu={(event) => {
+                        event.preventDefault()
+                        if (isBusy) return
+                        setActivePromptBuilderLabel(label)
+                      }}
+                      onPointerDown={(event) => {
+                        if (isBusy) return
+                        event.currentTarget.dataset.holdTriggered = '0'
+                        const pointerId = event.pointerId
+                        const target = event.currentTarget
+                        const timer = window.setTimeout(() => {
+                          target.dataset.holdTriggered = '1'
+                          setActivePromptBuilderLabel(label)
+                        }, 450)
+                        const cleanup = () => {
+                          window.clearTimeout(timer)
+                          target.removeEventListener('pointerup', cleanup)
+                          target.removeEventListener('pointercancel', cleanup)
+                        }
+                        target.addEventListener('pointerup', cleanup)
+                        target.addEventListener('pointercancel', cleanup)
+                      }}
+                      disabled={isBusy}
+                    >
                       {hasValue ? label + ': ' + value : label}
                     </button>
                     {!activePromptBuilderLabel && <button type="button" className="prompt-builder-delete-btn" onClick={() => deletePromptBuilderLabel(label)} disabled={isBusy} aria-label={'Delete ' + label}>×</button>}
