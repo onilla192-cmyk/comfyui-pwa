@@ -91,6 +91,7 @@ export default function App() {
   const [cancelling, setCancelling] = useState(false)
   const [comfySleeping, setComfySleeping] = useState(false)
   const [resuming, setResuming] = useState(false)
+  const [exploreMode, setExploreMode] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
   const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
@@ -594,7 +595,7 @@ export default function App() {
     ? results.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
-  if (comfySleeping) {
+  if (comfySleeping && !exploreMode) {
     return (
       <div className="sleep-screen">
         <div className="sleep-card">
@@ -602,8 +603,8 @@ export default function App() {
           <h1>ComfyUI is stopped</h1>
           <p>The GPU is sleeping to save power and VRAM.</p>
           {errorMsg && <p className="sleep-error">{errorMsg}</p>}
-          <button type="button" className="resume-btn" onClick={() => void handleResume()} disabled={resuming}>
-            {resuming ? 'Starting ComfyUI…' : 'Resume'}
+          <button type="button" className="resume-btn" onClick={() => setExploreMode(true)} disabled={resuming}>
+            Explore
           </button>
         </div>
       </div>
