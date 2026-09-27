@@ -32,6 +32,19 @@ function getBlob(key: string): Promise<Blob | undefined> {
   }))
 }
 
+export async function cacheFile(key: string, file: Blob): Promise<string> {
+  await putBlob(key, file)
+  return URL.createObjectURL(file)
+}
+
+export async function getCachedFile(key: string): Promise<Blob | null> {
+  try {
+    return (await getBlob(key)) ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function cacheImage(key: string, sourceUrl: string): Promise<string> {
   const response = await fetch(sourceUrl, { cache: 'no-store' })
   if (!response.ok) throw new Error(`Could not cache generated image (${response.status})`)
