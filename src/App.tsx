@@ -93,7 +93,7 @@ export default function App() {
   const [resuming, setResuming] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
-  const [sleepSeconds, setSleepSeconds] = useState(SLEEP_TIMEOUT_SECONDS)
+  const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid')
@@ -117,11 +117,11 @@ export default function App() {
       prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
-      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension,
+      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, sleepSeconds,
       promptId: currentPromptId.current, progress,
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash, imageOne, imageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status])
+  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash, imageOne, imageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
