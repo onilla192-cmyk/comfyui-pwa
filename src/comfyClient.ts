@@ -52,6 +52,12 @@ export async function waitForComfyReady(timeoutMs = 120000): Promise<void> {
 }
 
 export async function startComfyUI(): Promise<void> {
+  // Production uses the phone remote controller. The old /launcher route is not exposed through Tailscale.
+  if (import.meta.env.PROD) {
+    await startComfyFromPhone()
+    return
+  }
+
   const response = await fetch(`${LAUNCHER_BASE_URL}/start`, { method: 'POST' })
   if (!response.ok) {
     const text = await response.text()
