@@ -144,7 +144,7 @@ export default function App() {
   useEffect(() => {
     if (isBusy || comfySleeping || startingComfy) return
     const timer = window.setInterval(() => {
-      setSleepSeconds((current) => Math.max(0, current - 1))
+      setSleepSeconds((current: number) => Math.max(0, current - 1))
     }, 1000)
     return () => window.clearInterval(timer)
   }, [isBusy, comfySleeping, startingComfy])
