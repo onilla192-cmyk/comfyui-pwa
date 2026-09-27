@@ -1525,3 +1525,55 @@ html, body, #root {
   0% { opacity: .85; }
   100% { opacity: 0; }
 }
+
+
+.results-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.results-image-toggle {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #303540;
+  border-radius: 10px;
+  background: #111318;
+  color: #7f8795;
+  cursor: pointer;
+}
+.results-image-toggle.active {
+  color: #a9c0ff;
+  border-color: #59698f;
+  background: #202638;
+}
+.results-image-toggle:active {
+  transform: translateY(1px);
+}
+.results-image-toggle svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.completed-image-tap-hidden {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  background: #1b1e24;
+}
+.completed-image-placeholder {
+  width: 54px;
+  height: 54px;
+  fill: none;
+  stroke: #777f8d;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
