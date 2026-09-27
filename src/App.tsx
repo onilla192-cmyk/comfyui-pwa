@@ -190,13 +190,18 @@ export default function App() {
         const remote = await getRemoteControlStatus()
         if (cancelled) return
 
-        if (remote.comfyui === 'running') {
-          setComfySleeping(false)
-          setComfyPowerState('active')
-        } else {
+        // The launcher/command prompt is the source of truth for the power state.
+        // ComfyUI can remain reachable while its models are unloaded for standby.
+        if (remote.launcher !== 'running') {
           setComfySleeping(true)
           setComfyPowerState('off')
           standbyReleased.current = false
+        } else if (remoteStarting || startingComfy) {
+          setComfyPowerState('idle')
+        } else if (comfySleeping || remote.comfyui !== 'running') {
+          setComfyPowerState('idle')
+        } else {
+          setComfyPowerState('active')
         }
 
       } catch {
@@ -241,7 +246,8 @@ export default function App() {
           .finally(() => {
             // Remain in standby until the user starts another generation.
             // The server stays alive; only its models/VRAM are unloaded.
-            setComfySleeping(false)
+            setComfySleeping(true)
+            setComfyPowerState('idle')
             setSleepSeconds(0)
           })
       })
