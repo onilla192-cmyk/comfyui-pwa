@@ -5152,3 +5152,76 @@ body,
     padding: 10px !important;
   }
 }
+
+
+/* Nintendo-style global background: clean console red/white/black field */
+html, body, #root,
+.app,
+.app-main,
+.prompt-builder-page,
+.master-prompts-page {
+  background-color: #0b0b0b !important;
+}
+
+html, body, #root {
+  background:
+    radial-gradient(circle at 50% -18%, rgba(230,0,18,.22), transparent 38%),
+    linear-gradient(180deg, #171717 0%, #0b0b0b 52%, #050505 100%) !important;
+}
+
+.app {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(230,0,18,.14), transparent 26%),
+    radial-gradient(circle at 92% 0%, rgba(255,255,255,.055), transparent 24%),
+    linear-gradient(180deg, #181818 0%, #0d0d0d 48%, #070707 100%) !important;
+}
+
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,.012) 0,
+      rgba(255,255,255,.012) 1px,
+      transparent 1px,
+      transparent 9px
+    );
+  opacity: .7;
+}
+
+.app-main {
+  position: relative;
+  z-index: 1;
+}
+
+.app-footer {
+  z-index: 110 !important;
+}
+
+/* Keep full-screen builder pages on the same console background. */
+.prompt-builder-page,
+.master-prompts-page {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(230,0,18,.18), transparent 34%),
+    linear-gradient(180deg, #181818 0%, #0c0c0c 60%, #050505 100%) !important;
+}
+
+.prompt-builder-page::before,
+.master-prompts-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,.01) 0,
+      rgba(255,255,255,.01) 1px,
+      transparent 1px,
+      transparent 10px
+    );
+}
