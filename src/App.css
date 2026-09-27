@@ -931,15 +931,15 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 }
 .app-footer {
   position: fixed;
-  left: 50%;
-  bottom: max(10px, env(safe-area-inset-bottom));
+  left: 0;
+  bottom: 0;
   z-index: 20;
-  width: min(calc(100% - 20px), 760px);
-  transform: translateX(-50%);
-  padding: 7px;
-  border: 1px solid #303540;
-  border-radius: 18px;
-  background: rgba(23, 26, 32, .94);
+  width: 100%;
+  padding: 7px 7px max(7px, env(safe-area-inset-bottom));
+  border: 0;
+  border-top: 1px solid #303540;
+  border-radius: 0;
+  background: rgba(23, 26, 32, .97);
   box-shadow:
     0 12px 35px rgba(0,0,0,.38),
     inset 0 1px 0 rgba(255,255,255,.05);
@@ -993,10 +993,10 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
     padding-bottom: 112px;
   }
   .app-footer {
-    width: calc(100% - 16px);
-    bottom: max(8px, env(safe-area-inset-bottom));
-    padding: 6px;
-    border-radius: 16px;
+    width: 100%;
+    bottom: 0;
+    padding: 6px 6px max(6px, env(safe-area-inset-bottom));
+    border-radius: 0;
   }
   .app-footer .icon-btn {
     height: 46px;
