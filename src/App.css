@@ -2342,3 +2342,691 @@ html, body, #root {
   opacity: .45;
   cursor: default;
 }
+
+
+/* iOS visual system — complete app skin */
+:root {
+  color-scheme: dark;
+  --ios-bg: #000000;
+  --ios-bg-secondary: #1c1c1e;
+  --ios-bg-tertiary: #2c2c2e;
+  --ios-fill: rgba(120,120,128,.24);
+  --ios-fill-strong: rgba(120,120,128,.32);
+  --ios-separator: rgba(84,84,88,.55);
+  --ios-label: #f5f5f7;
+  --ios-secondary-label: #98989d;
+  --ios-tertiary-label: #636366;
+  --ios-blue: #0a84ff;
+  --ios-green: #30d158;
+  --ios-red: #ff453a;
+  --ios-orange: #ff9f0a;
+  --ios-purple: #bf5af2;
+  --ios-radius: 14px;
+  --ios-radius-large: 20px;
+  --ios-shadow: 0 18px 50px rgba(0,0,0,.42);
+}
+
+html, body, #root {
+  background: var(--ios-bg) !important;
+  color: var(--ios-label);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% -20%, rgba(10,132,255,.08), transparent 38%),
+    #000 !important;
+}
+
+button, input, textarea, select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+  transition: transform .16s ease, opacity .16s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(.975);
+}
+
+.app {
+  min-height: 100dvh !important;
+  background: transparent !important;
+  color: var(--ios-label);
+}
+
+/* Main surface */
+.app-main {
+  width: min(calc(100% - 24px), 760px) !important;
+  padding: 12px 0 112px !important;
+}
+
+.generation-embed {
+  margin-top: 4px !important;
+  padding: 16px !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: var(--ios-radius-large) !important;
+  background: rgba(28,28,30,.88) !important;
+  box-shadow: 0 14px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04) !important;
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+.field {
+  margin-bottom: 16px !important;
+}
+
+.field label,
+.image-picker-title {
+  color: var(--ios-secondary-label) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: .01em;
+}
+
+.field textarea,
+.generation-embed .field textarea {
+  min-height: 76px;
+  border: 1px solid rgba(255,255,255,.09) !important;
+  border-radius: 13px !important;
+  background: rgba(118,118,128,.16) !important;
+  color: var(--ios-label) !important;
+  padding: 12px 13px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.field textarea::placeholder {
+  color: var(--ios-tertiary-label);
+}
+
+.field textarea:focus,
+.generation-embed .field textarea:focus {
+  border-color: rgba(10,132,255,.7) !important;
+  background: rgba(118,118,128,.2) !important;
+  box-shadow: 0 0 0 3px rgba(10,132,255,.13) !important;
+}
+
+/* iOS grouped image cards */
+.image-pickers {
+  gap: 10px !important;
+  margin-bottom: 16px !important;
+}
+
+.image-picker {
+  min-width: 0;
+}
+
+.image-picker-title {
+  min-height: 34px !important;
+  padding: 8px 11px !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-bottom: 0 !important;
+  border-radius: 14px 14px 0 0 !important;
+  background: rgba(28,28,30,.94) !important;
+}
+
+.image-picker:nth-child(1) .image-picker-title,
+.image-picker:nth-child(2) .image-picker-title {
+  background: rgba(28,28,30,.94) !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+.image-picker-box {
+  border: 1px solid rgba(255,255,255,.09) !important;
+  border-radius: 0 0 14px 14px !important;
+  background: #111113 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+.image-picker-box img {
+  background: #111113;
+}
+
+.image-empty {
+  color: var(--ios-secondary-label) !important;
+}
+
+.image-upload-plus {
+  color: var(--ios-tertiary-label) !important;
+  font-size: 48px !important;
+  font-weight: 200 !important;
+}
+
+.image-clear-btn {
+  width: 28px !important;
+  height: 28px !important;
+  top: 8px !important;
+  right: 8px !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  background: rgba(0,0,0,.55) !important;
+  color: #fff !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Primary actions */
+.generate-btn {
+  min-height: 50px !important;
+  border: 0 !important;
+  border-radius: 13px !important;
+  background: var(--ios-blue) !important;
+  color: #fff !important;
+  font-size: 15px;
+  font-weight: 700 !important;
+  box-shadow: 0 5px 18px rgba(10,132,255,.22), inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+.generate-btn:disabled {
+  background: rgba(118,118,128,.22) !important;
+  color: var(--ios-tertiary-label) !important;
+  box-shadow: none !important;
+}
+
+.cancel-btn {
+  min-height: 50px !important;
+  border: 1px solid rgba(255,69,58,.3) !important;
+  border-radius: 13px !important;
+  background: rgba(255,69,58,.13) !important;
+  color: var(--ios-red) !important;
+}
+
+.idea-btn {
+  flex-basis: 50px !important;
+  width: 50px !important;
+  min-height: 50px !important;
+  border: 1px solid rgba(255,159,10,.38) !important;
+  border-radius: 13px !important;
+  background: rgba(255,159,10,.14) !important;
+  color: var(--ios-orange) !important;
+  box-shadow: none !important;
+}
+
+.results-btn {
+  flex-basis: 50px !important;
+  width: 50px !important;
+  min-height: 50px !important;
+  border: 1px solid rgba(10,132,255,.28) !important;
+  border-radius: 13px !important;
+  background: rgba(10,132,255,.12) !important;
+  color: var(--ios-blue) !important;
+}
+
+/* Progress */
+.progress-wrap {
+  margin: 16px 2px !important;
+}
+
+.progress-label {
+  color: var(--ios-secondary-label) !important;
+}
+
+.progress-label strong {
+  color: var(--ios-label) !important;
+}
+
+.progress-bar {
+  height: 7px !important;
+  border-radius: 999px !important;
+  background: rgba(118,118,128,.2) !important;
+}
+
+.progress-fill {
+  border-radius: inherit;
+  background: var(--ios-blue) !important;
+}
+
+/* Latest result */
+.latest-result > img,
+.results-page-body .latest-result .completed-image-tap-area img {
+  border-radius: 16px !important;
+  background: #111113 !important;
+}
+
+.latest-result-info {
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 14px !important;
+  background: rgba(28,28,30,.86) !important;
+  box-shadow: none !important;
+}
+
+/* iOS-style sheets and full-screen pages */
+.history-backdrop,
+.settings-backdrop,
+.completed-prompt-backdrop,
+.master-prompt-editor-backdrop,
+.prompt-builder-preview-backdrop {
+  background: rgba(0,0,0,.58) !important;
+  backdrop-filter: blur(7px) saturate(120%);
+  -webkit-backdrop-filter: blur(7px) saturate(120%);
+}
+
+.history-panel,
+.history-viewer,
+.completed-prompt-embed,
+.master-prompt-editor,
+.prompt-builder-preview {
+  border: 1px solid rgba(255,255,255,.09) !important;
+  border-radius: 20px !important;
+  background: rgba(28,28,30,.96) !important;
+  box-shadow: var(--ios-shadow) !important;
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+
+.history-header,
+.history-toolbar,
+.history-viewer-header,
+.completed-prompt-header,
+.master-prompt-editor-header,
+.prompt-builder-preview-header {
+  border-color: var(--ios-separator) !important;
+  background: transparent !important;
+}
+
+.history-header h2,
+.history-viewer-header h2,
+.completed-prompt-header h2,
+.master-prompt-editor-header h2,
+.prompt-builder-preview-header h2 {
+  font-size: 20px !important;
+  letter-spacing: -.02em;
+}
+
+.history-header span,
+.history-viewer-header span,
+.completed-prompt-header span,
+.master-prompt-editor-header span,
+.prompt-builder-preview-header span {
+  color: var(--ios-secondary-label) !important;
+}
+
+.history-section-tabs {
+  background: transparent !important;
+}
+
+.history-section-tabs button,
+.history-view-toggle,
+.history-view-toggle button {
+  border-color: transparent !important;
+  background: rgba(118,118,128,.16) !important;
+  color: var(--ios-secondary-label) !important;
+}
+
+.history-section-tabs button.active,
+.history-view-toggle button.active {
+  background: rgba(118,118,128,.30) !important;
+  color: #fff !important;
+}
+
+.history-item {
+  border-color: rgba(255,255,255,.08) !important;
+  border-radius: 15px !important;
+  background: rgba(44,44,46,.72) !important;
+}
+
+.history-item-tap-armed {
+  border-color: var(--ios-green) !important;
+  box-shadow: 0 0 0 2px rgba(48,209,88,.18) !important;
+  background: rgba(48,209,88,.07) !important;
+}
+
+.history-details {
+  color: var(--ios-label);
+}
+
+.history-meta,
+.history-prompt strong {
+  color: var(--ios-secondary-label) !important;
+}
+
+.history-prompt p {
+  color: var(--ios-label) !important;
+}
+
+.history-actions button,
+.history-pagination button,
+.history-settings span {
+  border-color: rgba(255,255,255,.09) !important;
+  border-radius: 10px !important;
+  background: rgba(118,118,128,.16) !important;
+  color: var(--ios-label) !important;
+}
+
+.history-delete-btn,
+.history-delete-btn.permanent {
+  border-color: rgba(255,69,58,.24) !important;
+  background: rgba(255,69,58,.12) !important;
+  color: var(--ios-red) !important;
+}
+
+.history-restore-btn {
+  border-color: rgba(48,209,88,.24) !important;
+  background: rgba(48,209,88,.12) !important;
+  color: var(--ios-green) !important;
+}
+
+/* Settings becomes an iOS form sheet */
+.settings-drawer {
+  width: min(92vw, 390px) !important;
+  padding: 18px 16px 34px !important;
+  border-left: 1px solid rgba(255,255,255,.08) !important;
+  background: rgba(28,28,30,.96) !important;
+  box-shadow: -20px 0 55px rgba(0,0,0,.4) !important;
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+
+.settings-section {
+  border-color: var(--ios-separator) !important;
+}
+
+.settings-section h3 {
+  color: var(--ios-secondary-label) !important;
+  font-size: 12px !important;
+}
+
+.setting input,
+.setting select {
+  min-height: 40px !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  border-radius: 10px !important;
+  background: rgba(118,118,128,.16) !important;
+  color: var(--ios-label) !important;
+}
+
+.setting input:focus,
+.setting select:focus {
+  border-color: rgba(10,132,255,.6) !important;
+  box-shadow: 0 0 0 3px rgba(10,132,255,.1) !important;
+}
+
+.settings-note {
+  color: var(--ios-secondary-label) !important;
+}
+
+/* Results and ideas pages */
+.results-page,
+.ideas-page {
+  background:
+    radial-gradient(circle at 50% -15%, rgba(10,132,255,.08), transparent 36%),
+    #000 !important;
+}
+
+.results-page-header {
+  padding: 14px 16px !important;
+  border-color: var(--ios-separator) !important;
+  background: rgba(28,28,30,.88) !important;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+.results-page-header h2 {
+  letter-spacing: -.02em;
+}
+
+.results-image-toggle,
+.ideas-close {
+  border-color: rgba(255,255,255,.09) !important;
+  border-radius: 12px !important;
+  background: rgba(118,118,128,.16) !important;
+  color: var(--ios-secondary-label) !important;
+}
+
+/* Prompt Builder */
+.prompt-builder-page-tools {
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  border-color: var(--ios-separator) !important;
+  background: transparent !important;
+}
+
+.prompt-builder-tool-btn,
+.prompt-builder-label,
+.prompt-builder-drag-handle,
+.prompt-builder-delete-btn,
+.master-prompt-order button,
+.master-prompt-delete {
+  border-color: rgba(255,255,255,.09) !important;
+  border-radius: 11px !important;
+  background: rgba(118,118,128,.13) !important;
+  color: var(--ios-label) !important;
+}
+
+.prompt-builder-tool-btn.master {
+  border-color: rgba(10,132,255,.28) !important;
+  background: rgba(10,132,255,.12) !important;
+  color: var(--ios-blue) !important;
+}
+
+.prompt-builder-tool-btn.preview {
+  border-color: rgba(48,209,88,.28) !important;
+  background: rgba(48,209,88,.1) !important;
+  color: var(--ios-green) !important;
+}
+
+.prompt-builder-label.has-value,
+.prompt-builder-open-btn.has-active-labels {
+  border-color: rgba(48,209,88,.32) !important;
+  background: rgba(48,209,88,.1) !important;
+  color: var(--ios-green) !important;
+}
+
+.prompt-builder-input,
+.master-prompt-editor > label input,
+.master-prompt-editor > label textarea,
+.prompt-builder-preview-body pre,
+.completed-prompt-text,
+.history-viewer-info textarea {
+  border-color: rgba(255,255,255,.09) !important;
+  border-radius: 12px !important;
+  background: #111113 !important;
+  color: var(--ios-label) !important;
+}
+
+.prompt-builder-input:focus,
+.master-prompt-editor > label input:focus,
+.master-prompt-editor > label textarea:focus,
+.history-viewer-info textarea:focus {
+  border-color: rgba(10,132,255,.65) !important;
+  box-shadow: 0 0 0 3px rgba(10,132,255,.11) !important;
+}
+
+.prompt-builder-drag-ghost {
+  border-color: rgba(10,132,255,.5) !important;
+  border-radius: 13px !important;
+  background: rgba(44,44,46,.96) !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.5) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.master-prompt-button {
+  border-color: rgba(10,132,255,.25) !important;
+  border-radius: 12px !important;
+  background: rgba(10,132,255,.1) !important;
+}
+
+.master-prompt-row.disabled .master-prompt-button {
+  border-color: rgba(255,255,255,.07) !important;
+  background: rgba(118,118,128,.08) !important;
+}
+
+.master-prompt-toggle {
+  border-color: rgba(255,255,255,.1) !important;
+  border-radius: 10px !important;
+  background: rgba(118,118,128,.13) !important;
+}
+
+.master-prompt-toggle.enabled {
+  border-color: rgba(48,209,88,.32) !important;
+  background: rgba(48,209,88,.11) !important;
+  color: var(--ios-green) !important;
+}
+
+.master-prompt-editor-actions button {
+  border-color: rgba(255,255,255,.09) !important;
+  border-radius: 12px !important;
+  background: rgba(118,118,128,.16) !important;
+}
+
+.master-prompt-editor-actions button.primary {
+  border-color: rgba(48,209,88,.3) !important;
+  background: rgba(48,209,88,.11) !important;
+  color: var(--ios-green) !important;
+}
+
+/* iOS-style menu */
+.prompt-header-menu {
+  border-color: rgba(255,255,255,.1) !important;
+  border-radius: 15px !important;
+  background: rgba(44,44,46,.96) !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,.48) !important;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+.prompt-header-menu-item {
+  min-height: 46px !important;
+  border-radius: 10px !important;
+  color: var(--ios-label) !important;
+}
+
+.prompt-header-menu-item:hover,
+.prompt-header-menu-item:active {
+  background: rgba(118,118,128,.18) !important;
+}
+
+.prompt-header-menu-item.active {
+  background: rgba(48,209,88,.1) !important;
+  color: var(--ios-green) !important;
+}
+
+.prompt-menu-btn {
+  border-color: rgba(10,132,255,.32) !important;
+  background: rgba(10,132,255,.12) !important;
+  color: var(--ios-blue) !important;
+}
+
+/* Navigation footer: floating iOS tab bar */
+.app-footer,
+.navigation-footer,
+.footer-nav {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.app-footer > *,
+.navigation-footer > *,
+.footer-nav > * {
+  min-width: 0;
+}
+
+.app-footer,
+.navigation-footer,
+.footer-nav {
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) !important;
+}
+
+.app-footer > div,
+.navigation-footer > div,
+.footer-nav > div {
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 22px;
+  background: rgba(28,28,30,.88);
+  box-shadow: 0 10px 35px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
+.app-footer button,
+.navigation-footer button,
+.footer-nav button {
+  border-radius: 16px !important;
+  color: var(--ios-secondary-label);
+}
+
+.app-footer button:active,
+.navigation-footer button:active,
+.footer-nav button:active {
+  background: rgba(118,118,128,.18) !important;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .app-main {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Startup/power states use native iOS semantic colors */
+.power-btn.off { color: var(--ios-red) !important; }
+.power-btn.idle { color: var(--ios-orange) !important; }
+.power-btn.active { color: var(--ios-green) !important; }
+
+/* Remove the last traces of hard rectangular desktop styling on small screens */
+@media (max-width: 600px) {
+  .app-main {
+    width: calc(100% - 16px) !important;
+    padding-top: 8px !important;
+  }
+
+  .generation-embed {
+    padding: 13px !important;
+    border-radius: 18px !important;
+  }
+
+  .image-pickers {
+    gap: 8px !important;
+  }
+
+  .history-backdrop,
+  .completed-prompt-backdrop,
+  .master-prompt-editor-backdrop,
+  .prompt-builder-preview-backdrop {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .history-panel,
+  .history-viewer,
+  .completed-prompt-embed,
+  .master-prompt-editor,
+  .prompt-builder-preview {
+    width: 100% !important;
+    max-height: 94dvh !important;
+    border-radius: 22px 22px 0 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .settings-drawer {
+    width: 100% !important;
+    border-left: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    height: min(92dvh, 760px) !important;
+  }
+}
+
+/* Subtle iOS scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(142,142,147,.35) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(142,142,147,.35);
+}
