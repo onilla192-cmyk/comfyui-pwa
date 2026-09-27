@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, freeComfyMemory, getComfySystemStats } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, freeComfyMemory, getComfySystemStats, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
@@ -94,6 +94,7 @@ export default function App() {
   const [exploreMode, setExploreMode] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
+  const [remoteStarting, setRemoteStarting] = useState(false)
   const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
   const [logsOpen, setLogsOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
@@ -695,6 +696,31 @@ export default function App() {
     setTrash((prev) => prev.filter((x) => x.id !== id))
   }
 
+  async function handleRemoteStart() {
+    if (remoteStarting || startingComfy) return
+    setRemoteStarting(true)
+    setErrorMsg(null)
+    setStartProgress(5)
+    const timer = window.setInterval(() => {
+      setStartProgress((current) => Math.min(90, current + 5))
+    }, 1000)
+    try {
+      await startComfyFromPhone()
+      window.clearInterval(timer)
+      setStartProgress(100)
+      setComfySleeping(false)
+      setExploreMode(false)
+      setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
+      setStatus('idle')
+      await new Promise((resolve) => setTimeout(resolve, 250))
+    } catch (err) {
+      window.clearInterval(timer)
+      setErrorMsg(err instanceof Error ? err.message : 'Could not start ComfyUI from the phone.')
+    } finally {
+      setRemoteStarting(false)
+    }
+  }
+
   const historyPageCount = Math.max(1, Math.ceil(results.length / HISTORY_PAGE_SIZE))
   const trashPageCount = Math.max(1, Math.ceil(trash.length / HISTORY_PAGE_SIZE))
   const activePageCount = historySection === 'history' ? historyPageCount : trashPageCount
@@ -708,10 +734,13 @@ export default function App() {
       <div className="sleep-screen">
         <div className="sleep-card">
           <div className="sleep-icon">⏸</div>
-          <h1>ComfyUI is stopped</h1>
-          <p>The GPU is sleeping to save power and VRAM.</p>
+          <h1>ComfyUI is off</h1>
+          <p>ComfyUI and its launcher are not running. Start them from your phone when you're ready.</p>
           {errorMsg && <p className="sleep-error">{errorMsg}</p>}
-          <button type="button" className="resume-btn" onClick={() => setExploreMode(true)}>
+          <button type="button" className="resume-btn" onClick={() => void handleRemoteStart()} disabled={remoteStarting}>
+            {remoteStarting ? `Starting ComfyUI… ${startProgress}%` : 'Start ComfyUI'}
+          </button>
+          <button type="button" className="resume-btn" onClick={() => setExploreMode(true)} disabled={remoteStarting}>
             Explore
           </button>
         </div>
