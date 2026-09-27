@@ -86,6 +86,7 @@ export default function App() {
   const [promptBuilderValues, setPromptBuilderValues] = useState<Record<string, string>>(() => saved.promptBuilderValues && typeof saved.promptBuilderValues === 'object' ? saved.promptBuilderValues : {})
   const [activePromptBuilderLabel, setActivePromptBuilderLabel] = useState<string | null>(null)
   const [promptBuilderPageOpen, setPromptBuilderPageOpen] = useState(false)
+  const [promptExpanded, setPromptExpanded] = useState(false)
   const [promptHeaderMenuOpen, setPromptHeaderMenuOpen] = useState(false)
   const [promptBuilderLabels, setPromptBuilderLabels] = useState<string[]>(() => {
     if (Array.isArray(saved.promptBuilderLabels)) {
@@ -1096,7 +1097,7 @@ export default function App() {
         {showImageTwo && <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />}
       </section>
 
-      <section className="generation-embed">
+      <section className={`generation-embed${promptExpanded ? ' prompt-expanded' : ''}`}>
         <div className="field">
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
@@ -1202,7 +1203,14 @@ export default function App() {
               </button>
             </div>
           ) : (
-            <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
+            <div className="prompt-expanded-header">
+              <div>
+                <span className="prompt-expanded-title">Prompt</span>
+                <span className="prompt-expanded-subtitle">Full-screen editor</span>
+              </div>
+              <button type="button" className="prompt-expanded-close" onClick={() => setPromptExpanded(false)} aria-label="Close expanded prompt">×</button>
+            </div>
+            <textarea id="prompt" value={prompt} onFocus={() => setPromptExpanded(true)} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
           )}</div>
         <div className="field"><label htmlFor="negative">Negative prompt (optional)</label><textarea id="negative" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} /></div>
 
@@ -1615,7 +1623,7 @@ export default function App() {
       </div>
     })()}
     </main>
-    <footer className="app-footer" aria-label="ComfyUI navigation">
+    <footer className={`app-footer${promptBuilderPageOpen || masterPromptsPageOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <div className="footer-status" aria-label="ComfyUI status">
           <div className="sleep-timer footer-status-bubble" aria-live="polite">
