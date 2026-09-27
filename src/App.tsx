@@ -90,7 +90,6 @@ export default function App() {
   const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 720)
   const [cancelling, setCancelling] = useState(false)
   const [comfySleeping, setComfySleeping] = useState(false)
-  const [resuming, setResuming] = useState(false)
   const [exploreMode, setExploreMode] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
