@@ -92,6 +92,7 @@ export default function App() {
   const promptBuilderDragPointerRef = useRef<number | null>(null)
   const promptBuilderDragActiveRef = useRef(false)
   const promptBuilderLastTargetRef = useRef<string | null>(null)
+  const promptBuilderLastInsertIndexRef = useRef<number | null>(null)
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
