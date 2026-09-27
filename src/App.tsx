@@ -96,6 +96,7 @@ export default function App() {
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
   const [remoteStarting, setRemoteStarting] = useState(false)
+  const standbyReleased = useRef(false)
   const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
   const [logsOpen, setLogsOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
@@ -189,9 +190,10 @@ export default function App() {
         if (cancelled) return
 
         if (remote.comfyui === 'running') {
-          if (!isBusy && !startingComfy) setComfySleeping(false)
+          setComfySleeping(false)
         } else {
           setComfySleeping(true)
+          standbyReleased.current = false
         }
 
       } catch {
@@ -208,10 +210,10 @@ export default function App() {
   }, [isBusy, startingComfy])
 
   useEffect(() => {
-    if (isBusy || comfySleeping || startingComfy || sleepSeconds > 0) return
+    if (isBusy || comfySleeping || startingComfy || sleepSeconds > 0 || standbyReleased.current) return
     // Standby: keep the ComfyUI server alive, but unload models and release
     // cached GPU memory so other software can use the VRAM.
-    setComfySleeping(true)
+    standbyReleased.current = true
     const stamp = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     const addStandbyLog = (message: string) => setStandbyLogs((current) => [...current.slice(-49), `[${stamp()}] ${message}`])
     addStandbyLog('Standby: unloading ComfyUI models and releasing GPU memory...')
@@ -236,7 +238,7 @@ export default function App() {
           .finally(() => {
             // Remain in standby until the user starts another generation.
             // The server stays alive; only its models/VRAM are unloaded.
-            setComfySleeping(true)
+            setComfySleeping(false)
             setSleepSeconds(0)
           })
       })
@@ -721,6 +723,7 @@ export default function App() {
       await startComfyFromPhone()
       window.clearInterval(timer)
       setStartProgress(100)
+      standbyReleased.current = false
       setComfySleeping(false)
       setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
       setStatus('idle')
