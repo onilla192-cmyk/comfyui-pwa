@@ -760,17 +760,6 @@ export default function App() {
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
   return <div className="app">
-    <header className="app-header">
-      <div className="header-subfooters">
-        <div className="sleep-timer" aria-live="polite">
-          {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
-        </div>
-        <div className={`vram-status ${isBusy || startingComfy ? 'active' : comfySleeping ? 'free' : 'active'}`} aria-live="polite">
-          <span>{isBusy || startingComfy ? 'VRAM active' : comfySleeping ? 'VRAM free' : 'VRAM active'}</span>
-        </div>
-      </div>
-    </header>
-
     {logsOpen && <div className="logs-backdrop" onClick={() => setLogsOpen(false)}>
       <section className="logs-panel" onClick={(e) => e.stopPropagation()}>
         <div className="logs-header">
@@ -1007,6 +996,14 @@ export default function App() {
     })()}
     </main>
     <footer className="app-footer" aria-label="ComfyUI navigation">
+      <div className="footer-status" aria-label="ComfyUI status">
+        <div className="sleep-timer footer-status-bubble" aria-live="polite">
+          {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
+        </div>
+        <div className={`vram-status footer-status-bubble ${isBusy || startingComfy ? 'active' : comfySleeping ? 'free' : 'active'}`} aria-live="polite">
+          <span>{isBusy || startingComfy ? 'VRAM active' : comfySleeping ? 'VRAM free' : 'VRAM active'}</span>
+        </div>
+      </div>
       <div className="footer-actions">
         <button
           className={`start-comfy-btn footer-power-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
