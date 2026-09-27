@@ -5339,3 +5339,70 @@ body {
 .app-footer.app-footer-hidden {
   display: none !important;
 }
+
+
+/* Completed Generations — Nintendo console treatment */
+.results-page {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(230,0,18,.18), transparent 34%),
+    linear-gradient(180deg, #181818 0%, #0c0c0c 60%, #050505 100%) !important;
+  color: #fff !important;
+}
+
+.results-page-header {
+  min-height: 66px !important;
+  padding: 10px 14px !important;
+  border-bottom: 3px solid #3f3f3f !important;
+  background: #202020 !important;
+  box-shadow: 0 4px 0 #090909 !important;
+}
+
+.results-page-header h2 {
+  color: #fff !important;
+  font-weight: 900 !important;
+  letter-spacing: .01em !important;
+}
+
+.results-page-header span {
+  color: #aaa !important;
+  font-weight: 700 !important;
+}
+
+.results-page-header-actions button {
+  border: 2px solid #4c4c4c !important;
+  border-radius: 12px !important;
+  background: #303030 !important;
+  color: #fff !important;
+  box-shadow: 0 3px 0 #111 !important;
+}
+
+.results-page-body {
+  background: transparent !important;
+}
+
+.results-page .latest-result {
+  border: 2px solid #454545 !important;
+  border-radius: 16px !important;
+  background: #242424 !important;
+  box-shadow: 0 5px 0 #111 !important;
+  padding: 10px !important;
+}
+
+.results-page .latest-result > img,
+.results-page .completed-image-tap-area img {
+  border: 2px solid #4a4a4a !important;
+  border-radius: 12px !important;
+  background: #111 !important;
+}
+
+.results-page .latest-result-info {
+  border: 2px solid #454545 !important;
+  border-radius: 12px !important;
+  background: #151515 !important;
+}
+
+.results-page .history-btn,
+.results-page .results-btn,
+.results-page button {
+  border-radius: 12px !important;
+}
