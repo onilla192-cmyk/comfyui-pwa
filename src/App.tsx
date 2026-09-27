@@ -93,8 +93,6 @@ export default function App() {
   // Start on the off screen until the phone-control endpoint confirms ComfyUI is running.
   // This makes a refresh immediately reflect a stopped laptop without waiting for a timer.
   const [comfySleeping, setComfySleeping] = useState(true)
-  const [comfyStatusChecked, setComfyStatusChecked] = useState(false)
-  const [exploreMode, setExploreMode] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
   const [remoteStarting, setRemoteStarting] = useState(false)
@@ -198,23 +196,12 @@ export default function App() {
           setComfySleeping(true)
         }
 
-        // Do not render either page until the first status check has settled.
-        // This prevents the sleep/Explore screen from flashing over the main UI.
-        if (firstCheck) {
-          firstCheck = false
-          setComfyStatusChecked(true)
-        }
+        firstCheck = false
       } catch {
         if (cancelled) return
 
-        // Only the initial failure determines the initial screen. After that,
-        // keep the current UI state through transient network/Tailscale errors
-        // instead of flashing back to the sleep/Explore screen.
-        if (firstCheck) {
-          firstCheck = false
-          setComfySleeping(true)
-          setComfyStatusChecked(true)
-        }
+        // Keep the current UI during transient network/Tailscale errors.
+        // The main app stays visible and the Start ComfyUI button remains available.
       }
     }
 
@@ -738,7 +725,6 @@ export default function App() {
       window.clearInterval(timer)
       setStartProgress(100)
       setComfySleeping(false)
-      setExploreMode(false)
       setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
       setStatus('idle')
       await new Promise((resolve) => setTimeout(resolve, 250))
@@ -761,29 +747,6 @@ export default function App() {
     ? results.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
-  if (!comfyStatusChecked) {
-    return <div className="sleep-screen" aria-hidden="true" />
-  }
-
-  if (comfySleeping && !exploreMode) {
-    return (
-      <div className="sleep-screen">
-        <div className="sleep-card">
-          <div className="sleep-icon">⏸</div>
-          <h1>ComfyUI is off</h1>
-          <p>ComfyUI and its launcher are not running. Start them from your phone when you're ready.</p>
-          {errorMsg && <p className="sleep-error">{errorMsg}</p>}
-          <button type="button" className="resume-btn" onClick={() => void handleRemoteStart()} disabled={remoteStarting}>
-            {remoteStarting ? `Starting ComfyUI… ${startProgress}%` : 'Start ComfyUI'}
-          </button>
-          <button type="button" className="resume-btn" onClick={() => setExploreMode(true)} disabled={remoteStarting}>
-            Explore
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return <div className="app">
     <header className="app-header">
       <div className="app-header-title"><h1>ComfyUI Console</h1><span className="status-dot" data-active={isBusy} /></div>
@@ -796,6 +759,16 @@ export default function App() {
         </div>
       </div>
       <div className="header-actions">
+        {comfySleeping && (
+          <button
+            className="start-comfy-btn"
+            type="button"
+            onClick={() => void handleRemoteStart()}
+            disabled={remoteStarting}
+          >
+            {remoteStarting ? `Starting… ${startProgress}%` : 'Start ComfyUI'}
+          </button>
+        )}
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
         </button>
