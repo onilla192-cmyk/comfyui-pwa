@@ -174,3 +174,23 @@ export async function interruptGeneration(): Promise<void> {
     throw new Error(text || `Could not stop generation (${response.status})`)
   }
 }
+
+
+const REMOTE_CONTROL_URL = import.meta.env.PROD
+  ? 'https://comfyui.tail84bda1.ts.net/remote'
+  : '/remote'
+
+export async function startComfyFromPhone(): Promise<void> {
+  const response = await fetch(`${REMOTE_CONTROL_URL}/start`, { method: 'POST' })
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(text || `Remote start failed (${response.status})`)
+  }
+  await waitForComfyReady()
+}
+
+export async function getRemoteControlStatus(): Promise<any> {
+  const response = await fetch(`${REMOTE_CONTROL_URL}/status`, { cache: 'no-store' })
+  if (!response.ok) throw new Error(`Remote control returned ${response.status}`)
+  return response.json()
+}
