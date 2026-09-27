@@ -981,7 +981,7 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 }
 .footer-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
 .app-footer .icon-btn {
@@ -1003,6 +1003,62 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 .app-footer .icon-btn:active {
   transform: translateY(1px);
 }
+.footer-power-btn {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.footer-power-btn .power-progress-ring {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: conic-gradient(currentColor var(--power-progress, 0%), rgba(255,255,255,.08) 0);
+  opacity: .9;
+  pointer-events: none;
+}
+
+.footer-power-btn .power-progress-ring::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #171a20;
+}
+
+.footer-power-btn svg {
+  position: relative;
+  z-index: 2;
+}
+
+.footer-power-btn .power-progress-text {
+  position: absolute;
+  z-index: 3;
+  right: 9px;
+  bottom: 6px;
+  padding: 1px 4px;
+  border-radius: 5px;
+  background: rgba(11,13,17,.9);
+  color: currentColor;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.footer-power-btn.starting .power-progress-ring {
+  animation: power-ring-spin 1.2s linear infinite;
+}
+
+@keyframes power-ring-spin {
+  to { transform: rotate(360deg); }
+}
+
 .app-footer .icon-btn.history-icon {
   color: #62a5ff;
 }
@@ -1021,6 +1077,34 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 .app-footer .icon-btn.settings-icon:active {
   background: rgba(197,156,255,.14);
 }
+
+.app-footer .footer-power-btn.off {
+  color: #ef4444;
+  background: rgba(239,68,68,.06);
+  border-color: rgba(239,68,68,.22);
+}
+
+.app-footer .footer-power-btn.idle {
+  color: #f2c94c;
+  background: rgba(242,201,76,.06);
+  border-color: rgba(242,201,76,.22);
+}
+
+.app-footer .footer-power-btn.active {
+  color: #22c55e;
+  background: rgba(34,197,94,.06);
+  border-color: rgba(34,197,94,.22);
+}
+
+.app-footer .footer-power-btn.starting {
+  color: #f2c94c;
+  background: rgba(242,201,76,.08);
+  border-color: rgba(242,201,76,.28);
+}
+
+.app-footer .footer-power-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(.98);
+}
 @media (max-width: 600px) {
   .app-main {
     padding-bottom: 112px;
@@ -1031,8 +1115,15 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
     padding: 6px 6px max(6px, env(safe-area-inset-bottom));
     border-radius: 0;
   }
-  .app-footer .icon-btn {
+  .app-footer .icon-btn,
+  .app-footer .footer-power-btn {
     height: 46px;
     border-radius: 12px;
+  }
+
+  .footer-power-btn .power-progress-text {
+    right: 7px;
+    bottom: 5px;
+    font-size: 7px;
   }
 }
