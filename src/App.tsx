@@ -306,26 +306,6 @@ export default function App() {
     }
   }
 
-  async function handleResume() {
-    if (resuming) return
-    setErrorMsg(null)
-    setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
-    setStartProgress(5)
-    setResuming(true)
-    try {
-      setStartingComfy(true)
-      await startComfyUI()
-      await waitForComfyReady()
-      setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
-      setComfySleeping(false)
-      setStartingComfy(false)
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Could not start ComfyUI.')
-    } finally {
-      setResuming(false)
-      setStartingComfy(false)
-    }
-  }
 
   async function handleGenerate() {
     if (!prompt.trim() || uploading.one || uploading.two || startingComfy) return
