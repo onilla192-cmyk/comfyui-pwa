@@ -835,7 +835,11 @@ export default function App() {
         <div className="progress-wrap" aria-label="Generation progress">
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${percent}%` }} />
-            <span className="progress-current" style={{ left: `${Math.min(100, Math.max(0, percent))}%` }}>{progress.value}</span>
+            {progress.value <= 1 ? (
+              <span className="progress-preparing">Preparing...</span>
+            ) : (
+              <span className="progress-current" style={{ left: `${Math.min(100, Math.max(0, percent))}%` }}>{progress.value}</span>
+            )}
             <span className="progress-total">{progress.max}</span>
           </div>
         </div>
