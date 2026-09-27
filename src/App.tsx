@@ -132,14 +132,14 @@ export default function App() {
       try {
         const launcher = await getLauncherStatus()
         if (cancelled) return
-        if (launcher.comfyui === 'stopped' && !isBusy) setComfySleeping(true)
-        if (launcher.comfyui === 'running') setComfySleeping(false)
+        if (launcher.comfyui === 'stopped' && !isBusy && !startingComfy) setComfySleeping(true)
+        if (launcher.comfyui === 'running' && !startingComfy) setComfySleeping(false)
       } catch {}
     }
     void check()
     const timer = window.setInterval(check, 3000)
     return () => { cancelled = true; window.clearInterval(timer) }
-  }, [isBusy])
+  }, [isBusy, startingComfy])
 
   useEffect(() => {
     if (isBusy || comfySleeping || startingComfy) return
@@ -308,15 +308,21 @@ export default function App() {
   async function handleResume() {
     if (resuming) return
     setErrorMsg(null)
+    setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
+    setStartProgress(5)
     setResuming(true)
     try {
+      setStartingComfy(true)
       await startComfyUI()
       await waitForComfyReady()
+      setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
       setComfySleeping(false)
+      setStartingComfy(false)
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Could not start ComfyUI.')
     } finally {
       setResuming(false)
+      setStartingComfy(false)
     }
   }
 
