@@ -9,7 +9,7 @@ interface ResultImage { id: string; url: string; promptId: string; prompt?: stri
 const HISTORY_PAGE_SIZE = 5
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
-interface MasterPrompt { id: string; name: string; text: string }
+interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
@@ -27,8 +27,8 @@ const IMAGE_PROMPTS = {
 }
 
 const DEFAULT_MASTER_PROMPTS: MasterPrompt[] = [
-  { id: 'master-figure-a', name: 'Figure A', text: IMAGE_PROMPTS.one },
-  { id: 'master-preservation', name: 'Preservation', text: 'Preserve the subject’s identity, facial features, body proportions, and defining visual characteristics.' },
+  { id: 'master-figure-a', name: 'Figure A', text: IMAGE_PROMPTS.one, enabled: true },
+  { id: 'master-preservation', name: 'Preservation', text: 'Preserve the subject’s identity, facial features, body proportions, and defining visual characteristics.', enabled: true },
 ]
 
 function addImagePrompt(current: string, line: string) {
@@ -72,7 +72,9 @@ export default function App() {
   const savedPromptLabels = withLabelIds(Array.isArray(saved.promptLabels) ? saved.promptLabels : [])
   const savedPromptLabelTrash = withLabelIds(Array.isArray(saved.promptLabelTrash) ? saved.promptLabelTrash : [])
   const savedMasterPrompts: MasterPrompt[] = Array.isArray(saved.masterPrompts)
-    ? saved.masterPrompts.filter((item: unknown): item is MasterPrompt => !!item && typeof item === 'object' && typeof (item as MasterPrompt).id === 'string' && typeof (item as MasterPrompt).name === 'string' && typeof (item as MasterPrompt).text === 'string')
+    ? saved.masterPrompts
+        .filter((item: unknown): item is MasterPrompt => !!item && typeof item === 'object' && typeof (item as MasterPrompt).id === 'string' && typeof (item as MasterPrompt).name === 'string' && typeof (item as MasterPrompt).text === 'string')
+        .map((item) => ({ ...item, enabled: item.enabled !== false }))
     : DEFAULT_MASTER_PROMPTS
   const [prompt, setPrompt] = useState(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
@@ -169,7 +171,7 @@ export default function App() {
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
   function buildPromptBuilderPrompt() {
-    const masterBlock = masterPrompts.map((item) => item.text.trim()).filter(Boolean).join('\n\n')
+    const masterBlock = masterPrompts.filter((item) => item.enabled).map((item) => item.text.trim()).filter(Boolean).join('\n\n')
     const normalBlock = promptBuilderLabels.map((label) => {
       const value = promptBuilderValues[label]?.trim()
       return value ? label + ': ' + value : ''
@@ -219,7 +221,7 @@ export default function App() {
     if (masterPromptEditing.id) {
       setMasterPrompts((current) => current.map((item) => item.id === masterPromptEditing.id ? { ...item, name, text } : item))
     } else {
-      setMasterPrompts((current) => [...current, { id: 'master-' + Date.now() + '-' + Math.random().toString(36).slice(2), name, text }])
+      setMasterPrompts((current) => [...current, { id: 'master-' + Date.now() + '-' + Math.random().toString(36).slice(2), name, text, enabled: true }])
     }
     setMasterPromptEditing(null)
   }
@@ -228,6 +230,10 @@ export default function App() {
     if (!window.confirm('Delete this master prompt?')) return
     setMasterPrompts((current) => current.filter((item) => item.id !== id))
     if (masterPromptEditing?.id === id) setMasterPromptEditing(null)
+  }
+
+  function toggleMasterPrompt(id: string) {
+    setMasterPrompts((current) => current.map((item) => item.id === id ? { ...item, enabled: !item.enabled } : item))
   }
 
   function moveMasterPrompt(id: string, direction: -1 | 1) {
@@ -1348,11 +1354,12 @@ export default function App() {
           <div className="master-prompts-page-list">
             <button type="button" className="prompt-builder-tool-btn master" onClick={createMasterPrompt} disabled={isBusy}>+ Add Master Prompt</button>
             {masterPrompts.map((item, index) => (
-              <div className="master-prompt-row" key={item.id}>
+              <div className={'master-prompt-row' + (item.enabled ? '' : ' disabled')} key={item.id}>
                 <button type="button" className="master-prompt-button" onClick={() => setMasterPromptEditing(item)} disabled={isBusy}>
                   <strong>{item.name}</strong>
                   <span>{item.text}</span>
                 </button>
+                <button type="button" className={'master-prompt-toggle' + (item.enabled ? ' enabled' : '')} onClick={() => toggleMasterPrompt(item.id)} disabled={isBusy} aria-label={(item.enabled ? 'Deactivate ' : 'Activate ') + item.name}>{item.enabled ? 'ON' : 'OFF'}</button>
                 <div className="master-prompt-order">
                   <button type="button" onClick={() => moveMasterPrompt(item.id, -1)} disabled={isBusy || index === 0} aria-label={'Move ' + item.name + ' up'}>↑</button>
                   <button type="button" onClick={() => moveMasterPrompt(item.id, 1)} disabled={isBusy || index === masterPrompts.length - 1} aria-label={'Move ' + item.name + ' down'}>↓</button>
