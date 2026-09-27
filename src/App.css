@@ -5731,3 +5731,14 @@ button:not(:disabled):focus-visible {
     border-bottom: 0 !important;
   }
 }
+
+
+/* Prompt Builder: disabled labels keep their saved text and only stop contributing to the generated prompt. */
+.prompt-builder-label.disabled {
+  opacity: .45;
+  filter: grayscale(.35);
+  text-decoration: line-through;
+}
+.prompt-builder-label.disabled.has-value {
+  opacity: .55;
+}
