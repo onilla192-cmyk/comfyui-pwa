@@ -720,6 +720,7 @@ export default function App() {
     setRemoteStarting(true)
     setErrorMsg(null)
     setStartProgress(5)
+    setComfyPowerState('idle')
     const timer = window.setInterval(() => {
       setStartProgress((current) => Math.min(90, current + 5))
     }, 1000)
@@ -1015,7 +1016,6 @@ export default function App() {
             <path d="M12 2v10" />
             <path d="M6.5 5.8a8 8 0 1 0 11 0" />
           </svg>
-          {(remoteStarting || startingComfy) && <span className="power-progress-text">{startProgress}%</span>}
         </button>
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
