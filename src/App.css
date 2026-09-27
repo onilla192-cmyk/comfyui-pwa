@@ -1135,3 +1135,44 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 .footer-status .vram-status {
   font-size: 10px;
 }
+
+
+/* Generation progress at top of content */
+.progress-wrap {
+  margin: 0 0 14px;
+}
+.progress-wrap .progress-bar {
+  position: relative;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #292d35;
+}
+.progress-wrap .progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  height: 100%;
+  background: #6686d0;
+  transition: width .2s ease;
+}
+.progress-current,
+.progress-total {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+.progress-current {
+  transform: translate(-100%, -50%);
+  padding-right: 7px;
+  color: #fff;
+}
+.progress-total {
+  right: 9px;
+  color: #c4c8d0;
+}
