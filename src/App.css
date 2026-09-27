@@ -1479,3 +1479,49 @@ html, body, #root {
     grid-template-columns: 1fr;
   }
 }
+
+
+.completed-image-tap-area {
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.completed-image-tap-area::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,.18), transparent 58%);
+}
+.completed-image-tap-armed {
+  transform: scale(.992);
+}
+.completed-image-tap-armed::after {
+  animation: completedTapArm .7s ease-out forwards;
+}
+.completed-image-tap-confirmed {
+  animation: completedTapConfirm .26s ease-out;
+}
+.completed-image-tap-confirmed::after {
+  opacity: 1;
+  animation: completedTapConfirmGlow .26s ease-out forwards;
+}
+.completed-image-tap-area img {
+  display: block;
+}
+@keyframes completedTapArm {
+  0% { opacity: .7; }
+  100% { opacity: 0; }
+}
+@keyframes completedTapConfirm {
+  0% { transform: scale(.992); }
+  45% { transform: scale(1.008); }
+  100% { transform: scale(1); }
+}
+@keyframes completedTapConfirmGlow {
+  0% { opacity: .85; }
+  100% { opacity: 0; }
+}
