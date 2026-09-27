@@ -1079,8 +1079,9 @@ export default function App() {
               ×
             </button>
           </div>
-          <div className="prompt-builder-page-list">
+          <div className={`prompt-builder-page-list${activePromptBuilderLabel ? ' focus-mode' : ''}`}>
             {promptBuilderLabels.map((label) => {
+              if (activePromptBuilderLabel && activePromptBuilderLabel !== label) return null
               const value = promptBuilderValues[label] ?? ''
               const hasValue = value.trim().length > 0
               const inputId = 'prompt-builder-page-' + label.replace(/[^A-Z0-9]+/g, '-').toLowerCase()
@@ -1090,49 +1091,51 @@ export default function App() {
                   key={label}
                   data-prompt-builder-label={label}
                 >
-                  <div
-                    className="prompt-builder-drag-handle"
-                    role="button"
-                    tabIndex={isBusy ? -1 : 0}
-                    aria-label={'Reorder ' + label}
-                    onPointerDown={(event) => {
-                      if (isBusy) return
-                      event.preventDefault()
-                      event.currentTarget.setPointerCapture(event.pointerId)
-                      setDraggingPromptBuilderLabel(label)
-                    }}
-                    onPointerMove={(event) => {
-                      if (draggingPromptBuilderLabel !== label) return
-                      event.preventDefault()
-                      movePromptBuilderLabel(label, event.clientY)
-                    }}
-                    onPointerUp={(event) => {
-                      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                        event.currentTarget.releasePointerCapture(event.pointerId)
-                      }
-                      setDraggingPromptBuilderLabel(null)
-                    }}
-                    onPointerCancel={() => setDraggingPromptBuilderLabel(null)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                  {!activePromptBuilderLabel && (
+                    <div
+                      className="prompt-builder-drag-handle"
+                      role="button"
+                      tabIndex={isBusy ? -1 : 0}
+                      aria-label={'Reorder ' + label}
+                      onPointerDown={(event) => {
+                        if (isBusy) return
                         event.preventDefault()
-                        setPromptBuilderLabels((current) => {
-                          const next = [...current]
-                          const index = next.indexOf(label)
-                          const target = event.key === 'ArrowUp' ? index - 1 : index + 1
-                          if (index < 0 || target < 0 || target >= next.length) return current
-                          ;[next[index], next[target]] = [next[target], next[index]]
-                          return next
-                        })
-                      }
-                    }}
-                  >
-                    ⋮⋮
-                  </div>
+                        event.currentTarget.setPointerCapture(event.pointerId)
+                        setDraggingPromptBuilderLabel(label)
+                      }}
+                      onPointerMove={(event) => {
+                        if (draggingPromptBuilderLabel !== label) return
+                        event.preventDefault()
+                        movePromptBuilderLabel(label, event.clientY)
+                      }}
+                      onPointerUp={(event) => {
+                        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                          event.currentTarget.releasePointerCapture(event.pointerId)
+                        }
+                        setDraggingPromptBuilderLabel(null)
+                      }}
+                      onPointerCancel={() => setDraggingPromptBuilderLabel(null)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                          event.preventDefault()
+                          setPromptBuilderLabels((current) => {
+                            const next = [...current]
+                            const index = next.indexOf(label)
+                            const target = event.key === 'ArrowUp' ? index - 1 : index + 1
+                            if (index < 0 || target < 0 || target >= next.length) return current
+                            ;[next[index], next[target]] = [next[target], next[index]]
+                            return next
+                          })
+                        }
+                      }}
+                    >
+                      ⋮⋮
+                    </div>
+                  )}
                   <div className="prompt-builder-control">
                     <button
                       type="button"
-                      className={`prompt-builder-label${hasValue ? ' has-value' : ''}`}
+                      className={`prompt-builder-label${hasValue ? ' has-value' : ''}${activePromptBuilderLabel === label ? ' focused' : ''}`}
                       onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)}
                       disabled={isBusy}
                     >
@@ -1141,9 +1144,10 @@ export default function App() {
                     {activePromptBuilderLabel === label && (
                       <input
                         id={inputId}
-                        className="prompt-builder-input"
+                        className="prompt-builder-input prompt-builder-input-focused"
                         value={value}
                         onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))}
+                        onBlur={() => setActivePromptBuilderLabel(null)}
                         placeholder={'Enter ' + label.toLowerCase() + '...'}
                         disabled={isBusy}
                         autoFocus
