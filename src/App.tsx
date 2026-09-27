@@ -991,11 +991,11 @@ export default function App() {
                 <div className="completed-prompt-text">{completed.prompt || 'Prompt not saved for this generation.'}</div>
                 <div className="completed-prompt-actions">
                   <button type="button" onClick={() => {
-                    if (completed.prompt) setPrompt((current) => addImagePrompt(current, completed.prompt!))
+                    if (completed.prompt) setPrompt((current: string) => addImagePrompt(current, completed.prompt!))
                     setCompletedPromptId(null)
                   }} disabled={!completed.prompt}>Send to main prompt</button>
                   <button type="button" className="danger" onClick={() => {
-                    if (completed.prompt) setPrompt((current) => removeImagePrompt(current, completed.prompt!))
+                    if (completed.prompt) setPrompt((current: string) => removeImagePrompt(current, completed.prompt!))
                     setCompletedPromptId(null)
                   }} disabled={!completed.prompt}>Remove from main prompt</button>
                 </div>
