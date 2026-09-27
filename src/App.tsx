@@ -76,6 +76,7 @@ export default function App() {
   const [uploading, setUploading] = useState({ one: false, two: false })
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ideasOpen, setIdeasOpen] = useState(false)
+  const [resultsOpen, setResultsOpen] = useState(false)
   const [promptLabelsSection, setPromptLabelsSection] = useState<'labels' | 'trash'>('labels')
   const [selectedPromptLabelId, setSelectedPromptLabelId] = useState<string | null>(null)
   const [editingPromptLabel, setEditingPromptLabel] = useState<{ id: string | null; name: string; text: string } | null>(null)
@@ -428,6 +429,7 @@ export default function App() {
         setImageTwo(value)
         setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.two))
       }
+      setResultsOpen(false)
       return true
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Could not use generated image')
@@ -856,22 +858,32 @@ export default function App() {
         <div className="field">
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
-            <button
-              type="button"
-              className={`image-node-toggle${showImageTwo ? ' remove' : ''}`}
-              onClick={() => {
-                if (showImageTwo) {
-                  clearImage('two')
-                  setShowImageTwo(false)
-                } else {
-                  setShowImageTwo(true)
-                }
-              }}
-              disabled={isBusy}
-              aria-label={showImageTwo ? 'Remove Figure B image node' : 'Add Figure B image node'}
-            >
-              {showImageTwo ? '- image node' : '+ image node'}
-            </button>
+            <div className="prompt-header-actions">
+              <button
+                type="button"
+                className={`image-node-toggle${showImageTwo ? ' remove' : ''}`}
+                onClick={() => {
+                  if (showImageTwo) {
+                    clearImage('two')
+                    setShowImageTwo(false)
+                  } else {
+                    setShowImageTwo(true)
+                  }
+                }}
+                disabled={isBusy}
+                aria-label={showImageTwo ? 'Remove Figure B image node' : 'Add Figure B image node'}
+              >
+                {showImageTwo ? '- image node' : '+ image node'}
+              </button>
+              <button className="idea-btn prompt-idea-btn" type="button" onClick={() => setIdeasOpen(true)} aria-label="Open ideas" title="Ideas">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 18h6"/>
+                  <path d="M10 21h4"/>
+                  <path d="M8.7 15.2C7.6 14.3 7 13 7 11.5A5 5 0 0 1 17 11.5c0 1.5-.6 2.8-1.7 3.7-.8.7-1.3 1.5-1.3 2.8h-4c0-1.3-.5-2.1-1.3-2.8Z"/>
+                  <path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4M22 12h-2"/>
+                </svg>
+              </button>
+            </div>
           </div>
           <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} /></div>
         <div className="field"><label htmlFor="negative">Negative prompt (optional)</label><textarea id="negative" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} /></div>
@@ -886,12 +898,11 @@ export default function App() {
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
-          <button className="idea-btn" type="button" onClick={() => setIdeasOpen(true)} aria-label="Open ideas" title="Ideas">
+          <button className="results-btn" type="button" onClick={() => setResultsOpen(true)} aria-label="Open completed generations" title="Completed generations">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 18h6"/>
-              <path d="M10 21h4"/>
-              <path d="M8.7 15.2C7.6 14.3 7 13 7 11.5A5 5 0 0 1 17 11.5c0 1.5-.6 2.8-1.7 3.7-.8.7-1.3 1.5-1.3 2.8h-4c0-1.3-.5-2.1-1.3-2.8Z"/>
-              <path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4M22 12h-2"/>
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <path d="M7.5 15.5l3-3 2.5 2.5 2-2 1.5 1.5"/>
+              <circle cx="9" cy="9" r="1.2"/>
             </svg>
           </button>
         </div>
@@ -899,38 +910,52 @@ export default function App() {
 
       {status === 'cancelling' && <p className="cancel-text">Cancelling generation…</p>}
       {errorMsg && <p className="error-text">{errorMsg}</p>}
-      {latestResultId && results.length > 0 && (() => {
-        const latestResult = results.find((item) => item.id === latestResultId)
-        return latestResult ? (
-          <section className="latest-result">
-            <img
-              src={latestResult.url}
-              alt="Generated result"
-              loading="lazy"
-              onLoad={(event) => {
-                const width = event.currentTarget.naturalWidth
-                const height = event.currentTarget.naturalHeight
-                if (width && height && (latestResult.width !== width || latestResult.height !== height)) {
-                  setResults((prev) => prev.map((item) => item.id === latestResult.id ? { ...item, width, height } : item))
-                }
-              }}
-            />
-            <div className="latest-result-info">
-              <span>Dimension <b>{latestResult.width && latestResult.height ? `${latestResult.width} × ${latestResult.height}px` : 'Loading…'}</b></span>
-              <span>CFG <b>{latestResult.cfg ?? '—'}</b></span>
-              <span>Steps <b>{latestResult.steps ?? '—'}</b></span>
-              <span>Megapixels <b>{latestResult.megapixels ?? '—'}</b></span>
+      {resultsOpen && (
+        <section className="results-page" aria-label="Completed generations">
+          <div className="results-page-header">
+            <div>
+              <h2>Completed Generations</h2>
+              <span>{results.length} completed image{results.length === 1 ? '' : 's'}</span>
             </div>
-            <div className="use-generated-wrap">
-              <span className="use-generated-label">Use generated image as</span>
-              <div className="use-generated-actions">
-                <button type="button" onClick={() => void useGeneratedAsFigure(latestResult, 'one')} disabled={isBusy || isUploading}>Figure A</button>
-                <button type="button" onClick={() => void useGeneratedAsFigure(latestResult, 'two')} disabled={isBusy || isUploading}>Figure B</button>
-              </div>
-            </div>
-          </section>
-        ) : null
-      })()}
+            <button className="close-btn" type="button" onClick={() => setResultsOpen(false)} aria-label="Return to generation UI">×</button>
+          </div>
+          <div className="results-page-body">
+            {latestResultId && results.length > 0 && (() => {
+  const latestResult = results.find((item) => item.id === latestResultId)
+  return latestResult ? (
+    <section className="latest-result">
+      <img
+        src={latestResult.url}
+        alt="Generated result"
+        loading="lazy"
+        onLoad={(event) => {
+          const width = event.currentTarget.naturalWidth
+          const height = event.currentTarget.naturalHeight
+          if (width && height && (latestResult.width !== width || latestResult.height !== height)) {
+            setResults((prev) => prev.map((item) => item.id === latestResult.id ? { ...item, width, height } : item))
+          }
+        }}
+      />
+      <div className="latest-result-info">
+        <span>Dimension <b>{latestResult.width && latestResult.height ? `${latestResult.width} × ${latestResult.height}px` : 'Loading…'}</b></span>
+        <span>CFG <b>{latestResult.cfg ?? '—'}</b></span>
+        <span>Steps <b>{latestResult.steps ?? '—'}</b></span>
+        <span>Megapixels <b>{latestResult.megapixels ?? '—'}</b></span>
+      </div>
+      <div className="use-generated-wrap">
+        <span className="use-generated-label">Use generated image as</span>
+        <div className="use-generated-actions">
+          <button type="button" onClick={() => void useGeneratedAsFigure(latestResult, 'one')} disabled={isBusy || isUploading}>Figure A</button>
+          <button type="button" onClick={() => void useGeneratedAsFigure(latestResult, 'two')} disabled={isBusy || isUploading}>Figure B</button>
+        </div>
+      </div>
+    </section>
+  ) : null
+})()}
+            {!latestResultId || !results.length ? <div className="results-empty">No completed generations yet.</div> : null}
+          </div>
+        </section>
+      )}
 
       {selectedPromptLabelId && (() => {
         const label = promptLabels.find((x) => x.id === selectedPromptLabelId)
