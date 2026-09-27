@@ -74,7 +74,7 @@ export default function App() {
   const savedMasterPrompts: MasterPrompt[] = Array.isArray(saved.masterPrompts)
     ? saved.masterPrompts
         .filter((item: unknown): item is MasterPrompt => !!item && typeof item === 'object' && typeof (item as MasterPrompt).id === 'string' && typeof (item as MasterPrompt).name === 'string' && typeof (item as MasterPrompt).text === 'string')
-        .map((item) => ({ ...item, enabled: item.enabled !== false }))
+        .map((item: MasterPrompt) => ({ ...item, enabled: item.enabled !== false }))
     : DEFAULT_MASTER_PROMPTS
   const [prompt, setPrompt] = useState(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
@@ -205,7 +205,7 @@ export default function App() {
 
   function createMasterPrompt() {
     if (isBusy) return
-    setMasterPromptEditing({ id: '', name: '', text: '' })
+    setMasterPromptEditing({ id: '', name: '', text: '', enabled: true })
   }
 
   function saveMasterPrompt() {
