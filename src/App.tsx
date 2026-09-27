@@ -84,7 +84,13 @@ export default function App() {
   const [promptBuilderDragPosition, setPromptBuilderDragPosition] = useState<{ x: number; y: number } | null>(null)
   const promptBuilderListRef = useRef<HTMLDivElement | null>(null)
   const promptBuilderDragTimer = useRef<number | null>(null)
+  const promptBuilderHoldTimer = useRef<number | null>(null)
   const promptBuilderDragY = useRef(0)
+  const promptBuilderDragX = useRef(0)
+  const promptBuilderDragLabelRef = useRef<string | null>(null)
+  const promptBuilderDragPointerRef = useRef<number | null>(null)
+  const promptBuilderDragActiveRef = useRef(false)
+  const promptBuilderLastTargetRef = useRef<string | null>(null)
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -153,15 +159,34 @@ export default function App() {
     const distanceFromTop = clientY - rect.top
     const distanceFromBottom = rect.bottom - clientY
     if (distanceFromTop < edge) {
-      list.scrollTop -= Math.max(4, Math.round((edge - distanceFromTop) / 6))
+      list.scrollTop -= Math.max(3, Math.round((edge - distanceFromTop) / 8))
     } else if (distanceFromBottom < edge) {
-      list.scrollTop += Math.max(4, Math.round((edge - distanceFromBottom) / 6))
+      list.scrollTop += Math.max(3, Math.round((edge - distanceFromBottom) / 8))
     }
 
-    const target = document.elementFromPoint(window.innerWidth / 2, clientY)?.closest('[data-prompt-builder-label]') as HTMLElement | null
-    const targetLabel = target?.dataset.promptBuilderLabel
-    if (!targetLabel || targetLabel === label) return
+    const items = Array.from(list.querySelectorAll<HTMLElement>('[data-prompt-builder-label]'))
+      .filter((item) => item.dataset.promptBuilderLabel !== label)
+    let targetLabel: string | null = null
+    let bestDistance = Number.POSITIVE_INFINITY
 
+    for (const item of items) {
+      const itemRect = item.getBoundingClientRect()
+      if (clientY >= itemRect.top && clientY <= itemRect.bottom) {
+        targetLabel = item.dataset.promptBuilderLabel ?? null
+        break
+      }
+      const distance = Math.abs(clientY - (itemRect.top + itemRect.height / 2))
+      if (distance < bestDistance) {
+        bestDistance = distance
+        targetLabel = item.dataset.promptBuilderLabel ?? null
+      }
+    }
+
+    if (!targetLabel || targetLabel === promptBuilderLastTargetRef.current) return
+    promptBuilderLastTargetRef.current = targetLabel
+
+    const target = items.find((item) => item.dataset.promptBuilderLabel === targetLabel)
+    if (!target) return
     const targetRect = target.getBoundingClientRect()
     const insertBefore = clientY < targetRect.top + targetRect.height / 2
 
@@ -173,6 +198,7 @@ export default function App() {
       next.splice(fromIndex, 1)
       let insertIndex = next.indexOf(targetLabel)
       if (!insertBefore) insertIndex += 1
+      if (insertIndex > next.length) insertIndex = next.length
       next.splice(insertIndex, 0, label)
       return next
     })
@@ -183,8 +209,34 @@ export default function App() {
       window.clearInterval(promptBuilderDragTimer.current)
       promptBuilderDragTimer.current = null
     }
+    if (promptBuilderHoldTimer.current !== null) {
+      window.clearTimeout(promptBuilderHoldTimer.current)
+      promptBuilderHoldTimer.current = null
+    }
+    promptBuilderDragActiveRef.current = false
+    promptBuilderDragLabelRef.current = null
+    promptBuilderDragPointerRef.current = null
+    promptBuilderLastTargetRef.current = null
     setDraggingPromptBuilderLabel(null)
     setPromptBuilderDragPosition(null)
+  }
+
+  function startPromptBuilderDrag(label: string, event: React.PointerEvent<HTMLDivElement>) {
+    promptBuilderDragActiveRef.current = true
+    promptBuilderDragLabelRef.current = label
+    promptBuilderDragPointerRef.current = event.pointerId
+    promptBuilderDragY.current = event.clientY
+    promptBuilderDragX.current = event.clientX
+    promptBuilderLastTargetRef.current = null
+    setDraggingPromptBuilderLabel(label)
+    setPromptBuilderDragPosition({ x: event.clientX, y: event.clientY })
+    movePromptBuilderLabel(label, event.clientY)
+
+    promptBuilderDragTimer.current = window.setInterval(() => {
+      const activeLabel = promptBuilderDragLabelRef.current
+      if (!activeLabel || !promptBuilderDragActiveRef.current) return
+      movePromptBuilderLabel(activeLabel, promptBuilderDragY.current)
+    }, 50)
   }
 
   if (currentPromptId.current && !currentGenerationPrompt.current) {
@@ -1131,17 +1183,27 @@ export default function App() {
                       event.preventDefault()
                       event.currentTarget.setPointerCapture(event.pointerId)
                       promptBuilderDragY.current = event.clientY
-                      setDraggingPromptBuilderLabel(label)
-                      setPromptBuilderDragPosition({ x: event.clientX, y: event.clientY })
-                      movePromptBuilderLabel(label, event.clientY)
-                      promptBuilderDragTimer.current = window.setInterval(() => {
-                        movePromptBuilderLabel(label, promptBuilderDragY.current)
-                      }, 50)
+                      promptBuilderDragX.current = event.clientX
+                      promptBuilderDragPointerRef.current = event.pointerId
+                      if (promptBuilderHoldTimer.current !== null) window.clearTimeout(promptBuilderHoldTimer.current)
+                      promptBuilderHoldTimer.current = window.setTimeout(() => {
+                        startPromptBuilderDrag(label, event)
+                      }, 160)
                     }}
                     onPointerMove={(event) => {
-                      if (draggingPromptBuilderLabel !== label) return
+                      if (promptBuilderDragPointerRef.current !== event.pointerId) return
+                      const moved = Math.hypot(event.clientX - promptBuilderDragX.current, event.clientY - promptBuilderDragY.current)
+                      if (!promptBuilderDragActiveRef.current) {
+                        if (moved > 10) {
+                          if (promptBuilderHoldTimer.current !== null) window.clearTimeout(promptBuilderHoldTimer.current)
+                          promptBuilderHoldTimer.current = null
+                          return
+                        }
+                        return
+                      }
                       event.preventDefault()
                       promptBuilderDragY.current = event.clientY
+                      promptBuilderDragX.current = event.clientX
                       setPromptBuilderDragPosition({ x: event.clientX, y: event.clientY })
                       movePromptBuilderLabel(label, event.clientY)
                     }}
