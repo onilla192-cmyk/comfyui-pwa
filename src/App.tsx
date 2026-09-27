@@ -430,6 +430,7 @@ export default function App() {
   async function handleGenerate() {
     if (!prompt.trim() || uploading.one || uploading.two || startingComfy) return
     setLatestResultId(null)
+    standbyReleased.current = false
     setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
     setErrorMsg(null); setStatus('queued'); setProgress({ value: 0, max: 1 })
     let startupTimer: number | null = null
