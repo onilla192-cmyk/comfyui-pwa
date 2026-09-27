@@ -9,6 +9,7 @@ interface ResultImage { id: string; url: string; promptId: string; prompt?: stri
 const HISTORY_PAGE_SIZE = 5
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
+interface MasterPrompt { id: string; name: string; text: string }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
@@ -24,6 +25,11 @@ const IMAGE_PROMPTS = {
   one: '<image_1> is identified as Figure A, subject from the source image',
   two: '<image_2> is identified as Figure B, subject from the source image',
 }
+
+const DEFAULT_MASTER_PROMPTS: MasterPrompt[] = [
+  { id: 'master-figure-a', name: 'Figure A', text: IMAGE_PROMPTS.one },
+  { id: 'master-preservation', name: 'Preservation', text: 'Preserve the subject’s identity, facial features, body proportions, and defining visual characteristics.' },
+]
 
 function addImagePrompt(current: string, line: string) {
   const imageLines = Object.values(IMAGE_PROMPTS).filter((imageLine) => imageLine === line || current.includes(imageLine))
@@ -65,6 +71,9 @@ export default function App() {
   const savedTrash = withHistoryIds(Array.isArray(saved.trash) ? saved.trash : [])
   const savedPromptLabels = withLabelIds(Array.isArray(saved.promptLabels) ? saved.promptLabels : [])
   const savedPromptLabelTrash = withLabelIds(Array.isArray(saved.promptLabelTrash) ? saved.promptLabelTrash : [])
+  const savedMasterPrompts: MasterPrompt[] = Array.isArray(saved.masterPrompts)
+    ? saved.masterPrompts.filter((item: unknown): item is MasterPrompt => !!item && typeof item === 'object' && typeof (item as MasterPrompt).id === 'string' && typeof (item as MasterPrompt).name === 'string' && typeof (item as MasterPrompt).text === 'string')
+    : DEFAULT_MASTER_PROMPTS
   const [prompt, setPrompt] = useState(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -77,9 +86,15 @@ export default function App() {
   const [promptBuilderPageOpen, setPromptBuilderPageOpen] = useState(false)
   const [promptHeaderMenuOpen, setPromptHeaderMenuOpen] = useState(false)
   const [promptBuilderLabels, setPromptBuilderLabels] = useState<string[]>(() => {
-    const savedOrder = Array.isArray(saved.promptBuilderLabels) ? saved.promptBuilderLabels.filter((label: unknown): label is string => typeof label === 'string' && PROMPT_BUILDER_LABELS.includes(label)) : []
-    return [...savedOrder, ...PROMPT_BUILDER_LABELS.filter((label) => !savedOrder.includes(label))]
+    if (Array.isArray(saved.promptBuilderLabels)) {
+      return saved.promptBuilderLabels.filter((label: unknown): label is string => typeof label === 'string' && label.trim().length > 0)
+    }
+    return [...PROMPT_BUILDER_LABELS]
   })
+  const [masterPrompts, setMasterPrompts] = useState<MasterPrompt[]>(savedMasterPrompts)
+  const [masterPromptsPageOpen, setMasterPromptsPageOpen] = useState(false)
+  const [masterPromptEditing, setMasterPromptEditing] = useState<MasterPrompt | null>(null)
+  const [promptBuilderPreviewOpen, setPromptBuilderPreviewOpen] = useState(false)
   const [draggingPromptBuilderLabel, setDraggingPromptBuilderLabel] = useState<string | null>(null)
   const [promptBuilderDragPosition, setPromptBuilderDragPosition] = useState<{ x: number; y: number } | null>(null)
   const promptBuilderListRef = useRef<HTMLDivElement | null>(null)
@@ -152,6 +167,79 @@ export default function App() {
   const currentPromptId = useRef<string | null>(saved.promptId ?? null)
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
+
+  function buildPromptBuilderPrompt() {
+    const masterBlock = masterPrompts.map((item) => item.text.trim()).filter(Boolean).join('\n\n')
+    const normalBlock = promptBuilderLabels.map((label) => {
+      const value = promptBuilderValues[label]?.trim()
+      return value ? label + ': ' + value : ''
+    }).filter(Boolean).join('\n')
+    return [masterBlock, normalBlock].filter(Boolean).join('\n\n')
+  }
+
+  function createPromptBuilderLabel() {
+    if (isBusy) return
+    const name = window.prompt('Label name')?.trim()
+    if (!name) return
+    if (promptBuilderLabels.some((label) => label.toLowerCase() === name.toLowerCase())) {
+      window.alert('A prompt builder label with that name already exists.')
+      return
+    }
+    setPromptBuilderLabels((current) => [...current, name])
+    setPromptBuilderValues((current) => ({ ...current, [name]: '' }))
+  }
+
+  function deletePromptBuilderLabel(label: string) {
+    if (isBusy) return
+    if (!window.confirm('Delete “' + label + '” from Prompt Builder?')) return
+    setPromptBuilderLabels((current) => current.filter((item) => item !== label))
+    setPromptBuilderValues((current) => {
+      const next = { ...current }
+      delete next[label]
+      return next
+    })
+    if (activePromptBuilderLabel === label) setActivePromptBuilderLabel(null)
+  }
+
+  function createMasterPrompt() {
+    if (isBusy) return
+    setMasterPromptEditing({ id: '', name: '', text: '' })
+  }
+
+  function saveMasterPrompt() {
+    if (!masterPromptEditing) return
+    const name = masterPromptEditing.name.trim()
+    const text = masterPromptEditing.text.trim()
+    if (!name || !text) return
+    const duplicate = masterPrompts.some((item) => item.id !== masterPromptEditing.id && item.name.toLowerCase() === name.toLowerCase())
+    if (duplicate) {
+      window.alert('A master prompt with that name already exists.')
+      return
+    }
+    if (masterPromptEditing.id) {
+      setMasterPrompts((current) => current.map((item) => item.id === masterPromptEditing.id ? { ...item, name, text } : item))
+    } else {
+      setMasterPrompts((current) => [...current, { id: 'master-' + Date.now() + '-' + Math.random().toString(36).slice(2), name, text }])
+    }
+    setMasterPromptEditing(null)
+  }
+
+  function deleteMasterPrompt(id: string) {
+    if (!window.confirm('Delete this master prompt?')) return
+    setMasterPrompts((current) => current.filter((item) => item.id !== id))
+    if (masterPromptEditing?.id === id) setMasterPromptEditing(null)
+  }
+
+  function moveMasterPrompt(id: string, direction: -1 | 1) {
+    setMasterPrompts((current) => {
+      const index = current.findIndex((item) => item.id === id)
+      const target = index + direction
+      if (index < 0 || target < 0 || target >= current.length) return current
+      const next = [...current]
+      ;[next[index], next[target]] = [next[target], next[index]]
+      return next
+    })
+  }
 
   function movePromptBuilderLabel(label: string, clientY: number) {
     const list = promptBuilderListRef.current
@@ -271,7 +359,7 @@ export default function App() {
 
   useEffect(() => {
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash,
+      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, masterPrompts, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
@@ -565,12 +653,7 @@ export default function App() {
 
 
   async function handleGenerate() {
-    const generationPrompt = promptBuilderOpen
-      ? promptBuilderLabels.map((label) => {
-          const value = promptBuilderValues[label]?.trim()
-          return value ? label + ': ' + value : ''
-        }).filter(Boolean).join('\\n')
-      : prompt.trim()
+    const generationPrompt = promptBuilderOpen ? buildPromptBuilderPrompt() : prompt.trim()
     if (!generationPrompt || uploading.one || uploading.two || startingComfy) return
     setLatestResultId(null)
     standbyReleased.current = false
@@ -1123,7 +1206,7 @@ export default function App() {
               {cancelling ? 'Cancelling...' : 'Stop Generation'}
             </button>
           ) : (
-            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !(promptBuilderOpen ? PROMPT_BUILDER_LABELS.some((label) => promptBuilderValues[label]?.trim()) : prompt.trim())}>
+            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !(promptBuilderOpen ? buildPromptBuilderPrompt().trim() : prompt.trim())}>
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
@@ -1142,35 +1225,23 @@ export default function App() {
           <div className="prompt-builder-page-header">
             <div>
               <h2>Prompt Builder</h2>
-              <span>Build the prompt from individual labels</span>
+              <span>{promptBuilderLabels.length} normal label{promptBuilderLabels.length === 1 ? '' : 's'} · {masterPrompts.length} master prompt{masterPrompts.length === 1 ? '' : 's'}</span>
             </div>
-            <button
-              className="close-btn"
-              type="button"
-              onClick={() => {
-                setPromptBuilderPageOpen(false)
-                setActivePromptBuilderLabel(null)
-              }}
-              aria-label="Close Prompt Builder"
-            >
-              ×
-            </button>
+            <button className="close-btn" type="button" onClick={() => { setPromptBuilderPageOpen(false); setActivePromptBuilderLabel(null) }} aria-label="Close Prompt Builder">×</button>
           </div>
-          <div
-            ref={promptBuilderListRef}
-            className={`prompt-builder-page-list${activePromptBuilderLabel ? ' focus-mode' : ''}`}
-          >
+          <div className="prompt-builder-page-tools">
+            <button type="button" className="prompt-builder-tool-btn master" onClick={() => setMasterPromptsPageOpen(true)} disabled={isBusy}>Master Prompts</button>
+            <button type="button" className="prompt-builder-tool-btn" onClick={createPromptBuilderLabel} disabled={isBusy}>+ Add Label</button>
+            <button type="button" className="prompt-builder-tool-btn preview" onClick={() => setPromptBuilderPreviewOpen(true)}>Preview Final Prompt</button>
+          </div>
+          <div ref={promptBuilderListRef} className={'prompt-builder-page-list' + (activePromptBuilderLabel ? ' focus-mode' : '')}>
             {promptBuilderLabels.map((label) => {
               if (activePromptBuilderLabel && activePromptBuilderLabel !== label) return null
               const value = promptBuilderValues[label] ?? ''
               const hasValue = value.trim().length > 0
-              const inputId = 'prompt-builder-page-' + label.replace(/[^A-Z0-9]+/g, '-').toLowerCase()
+              const inputId = 'prompt-builder-page-' + label.replace(/[^A-Z0-9]+/gi, '-').toLowerCase()
               return (
-                <div
-                  className={`prompt-builder-item${hasValue ? ' has-value' : ''}${draggingPromptBuilderLabel === label ? ' dragging' : ''}`}
-                  key={label}
-                  data-prompt-builder-label={label}
-                >
+                <div className={'prompt-builder-item' + (hasValue ? ' has-value' : '') + (draggingPromptBuilderLabel === label ? ' dragging' : '')} key={label} data-prompt-builder-label={label}>
                   {!activePromptBuilderLabel && (
                     <div
                       className="prompt-builder-drag-handle"
@@ -1178,48 +1249,44 @@ export default function App() {
                       tabIndex={isBusy ? -1 : 0}
                       aria-label={'Reorder ' + label}
                       onPointerDown={(event) => {
-                      if (isBusy) return
-                      event.preventDefault()
-                      event.currentTarget.setPointerCapture(event.pointerId)
-                      promptBuilderDragY.current = event.clientY
-                      promptBuilderDragX.current = event.clientX
-                      promptBuilderDragPointerRef.current = event.pointerId
-                      if (promptBuilderHoldTimer.current !== null) window.clearTimeout(promptBuilderHoldTimer.current)
-                      promptBuilderHoldTimer.current = window.setTimeout(() => {
-                        startPromptBuilderDrag(label, event)
-                      }, 160)
-                    }}
-                    onPointerMove={(event) => {
-                      if (promptBuilderDragPointerRef.current !== event.pointerId) return
-                      const moved = Math.hypot(event.clientX - promptBuilderDragX.current, event.clientY - promptBuilderDragY.current)
-                      if (!promptBuilderDragActiveRef.current) {
-                        if (moved > 10) {
-                          if (promptBuilderHoldTimer.current !== null) window.clearTimeout(promptBuilderHoldTimer.current)
-                          promptBuilderHoldTimer.current = null
+                        if (isBusy) return
+                        event.preventDefault()
+                        event.currentTarget.setPointerCapture(event.pointerId)
+                        promptBuilderDragY.current = event.clientY
+                        promptBuilderDragX.current = event.clientX
+                        promptBuilderDragPointerRef.current = event.pointerId
+                        if (promptBuilderHoldTimer.current !== null) window.clearTimeout(promptBuilderHoldTimer.current)
+                        promptBuilderHoldTimer.current = window.setTimeout(() => { startPromptBuilderDrag(label, event) }, 160)
+                      }}
+                      onPointerMove={(event) => {
+                        if (promptBuilderDragPointerRef.current !== event.pointerId) return
+                        const moved = Math.hypot(event.clientX - promptBuilderDragX.current, event.clientY - promptBuilderDragY.current)
+                        if (!promptBuilderDragActiveRef.current) {
+                          if (moved > 10) {
+                            if (promptBuilderHoldTimer.current !== null) window.clearTimeout(promptBuilderHoldTimer.current)
+                            promptBuilderHoldTimer.current = null
+                            return
+                          }
                           return
                         }
-                        return
-                      }
-                      event.preventDefault()
-                      promptBuilderDragY.current = event.clientY
-                      promptBuilderDragX.current = event.clientX
-                      if (promptBuilderDragRaf.current === null) {
-                        promptBuilderDragRaf.current = window.requestAnimationFrame(() => {
-                          promptBuilderDragRaf.current = null
-                          setPromptBuilderDragPosition({ x: promptBuilderDragX.current, y: promptBuilderDragY.current })
-                        })
-                      }
-                      movePromptBuilderLabel(label, event.clientY)
-                    }}
-                    onPointerUp={(event) => {
-                      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                        event.currentTarget.releasePointerCapture(event.pointerId)
-                      }
-                      stopPromptBuilderDrag()
-                    }}
-                    onPointerCancel={stopPromptBuilderDrag}
-                    onLostPointerCapture={stopPromptBuilderDrag}
-                    onKeyDown={(event) => {
+                        event.preventDefault()
+                        promptBuilderDragY.current = event.clientY
+                        promptBuilderDragX.current = event.clientX
+                        if (promptBuilderDragRaf.current === null) {
+                          promptBuilderDragRaf.current = window.requestAnimationFrame(() => {
+                            promptBuilderDragRaf.current = null
+                            setPromptBuilderDragPosition({ x: promptBuilderDragX.current, y: promptBuilderDragY.current })
+                          })
+                        }
+                        movePromptBuilderLabel(label, event.clientY)
+                      }}
+                      onPointerUp={(event) => {
+                        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+                        stopPromptBuilderDrag()
+                      }}
+                      onPointerCancel={stopPromptBuilderDrag}
+                      onLostPointerCapture={stopPromptBuilderDrag}
+                      onKeyDown={(event) => {
                         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                           event.preventDefault()
                           setPromptBuilderLabels((current) => {
@@ -1232,19 +1299,13 @@ export default function App() {
                           })
                         }
                       }}
-                    >
-                      ⋮⋮
-                    </div>
+                    >⋮⋮</div>
                   )}
                   <div className="prompt-builder-control">
-                    <button
-                      type="button"
-                      className={`prompt-builder-label${hasValue ? ' has-value' : ''}${activePromptBuilderLabel === label ? ' focused' : ''}`}
-                      onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)}
-                      disabled={isBusy}
-                    >
+                    <button type="button" className={'prompt-builder-label' + (hasValue ? ' has-value' : '') + (activePromptBuilderLabel === label ? ' focused' : '')} onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)} disabled={isBusy}>
                       {hasValue ? label + ': ' + value : label}
                     </button>
+                    {!activePromptBuilderLabel && <button type="button" className="prompt-builder-delete-btn" onClick={() => deletePromptBuilderLabel(label)} disabled={isBusy} aria-label={'Delete ' + label}>×</button>}
                     {activePromptBuilderLabel === label && (
                       <textarea
                         id={inputId}
@@ -1262,23 +1323,75 @@ export default function App() {
                 </div>
               )
             })}
+            {!promptBuilderLabels.length && <div className="prompt-builder-empty">No normal labels yet. Add one above.</div>}
           </div>
-        {draggingPromptBuilderLabel && promptBuilderDragPosition && (
-          <div
-            className="prompt-builder-drag-ghost"
-            style={{
-              left: promptBuilderDragPosition.x + 12,
-              top: promptBuilderDragPosition.y + 12,
-            }}
-            aria-hidden="true"
-          >
-            {(() => {
-              const value = promptBuilderValues[draggingPromptBuilderLabel] ?? ''
-              return value.trim() ? draggingPromptBuilderLabel + ': ' + value : draggingPromptBuilderLabel
-            })()}
+          {draggingPromptBuilderLabel && promptBuilderDragPosition && (
+            <div className="prompt-builder-drag-ghost" style={{ left: promptBuilderDragPosition.x + 12, top: promptBuilderDragPosition.y + 12 }} aria-hidden="true">
+              {(() => {
+                const value = promptBuilderValues[draggingPromptBuilderLabel] ?? ''
+                return value.trim() ? draggingPromptBuilderLabel + ': ' + value : draggingPromptBuilderLabel
+              })()}
+            </div>
+          )}
+        </section>
+      )}
+
+      {masterPromptsPageOpen && (
+        <section className="prompt-builder-page" aria-label="Master Prompts">
+          <div className="prompt-builder-page-header">
+            <div>
+              <h2>Master Prompts</h2>
+              <span>Always included at the top of the final prompt</span>
+            </div>
+            <button className="close-btn" type="button" onClick={() => setMasterPromptsPageOpen(false)} aria-label="Close Master Prompts">×</button>
           </div>
-        )}
-      </section>
+          <div className="master-prompts-page-list">
+            <button type="button" className="prompt-builder-tool-btn master" onClick={createMasterPrompt} disabled={isBusy}>+ Add Master Prompt</button>
+            {masterPrompts.map((item, index) => (
+              <div className="master-prompt-row" key={item.id}>
+                <button type="button" className="master-prompt-button" onClick={() => setMasterPromptEditing(item)} disabled={isBusy}>
+                  <strong>{item.name}</strong>
+                  <span>{item.text}</span>
+                </button>
+                <div className="master-prompt-order">
+                  <button type="button" onClick={() => moveMasterPrompt(item.id, -1)} disabled={isBusy || index === 0} aria-label={'Move ' + item.name + ' up'}>↑</button>
+                  <button type="button" onClick={() => moveMasterPrompt(item.id, 1)} disabled={isBusy || index === masterPrompts.length - 1} aria-label={'Move ' + item.name + ' down'}>↓</button>
+                </div>
+                <button type="button" className="master-prompt-delete" onClick={() => deleteMasterPrompt(item.id)} disabled={isBusy} aria-label={'Delete ' + item.name}>×</button>
+              </div>
+            ))}
+            {!masterPrompts.length && <div className="prompt-builder-empty">No master prompts yet. Add one above.</div>}
+          </div>
+        </section>
+      )}
+
+      {masterPromptEditing && (
+        <div className="master-prompt-editor-backdrop" onClick={() => setMasterPromptEditing(null)}>
+          <section className="master-prompt-editor" onClick={(event) => event.stopPropagation()}>
+            <div className="master-prompt-editor-header">
+              <div><h2>{masterPromptEditing.id ? 'Edit Master Prompt' : 'New Master Prompt'}</h2><span>Master prompts are always placed first.</span></div>
+              <button className="close-btn" type="button" onClick={() => setMasterPromptEditing(null)} aria-label="Close master prompt editor">×</button>
+            </div>
+            <label>Button name<input value={masterPromptEditing.name} onChange={(e) => setMasterPromptEditing((current) => current ? { ...current, name: e.target.value } : current)} placeholder="Example: Lighting" autoFocus /></label>
+            <label>Prompt text<textarea value={masterPromptEditing.text} onChange={(e) => setMasterPromptEditing((current) => current ? { ...current, text: e.target.value } : current)} placeholder="Enter the prompt text..." rows={8} /></label>
+            <div className="master-prompt-editor-actions">
+              <button type="button" onClick={() => setMasterPromptEditing(null)}>Cancel</button>
+              <button type="button" className="primary" onClick={saveMasterPrompt} disabled={!masterPromptEditing.name.trim() || !masterPromptEditing.text.trim()}>Save</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {promptBuilderPreviewOpen && (
+        <div className="prompt-builder-preview-backdrop" onClick={() => setPromptBuilderPreviewOpen(false)}>
+          <section className="prompt-builder-preview" onClick={(event) => event.stopPropagation()}>
+            <div className="prompt-builder-preview-header">
+              <div><h2>Final Prompt</h2><span>Master prompts first, then normal labels in list order</span></div>
+              <button className="close-btn" type="button" onClick={() => setPromptBuilderPreviewOpen(false)} aria-label="Close prompt preview">×</button>
+            </div>
+            <div className="prompt-builder-preview-body"><pre>{buildPromptBuilderPrompt() || 'No prompt content yet.'}</pre></div>
+          </section>
+        </div>
       )}
 
       {status === 'cancelling' && <p className="cancel-text">Cancelling generation…</p>}
