@@ -112,9 +112,6 @@ export function viewImageUrl(filename: string, subfolder = '', type = 'output') 
 }
 
 export async function uploadImage(file: File) {
-  // Image uploads need ComfyUI's /upload/image endpoint, so wake it first
-  // if the automatic sleep timer has stopped the server.
-  await startComfyUI()
   const form = new FormData()
   form.append('image', file, file.name)
   form.append('type', 'input')
