@@ -90,7 +90,9 @@ export default function App() {
   const [megapixels, setMegapixels] = useState(saved.megapixels ?? 0.5)
   const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 720)
   const [cancelling, setCancelling] = useState(false)
-  // Start on the off screen until the phone-control endpoint confirms ComfyUI is running.\n  // This makes a refresh immediately reflect a stopped laptop without waiting for a timer.\n  const [comfySleeping, setComfySleeping] = useState(true)
+  // Start on the off screen until the phone-control endpoint confirms ComfyUI is running.
+  // This makes a refresh immediately reflect a stopped laptop without waiting for a timer.
+  const [comfySleeping, setComfySleeping] = useState(true)
   const [exploreMode, setExploreMode] = useState(false)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
