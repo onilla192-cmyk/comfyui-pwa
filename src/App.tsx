@@ -727,7 +727,7 @@ export default function App() {
       await new Promise((resolve) => setTimeout(resolve, 250))
       // Return to the PWA we started from, not the raw ComfyUI interface.
       // Keep the current origin so this works on the production Vercel app.
-      window.location.assign(window.location.origin)
+      // Stay on the current PWA screen after startup.
     } catch (err) {
       window.clearInterval(timer)
       setErrorMsg(err instanceof Error ? err.message : 'Could not start ComfyUI from the phone.')
@@ -748,14 +748,6 @@ export default function App() {
     <header className="app-header">
       <div className="app-header-title"><h1>ComfyUI Console</h1><span className="status-dot" data-active={isBusy} /></div>
       <div className="header-subfooters">
-        <div className="sleep-timer" aria-live="polite">
-          {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
-        </div>
-        <div className={`vram-status ${isBusy || startingComfy ? 'active' : comfySleeping ? 'free' : 'active'}`} aria-live="polite">
-          <span>{isBusy || startingComfy ? 'VRAM active' : comfySleeping ? 'VRAM free' : 'VRAM active'}</span>
-        </div>
-      </div>
-      <div className="header-actions">
         {comfySleeping && (
           <button
             className="start-comfy-btn"
@@ -766,6 +758,14 @@ export default function App() {
             {remoteStarting ? `Starting… ${startProgress}%` : 'Start ComfyUI'}
           </button>
         )}
+        <div className="sleep-timer" aria-live="polite">
+          {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
+        </div>
+        <div className={`vram-status ${isBusy || startingComfy ? 'active' : comfySleeping ? 'free' : 'active'}`} aria-live="polite">
+          <span>{isBusy || startingComfy ? 'VRAM active' : comfySleeping ? 'VRAM free' : 'VRAM active'}</span>
+        </div>
+      </div>
+      <div className="header-actions">
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
         </button>
