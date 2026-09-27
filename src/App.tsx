@@ -66,6 +66,7 @@ export default function App() {
   const [promptLabelBlock, setPromptLabelBlock] = useState('')
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(() => saved.promptBuilderOpen ?? false)
   const [promptBuilderValues, setPromptBuilderValues] = useState<Record<string, string>>(() => saved.promptBuilderValues && typeof saved.promptBuilderValues === 'object' ? saved.promptBuilderValues : {})
+  const [activePromptBuilderLabel, setActivePromptBuilderLabel] = useState<string | null>(null)
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -944,10 +945,25 @@ export default function App() {
                   const inputId = 'prompt-builder-' + label.replace(/[^A-Z0-9]+/g, '-').toLowerCase()
                   return (
                     <div className={`prompt-builder-item${hasValue ? ' has-value' : ''}`} key={label}>
-                      <button type="button" className={`prompt-builder-label${hasValue ? ' has-value' : ''}`} onClick={() => document.getElementById(inputId)?.focus()} disabled={isBusy}>
+                      <button
+                        type="button"
+                        className={`prompt-builder-label${hasValue ? ' has-value' : ''}`}
+                        onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)}
+                        disabled={isBusy}
+                      >
                         {hasValue ? label + ': ' + value : label}
                       </button>
-                      <input id={inputId} className="prompt-builder-input" value={value} onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))} placeholder={'Enter ' + label.toLowerCase() + '...'} disabled={isBusy} />
+                      {activePromptBuilderLabel === label && (
+                        <input
+                          id={inputId}
+                          className="prompt-builder-input"
+                          value={value}
+                          onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))}
+                          placeholder={'Enter ' + label.toLowerCase() + '...'}
+                          disabled={isBusy}
+                          autoFocus
+                        />
+                      )}
                     </div>
                   )
                 })}
