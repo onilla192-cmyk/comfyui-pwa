@@ -4664,3 +4664,154 @@ body {
     border-width: 2px !important;
   }
 }
+
+
+/* Nintendo palette refinement: red, white, black, with restrained blue accents. */
+:root {
+  --console-red: #e60012;
+  --console-red-dark: #b4000e;
+  --console-blue: #00a8e8;
+  --console-blue-dark: #08799f;
+  --console-yellow: #f5f5f5;
+  --console-green: #f5f5f5;
+  --console-purple: #f5f5f5;
+  --console-ink: #111111;
+  --console-surface: #242424;
+  --console-surface-2: #303030;
+  --console-border: #4a4a4a;
+  --console-white: #ffffff;
+  --console-muted: #b8b8b8;
+}
+
+body,
+.app {
+  background: #0d0d0d !important;
+  color: #fff !important;
+}
+
+.generation-embed {
+  background: linear-gradient(180deg, #2b2b2b 0%, #202020 100%) !important;
+  border-color: #4a4a4a !important;
+}
+
+.image-picker-title {
+  background: var(--console-red) !important;
+  box-shadow: 0 3px 0 var(--console-red-dark) !important;
+}
+
+.image-picker:nth-child(2) .image-picker-title {
+  background: #303030 !important;
+  box-shadow: 0 3px 0 #171717 !important;
+}
+
+.generate-btn {
+  background: var(--console-red) !important;
+  box-shadow: 0 5px 0 var(--console-red-dark), 0 8px 18px rgba(230,0,18,.22) !important;
+}
+
+.idea-btn {
+  border-color: #5a5a5a !important;
+  background: #3a3a3a !important;
+  color: #fff !important;
+  box-shadow: 0 5px 0 #1b1b1b !important;
+}
+
+.results-btn {
+  border-color: var(--console-blue-dark) !important;
+  background: var(--console-blue) !important;
+  color: #fff !important;
+  box-shadow: 0 5px 0 var(--console-blue-dark) !important;
+}
+
+.app-footer .history-icon,
+.app-footer .logs-icon,
+.app-footer .settings-icon,
+.app-footer .footer-power-btn.off,
+.app-footer .footer-power-btn.idle,
+.app-footer .footer-power-btn.active {
+  color: #fff !important;
+}
+
+.app-footer .footer-power-btn.off {
+  background: rgba(230,0,18,.13) !important;
+}
+
+.app-footer .footer-power-btn.active {
+  background: rgba(255,255,255,.08) !important;
+}
+
+.app-footer .vram-status.free {
+  color: #ff6b6b !important;
+  background: rgba(230,0,18,.08) !important;
+}
+
+.app-footer .vram-status.active {
+  color: #fff !important;
+  background: rgba(255,255,255,.05) !important;
+}
+
+.prompt-menu-btn {
+  border-color: var(--console-blue-dark) !important;
+  background: rgba(0,168,232,.1) !important;
+  color: #55d3ff !important;
+}
+
+.prompt-header-menu-item.active {
+  background: rgba(230,0,18,.12) !important;
+  color: #ff6874 !important;
+}
+
+.prompt-builder-page,
+.master-prompts-page {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(230,0,18,.12), transparent 30%),
+    #0d0d0d !important;
+}
+
+.prompt-builder-tool-btn.master {
+  border-color: var(--console-red-dark) !important;
+  background: var(--console-red) !important;
+  box-shadow: 0 4px 0 var(--console-red-dark) !important;
+}
+
+.prompt-builder-tool-btn.preview,
+.prompt-builder-label.has-value,
+.prompt-builder-open-btn.has-active-labels,
+.master-prompt-toggle.enabled {
+  border-color: #555 !important;
+  background: #444 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 0 #222 !important;
+}
+
+.master-prompt-button {
+  border-color: var(--console-red-dark) !important;
+  box-shadow: 0 4px 0 var(--console-red-dark) !important;
+}
+
+.history-restore-btn {
+  background: #444 !important;
+  border-color: #555 !important;
+}
+
+.history-delete-btn {
+  background: var(--console-red) !important;
+  border-color: var(--console-red-dark) !important;
+}
+
+/* The generation card should wrap its contents and finish immediately
+   beneath the action row, rather than stretching into unused space. */
+@media (max-width: 600px) {
+  .generation-embed {
+    flex: 0 0 auto !important;
+    height: fit-content !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .generation-embed .generation-actions {
+    flex: 0 0 auto !important;
+    margin-bottom: 0 !important;
+  }
+}
