@@ -1378,6 +1378,17 @@ html, body, #root {
   gap: 7px;
   touch-action: manipulation;
 }
+.prompt-builder-page-list.is-dragging {
+  overflow: hidden;
+}
+.prompt-builder-drag-handle {
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+.prompt-builder-drag-ghost {
+  will-change: left, top, transform;
+  transition: box-shadow .12s ease, background .12s ease;
+}
 .prompt-builder-page-list .prompt-builder-item.dragging {
   opacity: .65;
 }
