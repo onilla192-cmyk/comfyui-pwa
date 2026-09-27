@@ -26,8 +26,15 @@ const IMAGE_PROMPTS = {
 }
 
 function addImagePrompt(current: string, line: string) {
-  if (current.includes(line)) return current
-  return current.trim() ? `${current.trim()}\n${line}` : line
+  const imageLines = Object.values(IMAGE_PROMPTS).filter((imageLine) => imageLine === line || current.includes(imageLine))
+  const uniqueImageLines = [...new Set(imageLines)]
+  const remaining = current
+    .split('\n')
+    .filter((part) => !Object.values(IMAGE_PROMPTS).includes(part.trim()))
+    .join('\n')
+    .trim()
+  const top = uniqueImageLines.join('\n')
+  return remaining ? `${top}\n\n${remaining}` : top
 }
 
 function removeImagePrompt(current: string, line: string) {
