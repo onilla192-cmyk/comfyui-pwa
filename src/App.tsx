@@ -76,6 +76,11 @@ export default function App() {
   const [activePromptBuilderLabel, setActivePromptBuilderLabel] = useState<string | null>(null)
   const [promptBuilderPageOpen, setPromptBuilderPageOpen] = useState(false)
   const [promptHeaderMenuOpen, setPromptHeaderMenuOpen] = useState(false)
+  const [promptBuilderLabels, setPromptBuilderLabels] = useState<string[]>(() => {
+    const savedOrder = Array.isArray(saved.promptBuilderLabels) ? saved.promptBuilderLabels.filter((label: unknown): label is string => typeof label === 'string' && PROMPT_BUILDER_LABELS.includes(label)) : []
+    return [...savedOrder, ...PROMPT_BUILDER_LABELS.filter((label) => !savedOrder.includes(label))]
+  })
+  const [draggingPromptBuilderLabel, setDraggingPromptBuilderLabel] = useState<string | null>(null)
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -167,7 +172,7 @@ export default function App() {
 
   useEffect(() => {
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, negativePrompt, results, trash,
+      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
@@ -175,7 +180,7 @@ export default function App() {
       promptId: currentPromptId.current, progress,
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
+  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
@@ -1053,31 +1058,64 @@ export default function App() {
             </button>
           </div>
           <div className="prompt-builder-page-list">
-            {PROMPT_BUILDER_LABELS.map((label) => {
+            {promptBuilderLabels.map((label) => {
               const value = promptBuilderValues[label] ?? ''
               const hasValue = value.trim().length > 0
               const inputId = 'prompt-builder-page-' + label.replace(/[^A-Z0-9]+/g, '-').toLowerCase()
               return (
-                <div className={`prompt-builder-item${hasValue ? ' has-value' : ''}`} key={label}>
-                  <button
-                    type="button"
-                    className={`prompt-builder-label${hasValue ? ' has-value' : ''}`}
-                    onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)}
-                    disabled={isBusy}
-                  >
-                    {hasValue ? label + ': ' + value : label}
-                  </button>
-                  {activePromptBuilderLabel === label && (
-                    <input
-                      id={inputId}
-                      className="prompt-builder-input"
-                      value={value}
-                      onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))}
-                      placeholder={'Enter ' + label.toLowerCase() + '...'}
+                <div
+                  className={`prompt-builder-item${hasValue ? ' has-value' : ''}${draggingPromptBuilderLabel === label ? ' dragging' : ''}`}
+                  key={label}
+                  draggable={!isBusy}
+                  onDragStart={(event) => {
+                    if (isBusy) return
+                    setDraggingPromptBuilderLabel(label)
+                    event.dataTransfer.effectAllowed = 'move'
+                    event.dataTransfer.setData('text/plain', label)
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault()
+                    event.dataTransfer.dropEffect = 'move'
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    const from = event.dataTransfer.getData('text/plain') || draggingPromptBuilderLabel
+                    if (!from || from === label) return
+                    setPromptBuilderLabels((current) => {
+                      const next = [...current]
+                      const fromIndex = next.indexOf(from)
+                      const toIndex = next.indexOf(label)
+                      if (fromIndex < 0 || toIndex < 0) return current
+                      next.splice(fromIndex, 1)
+                      next.splice(toIndex, 0, from)
+                      return next
+                    })
+                    setDraggingPromptBuilderLabel(null)
+                  }}
+                  onDragEnd={() => setDraggingPromptBuilderLabel(null)}
+                >
+                  <div className="prompt-builder-drag-handle" aria-hidden="true">⋮⋮</div>
+                  <div className="prompt-builder-control">
+                    <button
+                      type="button"
+                      className={`prompt-builder-label${hasValue ? ' has-value' : ''}`}
+                      onClick={() => setActivePromptBuilderLabel((current) => current === label ? null : label)}
                       disabled={isBusy}
-                      autoFocus
-                    />
-                  )}
+                    >
+                      {hasValue ? label + ': ' + value : label}
+                    </button>
+                    {activePromptBuilderLabel === label && (
+                      <input
+                        id={inputId}
+                        className="prompt-builder-input"
+                        value={value}
+                        onChange={(e) => setPromptBuilderValues((current) => ({ ...current, [label]: e.target.value }))}
+                        placeholder={'Enter ' + label.toLowerCase() + '...'}
+                        disabled={isBusy}
+                        autoFocus
+                      />
+                    )}
+                  </div>
                 </div>
               )
             })}
