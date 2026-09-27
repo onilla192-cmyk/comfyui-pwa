@@ -81,6 +81,10 @@ export default function App() {
     return [...savedOrder, ...PROMPT_BUILDER_LABELS.filter((label) => !savedOrder.includes(label))]
   })
   const [draggingPromptBuilderLabel, setDraggingPromptBuilderLabel] = useState<string | null>(null)
+  const [promptBuilderDragPosition, setPromptBuilderDragPosition] = useState<{ x: number; y: number } | null>(null)
+  const promptBuilderListRef = useRef<HTMLDivElement | null>(null)
+  const promptBuilderDragTimer = useRef<number | null>(null)
+  const promptBuilderDragY = useRef(0)
   const [activePromptLabelIds, setActivePromptLabelIds] = useState<string[]>(() => {
     const nav = performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
@@ -141,12 +145,25 @@ export default function App() {
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
 
   function movePromptBuilderLabel(label: string, clientY: number) {
+    const list = promptBuilderListRef.current
+    if (!list) return
+
+    const rect = list.getBoundingClientRect()
+    const edge = 72
+    const distanceFromTop = clientY - rect.top
+    const distanceFromBottom = rect.bottom - clientY
+    if (distanceFromTop < edge) {
+      list.scrollTop -= Math.max(4, Math.round((edge - distanceFromTop) / 6))
+    } else if (distanceFromBottom < edge) {
+      list.scrollTop += Math.max(4, Math.round((edge - distanceFromBottom) / 6))
+    }
+
     const target = document.elementFromPoint(window.innerWidth / 2, clientY)?.closest('[data-prompt-builder-label]') as HTMLElement | null
     const targetLabel = target?.dataset.promptBuilderLabel
     if (!targetLabel || targetLabel === label) return
 
-    const rect = target.getBoundingClientRect()
-    const insertBefore = clientY < rect.top + rect.height / 2
+    const targetRect = target.getBoundingClientRect()
+    const insertBefore = clientY < targetRect.top + targetRect.height / 2
 
     setPromptBuilderLabels((current) => {
       const next = [...current]
@@ -159,6 +176,15 @@ export default function App() {
       next.splice(insertIndex, 0, label)
       return next
     })
+  }
+
+  function stopPromptBuilderDrag() {
+    if (promptBuilderDragTimer.current !== null) {
+      window.clearInterval(promptBuilderDragTimer.current)
+      promptBuilderDragTimer.current = null
+    }
+    setDraggingPromptBuilderLabel(null)
+    setPromptBuilderDragPosition(null)
   }
 
   if (currentPromptId.current && !currentGenerationPrompt.current) {
@@ -1079,7 +1105,10 @@ export default function App() {
               ×
             </button>
           </div>
-          <div className={`prompt-builder-page-list${activePromptBuilderLabel ? ' focus-mode' : ''}`}>
+          <div
+            ref={promptBuilderListRef}
+            className={`prompt-builder-page-list${activePromptBuilderLabel ? ' focus-mode' : ''}`}
+          >
             {promptBuilderLabels.map((label) => {
               if (activePromptBuilderLabel && activePromptBuilderLabel !== label) return null
               const value = promptBuilderValues[label] ?? ''
@@ -1098,23 +1127,31 @@ export default function App() {
                       tabIndex={isBusy ? -1 : 0}
                       aria-label={'Reorder ' + label}
                       onPointerDown={(event) => {
-                        if (isBusy) return
-                        event.preventDefault()
-                        event.currentTarget.setPointerCapture(event.pointerId)
-                        setDraggingPromptBuilderLabel(label)
-                      }}
-                      onPointerMove={(event) => {
-                        if (draggingPromptBuilderLabel !== label) return
-                        event.preventDefault()
-                        movePromptBuilderLabel(label, event.clientY)
-                      }}
-                      onPointerUp={(event) => {
-                        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                          event.currentTarget.releasePointerCapture(event.pointerId)
-                        }
-                        setDraggingPromptBuilderLabel(null)
-                      }}
-                      onPointerCancel={() => setDraggingPromptBuilderLabel(null)}
+                      if (isBusy) return
+                      event.preventDefault()
+                      event.currentTarget.setPointerCapture(event.pointerId)
+                      promptBuilderDragY.current = event.clientY
+                      setDraggingPromptBuilderLabel(label)
+                      setPromptBuilderDragPosition({ x: event.clientX, y: event.clientY })
+                      movePromptBuilderLabel(label, event.clientY)
+                      promptBuilderDragTimer.current = window.setInterval(() => {
+                        movePromptBuilderLabel(label, promptBuilderDragY.current)
+                      }, 50)
+                    }}
+                    onPointerMove={(event) => {
+                      if (draggingPromptBuilderLabel !== label) return
+                      event.preventDefault()
+                      promptBuilderDragY.current = event.clientY
+                      setPromptBuilderDragPosition({ x: event.clientX, y: event.clientY })
+                      movePromptBuilderLabel(label, event.clientY)
+                    }}
+                    onPointerUp={(event) => {
+                      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                        event.currentTarget.releasePointerCapture(event.pointerId)
+                      }
+                      stopPromptBuilderDrag()
+                    }}
+                    onPointerCancel={stopPromptBuilderDrag}
                       onKeyDown={(event) => {
                         if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                           event.preventDefault()
@@ -1158,7 +1195,22 @@ export default function App() {
               )
             })}
           </div>
-        </section>
+        {draggingPromptBuilderLabel && promptBuilderDragPosition && (
+          <div
+            className="prompt-builder-drag-ghost"
+            style={{
+              left: promptBuilderDragPosition.x + 12,
+              top: promptBuilderDragPosition.y + 12,
+            }}
+            aria-hidden="true"
+          >
+            {(() => {
+              const value = promptBuilderValues[draggingPromptBuilderLabel] ?? ''
+              return value.trim() ? draggingPromptBuilderLabel + ': ' + value : draggingPromptBuilderLabel
+            })()}
+          </div>
+        )}
+      </section>
       )}
 
       {status === 'cancelling' && <p className="cancel-text">Cancelling generation…</p>}
