@@ -5643,3 +5643,91 @@ button:not(:disabled):focus-visible {
     0 3px 8px rgba(0,0,0,.35),
     inset 0 1px 0 rgba(255,255,255,.12) !important;
 }
+
+
+
+/* Restore Final Prompt preview as a clearly visible modal with the live assembled prompt. */
+.prompt-builder-preview-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 200 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  background: rgba(0,0,0,.78) !important;
+  overflow: hidden !important;
+}
+
+.prompt-builder-preview {
+  width: min(720px, 100%) !important;
+  max-height: min(86dvh, 760px) !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 3px solid #e60012 !important;
+  border-radius: 20px !important;
+  background: #242424 !important;
+  color: #fff !important;
+  box-shadow: 0 8px 0 #8d000a, 0 25px 50px rgba(0,0,0,.6) !important;
+}
+
+.prompt-builder-preview-header {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 14px 16px !important;
+  border-bottom: 2px solid #444 !important;
+  background: #202020 !important;
+}
+
+.prompt-builder-preview-header h2 {
+  margin: 0 !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+}
+
+.prompt-builder-preview-header span {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #aaa !important;
+  font-size: 11px !important;
+}
+
+.prompt-builder-preview-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 14px !important;
+}
+
+.prompt-builder-preview-body pre {
+  display: block !important;
+  min-height: 180px !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 2px solid #4a4a4a !important;
+  border-radius: 14px !important;
+  background: #111 !important;
+  color: #fff !important;
+  font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  text-align: left !important;
+}
+
+@media (max-width: 600px) {
+  .prompt-builder-preview-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .prompt-builder-preview {
+    width: 100% !important;
+    max-height: 90dvh !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: 0 !important;
+  }
+}
