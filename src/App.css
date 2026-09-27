@@ -5225,3 +5225,65 @@ html, body, #root {
       transparent 10px
     );
 }
+
+
+/* Let the global console background show through the app shell. */
+html, body, #root {
+  min-height: 100% !important;
+  background:
+    radial-gradient(circle at 50% -18%, rgba(230,0,18,.24), transparent 38%),
+    linear-gradient(180deg, #181818 0%, #0b0b0b 55%, #050505 100%) !important;
+}
+
+body {
+  background-attachment: fixed !important;
+}
+
+.app {
+  position: relative !important;
+  min-height: 100dvh !important;
+  background: transparent !important;
+  isolation: isolate;
+}
+
+.app::before {
+  content: '' !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(230,0,18,.15), transparent 28%),
+    radial-gradient(circle at 92% 0%, rgba(255,255,255,.05), transparent 25%),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,.014) 0,
+      rgba(255,255,255,.014) 1px,
+      transparent 1px,
+      transparent 10px
+    ) !important;
+}
+
+.app-main {
+  background: transparent !important;
+}
+
+/* Keep the visible page background on builder screens too. */
+.prompt-builder-page,
+.master-prompts-page {
+  background: transparent !important;
+}
+
+.prompt-builder-page::before,
+.master-prompts-page::before {
+  z-index: -1 !important;
+  background:
+    radial-gradient(circle at 50% -12%, rgba(230,0,18,.18), transparent 34%),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255,255,255,.012) 0,
+      rgba(255,255,255,.012) 1px,
+      transparent 1px,
+      transparent 10px
+    ) !important;
+}
