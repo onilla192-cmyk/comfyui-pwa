@@ -1276,3 +1276,14 @@ html, body, #root {
   opacity: .45;
   cursor: default;
 }
+
+
+/* Single Figure A node: widen the node without increasing its original height. */
+.image-pickers.single .image-picker-box {
+  aspect-ratio: 2 / 1;
+}
+.image-picker-box img {
+  object-fit: contain;
+  object-position: center;
+  background: #191c23;
+}
