@@ -116,6 +116,29 @@ export default function App() {
   const [imageTwo, setImageTwo] = useState<CharacterImage | null>(() => null)
 
   useEffect(() => {
+    let cancelled = false
+    const restoreSelectedImages = async () => {
+      const savedImages = [
+        { savedImage: saved.imageOne, setImage: setImageOne },
+        { savedImage: saved.imageTwo, setImage: setImageTwo },
+      ]
+      for (const { savedImage, setImage } of savedImages) {
+        if (cancelled || !savedImage?.cacheKey) continue
+        const blob = await getCachedFile(savedImage.cacheKey)
+        if (cancelled || !blob) continue
+        setImage({
+          previewUrl: URL.createObjectURL(blob),
+          comfyName: savedImage.comfyName,
+          fileName: savedImage.fileName || 'Selected image',
+          cacheKey: savedImage.cacheKey,
+        })
+      }
+    }
+    void restoreSelectedImages()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({
       prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
