@@ -1211,11 +1211,11 @@ html, body, #root {
   overflow: hidden;
 }
 .app-main {
-  height: calc(100dvh - 116px);
+  height: calc(100dvh - 94px);
   min-height: 0;
   overflow: hidden;
   padding-top: 8px;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 .generation-embed {
   padding: 12px;
