@@ -1371,6 +1371,44 @@ html, body, #root {
   min-height: 44px;
   margin-top: 5px;
 }
+.prompt-builder-page-list .prompt-builder-item {
+  display: flex;
+  align-items: stretch;
+  gap: 7px;
+  touch-action: manipulation;
+}
+.prompt-builder-page-list .prompt-builder-item.dragging {
+  opacity: .65;
+}
+.prompt-builder-drag-handle {
+  width: 30px;
+  min-width: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  align-self: flex-start;
+  min-height: 46px;
+  border: 1px solid #303540;
+  border-radius: 9px;
+  background: #151820;
+  color: #7f8795;
+  font-size: 17px;
+  letter-spacing: -3px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.prompt-builder-drag-handle:active {
+  cursor: grabbing;
+  color: #cfd3da;
+  border-color: #506db4;
+}
+.prompt-builder-page-list .prompt-builder-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .prompt-builder-item {
   display: flex;
   flex-direction: column;
@@ -1429,7 +1467,7 @@ html, body, #root {
 }
 .prompt-menu-btn {
   position: relative;
-  z-index: 101;
+  z-index: 1;
   width: 34px;
   height: 28px;
   flex: 0 0 34px;
