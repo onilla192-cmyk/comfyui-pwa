@@ -1190,3 +1190,48 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   line-height: 1;
   pointer-events: none;
 }
+
+
+/* Locked phone viewport: keep the main generation controls above the footer. */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+.app {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.app-header {
+  min-height: 0;
+  height: 0;
+  padding: 0;
+  border-bottom: 0;
+  overflow: hidden;
+}
+.app-main {
+  height: calc(100dvh - 116px);
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 8px;
+  padding-bottom: 10px;
+}
+.generation-embed {
+  padding: 12px;
+}
+.generation-embed .field {
+  margin-bottom: 10px;
+}
+.generation-embed .field:last-of-type {
+  margin-bottom: 10px;
+}
+.generation-embed .field textarea {
+  min-height: 64px;
+  padding: 10px;
+}
+.generation-actions .generate-btn,
+.generation-actions .cancel-btn,
+.idea-btn {
+  min-height: 44px;
+}
