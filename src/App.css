@@ -5406,3 +5406,79 @@ body {
 .results-page button {
   border-radius: 12px !important;
 }
+
+
+/* Completed Generations: fixed viewport, no page scrolling, colored controls */
+html:has(.results-page),
+body:has(.results-page) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+.results-page {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 80 !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(230,0,18,.22), transparent 35%),
+    linear-gradient(180deg, #181818 0%, #0c0c0c 60%, #050505 100%) !important;
+}
+
+.results-page-header {
+  flex: 0 0 auto !important;
+}
+
+.results-page-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 10px !important;
+}
+
+.results-page-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+.results-page-header-actions .results-image-toggle {
+  border: 2px solid #08799f !important;
+  background: #00a8e8 !important;
+  color: #fff !important;
+  box-shadow: 0 3px 0 #075570 !important;
+}
+
+.results-page-header-actions .results-image-toggle.active {
+  border-color: #b4000e !important;
+  background: #e60012 !important;
+  box-shadow: 0 3px 0 #8d000a !important;
+}
+
+.results-page-header-actions .close-btn {
+  border: 2px solid #b4000e !important;
+  border-radius: 12px !important;
+  background: #e60012 !important;
+  color: #fff !important;
+  box-shadow: 0 3px 0 #8d000a !important;
+}
+
+.results-page .latest-result {
+  margin: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border-color: #4a4a4a !important;
+  background: #242424 !important;
+}
+
+.results-page .latest-result > img,
+.results-page .completed-image-tap-area img {
+  max-height: calc(100dvh - 150px) !important;
+  object-fit: contain !important;
+}
