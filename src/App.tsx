@@ -134,8 +134,22 @@ export default function App() {
     let cancelled = false
     const restoreImages = async () => {
       const items = [...savedResults, ...savedTrash]
-      for (const item of items) {
-        if (cancelled || item.url.startsWith('blob:')) continue
+      const uncached = items.filter((item) => !item.url.startsWith('blob:'))
+      if (!uncached.length) return
+
+      let sourceAvailable = true
+      try {
+        const launcher = await getLauncherStatus()
+        if (launcher.comfyui === 'stopped') {
+          await startComfyUI()
+          await waitForComfyReady()
+        }
+      } catch {
+        sourceAvailable = false
+      }
+
+      for (const item of uncached) {
+        if (cancelled) return
         const cached = await getCachedImage(item.id)
         if (cancelled) return
         if (cached) {
@@ -144,6 +158,7 @@ export default function App() {
           setTrash((prev) => apply(prev))
           continue
         }
+        if (!sourceAvailable) continue
         try {
           const localUrl = await cacheImage(item.id, item.url)
           if (cancelled) {
