@@ -85,6 +85,7 @@ export default function App() {
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(() => saved.promptBuilderOpen ?? false)
   const [promptBuilderValues, setPromptBuilderValues] = useState<Record<string, string>>(() => saved.promptBuilderValues && typeof saved.promptBuilderValues === 'object' ? saved.promptBuilderValues : {})
   const [activePromptBuilderLabel, setActivePromptBuilderLabel] = useState<string | null>(null)
+  const [disabledPromptBuilderLabels, setDisabledPromptBuilderLabels] = useState<string[]>(() => Array.isArray(saved.disabledPromptBuilderLabels) ? saved.disabledPromptBuilderLabels : [])
   const [promptBuilderPageOpen, setPromptBuilderPageOpen] = useState(false)
   const [promptExpanded, setPromptExpanded] = useState(false)
   const [promptHeaderMenuOpen, setPromptHeaderMenuOpen] = useState(false)
@@ -173,7 +174,7 @@ export default function App() {
 
   function buildPromptBuilderPrompt() {
     const masterBlock = masterPrompts.filter((item) => item.enabled).map((item) => item.text.trim()).filter(Boolean).join('\n\n')
-    const normalBlock = promptBuilderLabels.map((label) => {
+    const normalBlock = promptBuilderLabels.filter((label) => !disabledPromptBuilderLabels.includes(label)).map((label) => {
       const value = promptBuilderValues[label]?.trim()
       return value ? label + ': ' + value : ''
     }).filter(Boolean).join('\n')
@@ -366,7 +367,7 @@ export default function App() {
 
   useEffect(() => {
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, masterPrompts, negativePrompt, results, trash,
+      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, disabledPromptBuilderLabels, masterPrompts, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
@@ -1320,10 +1321,14 @@ export default function App() {
                   <div className="prompt-builder-control">
                     <button
                       type="button"
-                      className={'prompt-builder-label' + (hasValue ? ' has-value' : '') + (activePromptBuilderLabel === label ? ' focused' : '')}
-                      onClick={() => {
+                      className={'prompt-builder-label' + (hasValue ? ' has-value' : '') + (disabledPromptBuilderLabels.includes(label) ? ' disabled' : '') + (activePromptBuilderLabel === label ? ' focused' : '')}
+                      onClick={(event) => {
                         if (isBusy) return
-                        setPromptBuilderValues((current) => ({ ...current, [label]: '' }))
+                        if (event.currentTarget.dataset.holdTriggered === '1') {
+                          event.currentTarget.dataset.holdTriggered = '0'
+                          return
+                        }
+                        setDisabledPromptBuilderLabels((current) => current.includes(label) ? current.filter((item) => item !== label) : [...current, label])
                       }}
                       onContextMenu={(event) => {
                         event.preventDefault()
