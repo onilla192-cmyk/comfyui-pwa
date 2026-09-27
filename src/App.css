@@ -1422,21 +1422,124 @@ html, body, #root {
 
 /* Prompt header actions */
 .prompt-header-actions {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 7px;
 }
-.prompt-idea-btn {
-  flex: 0 0 34px;
+.prompt-menu-btn {
+  position: relative;
+  z-index: 101;
   width: 34px;
-  min-height: 28px;
   height: 28px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
   padding: 0;
+  border: 1px solid #4664aa;
   border-radius: 999px;
+  background: rgba(70,100,170,.14);
+  color: #8eabef;
+  cursor: pointer;
 }
-.prompt-idea-btn svg {
+.prompt-menu-btn.active {
+  background: #202638;
+  border-color: #6686d0;
+  color: #d9e4ff;
+}
+.prompt-menu-btn:active {
+  transform: translateY(1px);
+}
+.prompt-menu-btn svg {
   width: 18px;
   height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.prompt-header-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+.prompt-header-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  width: min(230px, calc(100vw - 36px));
+  padding: 6px;
+  border: 1px solid #303540;
+  border-radius: 13px;
+  background: #171a20;
+  box-shadow: 0 14px 35px rgba(0,0,0,.42);
+}
+.prompt-header-menu-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #dfe3ea;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.prompt-header-menu-item + .prompt-header-menu-item {
+  margin-top: 2px;
+}
+.prompt-header-menu-item:hover,
+.prompt-header-menu-item:active {
+  background: #242832;
+}
+.prompt-header-menu-item.active {
+  background: rgba(56,217,139,.09);
+  color: #38d98b;
+}
+.prompt-header-menu-item:disabled {
+  opacity: .45;
+  cursor: default;
+}
+.prompt-menu-item-icon {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #3d5c91;
+  border-radius: 8px;
+  background: rgba(70,100,170,.1);
+  color: #8eabef;
+}
+.prompt-menu-item-icon.idea {
+  border-color: rgba(228,189,53,.5);
+  background: rgba(242,201,76,.1);
+  color: #f2c94c;
+}
+.prompt-menu-item-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.prompt-header-menu-item.active .prompt-menu-item-icon {
+  border-color: rgba(56,217,139,.45);
+  background: rgba(56,217,139,.08);
+  color: #38d98b;
 }
 
 /* Completed generations button */
