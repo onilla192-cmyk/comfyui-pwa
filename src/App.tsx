@@ -183,8 +183,6 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false
-    let firstCheck = true
-
     const check = async () => {
       try {
         const remote = await getRemoteControlStatus()
@@ -196,7 +194,6 @@ export default function App() {
           setComfySleeping(true)
         }
 
-        firstCheck = false
       } catch {
         if (cancelled) return
 
