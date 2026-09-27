@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, stopComfyUI } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
+import { cacheImage, getCachedImage, deleteCachedImage } from './imageCache'
 import './App.css'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
@@ -128,6 +129,36 @@ export default function App() {
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const restoreImages = async () => {
+      const items = [...savedResults, ...savedTrash]
+      for (const item of items) {
+        if (cancelled || item.url.startsWith('blob:')) continue
+        const cached = await getCachedImage(item.id)
+        if (cancelled) return
+        if (cached) {
+          const apply = (list: ResultImage[]) => list.map((entry) => entry.id === item.id ? { ...entry, url: cached } : entry)
+          setResults((prev) => apply(prev))
+          setTrash((prev) => apply(prev))
+          continue
+        }
+        try {
+          const localUrl = await cacheImage(item.id, item.url)
+          if (cancelled) {
+            URL.revokeObjectURL(localUrl)
+            return
+          }
+          const apply = (list: ResultImage[]) => list.map((entry) => entry.id === item.id ? { ...entry, url: localUrl } : entry)
+          setResults((prev) => apply(prev))
+          setTrash((prev) => apply(prev))
+        } catch {}
+      }
+    }
+    void restoreImages()
+    return () => { cancelled = true }
+  }, [])
   useEffect(() => {
     let cancelled = false
     const check = async () => {
@@ -250,9 +281,15 @@ export default function App() {
       for (const nodeId of Object.keys(entry.outputs)) {
         const nodeOutput = entry.outputs[nodeId]
         if (nodeOutput?.images) for (const img of nodeOutput.images) {
+          const imageId = `${promptId}-${img.filename}-${img.subfolder ?? ''}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+          const remoteUrl = viewImageUrl(img.filename, img.subfolder, img.type)
+          let displayUrl = remoteUrl
+          try {
+            displayUrl = await cacheImage(imageId, remoteUrl)
+          } catch {}
           images.push({
-            id: `${promptId}-${img.filename}-${img.subfolder ?? ''}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            url: viewImageUrl(img.filename, img.subfolder, img.type),
+            id: imageId,
+            url: displayUrl,
             promptId,
             prompt: currentGenerationPrompt.current?.prompt ?? '',
             negativePrompt: currentGenerationPrompt.current?.negativePrompt ?? '',
@@ -581,6 +618,9 @@ export default function App() {
   }
 
   function permanentlyDelete(id: string) {
+    const item = trash.find((x) => x.id === id)
+    if (item?.url.startsWith('blob:')) URL.revokeObjectURL(item.url)
+    void deleteCachedImage(id)
     setTrash((prev) => prev.filter((x) => x.id !== id))
   }
 
