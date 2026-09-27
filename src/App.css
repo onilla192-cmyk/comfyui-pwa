@@ -1176,3 +1176,17 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   right: 9px;
   color: #c4c8d0;
 }
+
+
+.progress-preparing {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
