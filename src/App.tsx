@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady, stopComfyUI } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, startComfyUI, waitForComfyReady } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
@@ -202,8 +202,9 @@ export default function App() {
 
   useEffect(() => {
     if (isBusy || comfySleeping || startingComfy || sleepSeconds > 0) return
-    setComfySleeping(true)
-    void stopComfyUI()
+    // Sleep is app-side standby only. Keep ComfyUI running so the next
+    // generation can start immediately without paying the GPU startup cost.
+    setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
   }, [isBusy, comfySleeping, startingComfy, sleepSeconds])
 
 
