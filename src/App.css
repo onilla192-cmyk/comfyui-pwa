@@ -3439,3 +3439,278 @@ button:active:not(:disabled) {
     padding: 10px 11px !important;
   }
 }
+
+
+/* Main interface — premium iOS home screen */
+.app-main {
+  width: min(calc(100% - 24px), 760px) !important;
+  padding: 14px 0 128px !important;
+}
+
+.generation-embed {
+  margin-top: 6px !important;
+  padding: 17px !important;
+  border: 1px solid rgba(255,255,255,.075) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(180deg, rgba(44,44,46,.72), rgba(28,28,30,.9)) !important;
+  box-shadow:
+    0 18px 45px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.045) !important;
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+}
+
+.image-pickers {
+  gap: 10px !important;
+  margin-bottom: 17px !important;
+}
+
+.image-picker-title {
+  min-height: 36px !important;
+  padding: 9px 12px !important;
+  border-radius: 15px 15px 0 0 !important;
+  background: rgba(44,44,46,.9) !important;
+  color: #f5f5f7 !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  letter-spacing: -.005em;
+}
+
+.image-picker-box {
+  border-radius: 0 0 15px 15px !important;
+  border-color: rgba(255,255,255,.075) !important;
+  background: #111113 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.image-picker-name {
+  margin: 6px 3px 0 !important;
+  color: #636366 !important;
+  font-size: 10px !important;
+}
+
+.image-upload-plus {
+  width: 52px;
+  height: 52px;
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 50%;
+  background: rgba(118,118,128,.12);
+  color: #8e8e93 !important;
+  font-size: 38px !important;
+  line-height: 48px;
+  text-align: center;
+}
+
+.image-picker-box:active .image-upload-plus {
+  background: rgba(10,132,255,.15);
+  border-color: rgba(10,132,255,.35);
+  color: #5eb0ff !important;
+}
+
+.generation-embed .field {
+  margin-bottom: 14px !important;
+}
+
+.generation-embed .field > label {
+  margin: 0 0 7px 3px !important;
+  color: #8e8e93 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.generation-embed .field textarea {
+  min-height: 82px !important;
+  padding: 13px 14px !important;
+  border-radius: 15px !important;
+  background: rgba(118,118,128,.12) !important;
+  border-color: rgba(255,255,255,.075) !important;
+}
+
+.generation-embed .field textarea:focus {
+  background: rgba(118,118,128,.16) !important;
+}
+
+.prompt-builder-open-btn {
+  min-height: 82px !important;
+  border-radius: 15px !important;
+  border-color: rgba(255,255,255,.075) !important;
+  background: rgba(118,118,128,.12) !important;
+  color: #f5f5f7 !important;
+}
+
+.generation-actions {
+  gap: 9px !important;
+  margin-top: 4px;
+}
+
+.generation-actions .generate-btn {
+  min-height: 52px !important;
+  border-radius: 15px !important;
+  font-size: 15px !important;
+  letter-spacing: -.01em;
+}
+
+.idea-btn,
+.results-btn {
+  flex-basis: 52px !important;
+  width: 52px !important;
+  min-height: 52px !important;
+  border-radius: 15px !important;
+}
+
+.idea-btn {
+  border-color: rgba(255,159,10,.28) !important;
+  background: rgba(255,159,10,.11) !important;
+  color: #ffb340 !important;
+}
+
+.results-btn {
+  border-color: rgba(10,132,255,.25) !important;
+  background: rgba(10,132,255,.10) !important;
+  color: #5eb0ff !important;
+}
+
+.latest-result {
+  margin-top: 16px !important;
+}
+
+.latest-result > img {
+  border-radius: 19px !important;
+  box-shadow: 0 16px 38px rgba(0,0,0,.3);
+}
+
+.latest-result-info {
+  margin-top: 9px !important;
+  border-radius: 15px !important;
+  background: rgba(28,28,30,.78) !important;
+}
+
+/* Bottom system status dock */
+.app-footer,
+.navigation-footer,
+.footer-nav {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 110 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 6px 10px calc(7px + env(safe-area-inset-bottom)) !important;
+  pointer-events: none;
+}
+
+.app-footer > *,
+.navigation-footer > *,
+.footer-nav > * {
+  pointer-events: auto;
+}
+
+.app-footer > div,
+.navigation-footer > div,
+.footer-nav > div {
+  width: min(100%, 620px);
+}
+
+.app-footer .vram-status,
+.navigation-footer .vram-status,
+.footer-nav .vram-status {
+  width: auto;
+  min-height: 23px;
+  padding: 3px 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 999px;
+  background: rgba(28,28,30,.9);
+  box-shadow: 0 6px 20px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.035);
+  color: #8e8e93;
+  font-size: 10px;
+  font-weight: 650;
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+.app-footer .vram-status.active,
+.navigation-footer .vram-status.active,
+.footer-nav .vram-status.active {
+  border-color: rgba(48,209,88,.22);
+  background: rgba(48,209,88,.08);
+  color: #63e687;
+}
+
+.app-footer .vram-status.free,
+.navigation-footer .vram-status.free,
+.footer-nav .vram-status.free {
+  border-color: rgba(255,69,58,.2);
+  background: rgba(255,69,58,.07);
+  color: #ff6961;
+}
+
+.app-footer .sleep-timer,
+.navigation-footer .sleep-timer,
+.footer-nav .sleep-timer {
+  color: #8e8e93;
+}
+
+.app-footer .sleep-timer button,
+.navigation-footer .sleep-timer button,
+.footer-nav .sleep-timer button {
+  color: #8e8e93;
+}
+
+/* Keep the actual navigation bar visually dominant beneath the status */
+.app-footer > div:has(.power-btn),
+.navigation-footer > div:has(.power-btn),
+.footer-nav > div:has(.power-btn) {
+  min-height: 58px;
+  padding: 5px;
+  border-radius: 21px;
+  background: rgba(28,28,30,.9);
+  border-color: rgba(255,255,255,.09);
+  box-shadow: 0 12px 38px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.045);
+}
+
+/* If status and navigation share one wrapper, turn it into a clean stacked dock. */
+.app-footer .vram-status + *,
+.navigation-footer .vram-status + *,
+.footer-nav .vram-status + * {
+  margin-top: 1px;
+}
+
+.power-btn {
+  border-radius: 16px !important;
+}
+
+@media (max-width: 600px) {
+  .app-main {
+    width: calc(100% - 16px) !important;
+    padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .generation-embed {
+    padding: 14px !important;
+    border-radius: 20px !important;
+  }
+
+  .image-pickers {
+    gap: 8px !important;
+  }
+
+  .image-picker-title {
+    min-height: 34px !important;
+    padding: 8px 10px !important;
+  }
+
+  .app-footer,
+  .navigation-footer,
+  .footer-nav {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
