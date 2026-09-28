@@ -420,7 +420,7 @@ export default function App() {
       promptId: currentPromptId.current, progress,
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked])
+  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked, hookPrompts])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
