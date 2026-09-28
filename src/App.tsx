@@ -7,7 +7,7 @@ import { DatasetPage } from './components/DatasetPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
-const HISTORY_PAGE_SIZE = 5
+const HISTORY_PAGE_SIZE = 6
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -1752,36 +1752,22 @@ export default function App() {
 }
 
 function HistoryItem({ img, index, section, onHold, onOpen, onRestore, onPermanentDelete }: { img: ResultImage; index: number; section: 'history' | 'trash'; onHold: () => void; onOpen: () => void; onRestore: () => void; onPermanentDelete: () => void }) {
-  const holdTimer = useRef<number | null>(null)
   const tapTimer = useRef<number | null>(null)
-  const didHold = useRef(false)
   const [tapArmed, setTapArmed] = useState(false)
 
-  const startHold = () => {
-    didHold.current = false
-    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current)
-    holdTimer.current = window.setTimeout(() => {
-      didHold.current = true
-      if (tapTimer.current !== null) { window.clearTimeout(tapTimer.current); tapTimer.current = null }
-      setTapArmed(false)
-      if (navigator.vibrate) navigator.vibrate(25)
-      onHold()
-    }, 650)
-  }
-
-  const endHold = () => {
-    if (holdTimer.current !== null) { window.clearTimeout(holdTimer.current); holdTimer.current = null }
-  }
-
   const handleTap = () => {
-    if (didHold.current) return
     if (tapArmed) {
-      if (tapTimer.current !== null) { window.clearTimeout(tapTimer.current); tapTimer.current = null }
+      if (tapTimer.current !== null) {
+        window.clearTimeout(tapTimer.current)
+        tapTimer.current = null
+      }
       setTapArmed(false)
       onOpen()
       return
     }
+
     setTapArmed(true)
+    if (navigator.vibrate) navigator.vibrate(12)
     if (tapTimer.current !== null) window.clearTimeout(tapTimer.current)
     tapTimer.current = window.setTimeout(() => {
       tapTimer.current = null
@@ -1790,15 +1776,19 @@ function HistoryItem({ img, index, section, onHold, onOpen, onRestore, onPermane
   }
 
   useEffect(() => () => {
-    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current)
     if (tapTimer.current !== null) window.clearTimeout(tapTimer.current)
   }, [])
 
-  return <article className={`history-item${tapArmed ? ' history-item-tap-armed' : ''}`} onPointerDown={startHold} onPointerUp={endHold} onPointerCancel={endHold} onPointerLeave={endHold} onClick={handleTap} onContextMenu={(e) => e.preventDefault()}>
+  return <article
+    className={`history-item${tapArmed ? ' history-item-tap-armed' : ''}`}
+    onClick={handleTap}
+    onContextMenu={(e) => e.preventDefault()}
+    aria-label={`${section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}. Tap twice to open details.`}
+  >
     <img src={img.url} alt={`Generated result ${index + 1}`} loading="lazy" draggable={false} />
     <div className="history-details">
       <div className="history-meta">{section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}</div>
-      <div className="history-hold-hint">Tap and hold for options</div>
+      <div className="history-hold-hint">Tap twice to open details</div>
       <div className="history-prompt"><strong>Prompt</strong><p>{img.prompt || 'Prompt not saved for this generation.'}</p></div>
       {img.negativePrompt && <div className="history-prompt negative"><strong>Negative prompt</strong><p>{img.negativePrompt}</p></div>}
       <div className="history-settings"><span>CFG <b>{img.cfg ?? '—'}</b></span><span>Steps <b>{img.steps ?? '—'}</b></span><span>Megapixels <b>{img.megapixels ?? '—'}</b></span></div>
@@ -1806,7 +1796,6 @@ function HistoryItem({ img, index, section, onHold, onOpen, onRestore, onPermane
     </div>
   </article>
 }
-
 function PromptLabelButton({ label, index, armed, onPointerDown, onPointerUp, onTap }: { label: PromptLabel; index: number; armed: boolean; onPointerDown: () => void; onPointerUp: () => void; onTap: () => void }) {
   return <button type="button" className={`prompt-label-button${armed ? ' prompt-label-button-armed' : ''}`} onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onPointerLeave={onPointerUp} onClick={onTap} onContextMenu={(e) => e.preventDefault()}>
     <span className="prompt-label-order">{index + 1}</span><span className="prompt-label-name">{label.name}</span>
