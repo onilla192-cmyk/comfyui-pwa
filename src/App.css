@@ -5794,3 +5794,20 @@ button:not(:disabled):focus-visible {
   border-color: var(--console-red, #e60012) !important;
   box-shadow: 0 0 0 3px rgba(230,0,18,.16) !important;
 }
+
+
+/* Auto-sleep lock */
+.app-footer .sleep-lock-btn {
+  color: var(--console-yellow) !important;
+  background: rgba(255,212,0,.08) !important;
+}
+.app-footer .sleep-lock-btn.locked {
+  color: var(--console-green) !important;
+  background: rgba(0,196,84,.12) !important;
+}
+.app-footer .sleep-lock-btn.unlocked {
+  color: #aeb4bf !important;
+}
+.app-footer .sleep-lock-btn:active {
+  transform: translateY(2px);
+}
