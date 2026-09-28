@@ -95,6 +95,7 @@ export default function App() {
   const [disabledPromptBuilderLabels, setDisabledPromptBuilderLabels] = useState<string[]>(() => Array.isArray(saved.disabledPromptBuilderLabels) ? saved.disabledPromptBuilderLabels : [])
   const [promptBuilderPageOpen, setPromptBuilderPageOpen] = useState(false)
   const [promptExpanded, setPromptExpanded] = useState(false)
+  const [hookPreviewExpanded, setHookPreviewExpanded] = useState(false)
   const [promptHeaderMenuOpen, setPromptHeaderMenuOpen] = useState(false)
   const [promptBuilderLabels, setPromptBuilderLabels] = useState<string[]>(() => {
     if (Array.isArray(saved.promptBuilderLabels)) {
@@ -1262,7 +1263,7 @@ export default function App() {
             </div>
           ) : (
             <>
-              <textarea id="prompt" value={prompt} onFocus={() => setPromptExpanded(true)} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
+              <textarea id="prompt" value={prompt} onFocus={() => { setPromptExpanded(true); setHookPreviewExpanded(false) }} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
             </>
           )}</div>
         <div className="field"><label htmlFor="negative">Negative prompt (optional)</label><textarea id="negative" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="What to avoid..." rows={2} /></div>
@@ -1306,10 +1307,22 @@ export default function App() {
             <button type="button" className="prompt-expanded-close" onClick={() => setPromptExpanded(false)} aria-label="Close expanded prompt">×</button>
           </div>
           {hookPrompts.length > 0 && (
-            <div className="prompt-hook-preview" aria-label="Hook Prompts">
-              {hookPrompts.map((item) => <div className="prompt-hook-preview-item" key={item.id}>{item.text}</div>)}
-              <div className="prompt-hook-return" />
-            </div>
+            <button
+              type="button"
+              className={`prompt-hook-preview${hookPreviewExpanded ? ' expanded' : ' collapsed'}`}
+              aria-expanded={hookPreviewExpanded}
+              aria-label={hookPreviewExpanded ? 'Collapse Hook Prompts' : 'Expand Hook Prompts'}
+              onClick={() => setHookPreviewExpanded((open) => !open)}
+            >
+              <span className="prompt-hook-preview-title">Hook Prompts · {hookPrompts.length}</span>
+              {hookPreviewExpanded && (
+                <span className="prompt-hook-preview-content">
+                  {hookPrompts.map((item) => <span className="prompt-hook-preview-item" key={item.id}>{item.text}</span>)}
+                  <span className="prompt-hook-return" />
+                </span>
+              )}
+              {!hookPreviewExpanded && <span className="prompt-hook-preview-chevron">⌄</span>}
+            </button>
           )}
           <textarea
             id="prompt-expanded-editor"
