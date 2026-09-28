@@ -43,15 +43,22 @@ Keep this category adult and non-graphic: suggestive/erotic atmosphere is allowe
 function getPerchanceText(instruction: string): Promise<string> {
   return new Promise((resolve, reject) => {
     let iframe = document.getElementById(PERCHANCE_IFRAME_ID) as HTMLIFrameElement | null
+
     if (!iframe) {
       iframe = document.createElement('iframe')
       iframe.id = PERCHANCE_IFRAME_ID
-      iframe.src = `${PERCHANCE_ORIGIN}/embed`
-      iframe.style.cssText = 'display:none;position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none;'
+      iframe.src = \`\${PERCHANCE_ORIGIN}/embed\`
+      iframe.style.cssText = 'display:none;position:fixed;top:.5rem;right:.5rem;width:11rem;height:3rem;background:#333;border:0;border-radius:3px;z-index:10000;'
       document.body.appendChild(iframe)
+
+      window.setTimeout(() => {
+        if (iframe && !iframe.dataset.ready) {
+          iframe.src = \`\${PERCHANCE_ORIGIN}/embed?__cacheBust=\${Math.random()}\`
+        }
+      }, 15000)
     }
 
-    const requestId = `comfyPrompt_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const requestId = \`comfyPrompt_\${Date.now()}_\${Math.random().toString(36).slice(2)}\`
     let output = ''
     let finished = false
     let ready = iframe.dataset.ready === 'true'
@@ -82,11 +89,17 @@ function getPerchanceText(instruction: string): Promise<string> {
         fail(new Error('Prompt enhancer could not connect to the AI service.'))
         return
       }
+
+      let normalizedInstruction = instruction.replace(' ', '\\u00a0')
+      if (!normalizedInstruction.includes('\\u00a0')) {
+        normalizedInstruction = \`\${normalizedInstruction}\\u00a0\`
+      }
+
       iframe.contentWindow.postMessage({
         type: 'startStream',
-        url: `${PERCHANCE_ORIGIN}/api/generate`,
+        url: \`\${PERCHANCE_ORIGIN}/api/generate\`,
         postData: {
-          instruction: instruction.replace(' ', '\u00a0'),
+          instruction: normalizedInstruction,
           startWith: '',
           stopSequences: [],
           generatorName: 'comfyui-pwa',
@@ -103,13 +116,17 @@ function getPerchanceText(instruction: string): Promise<string> {
         ready = true
         iframe!.dataset.ready = 'true'
         iframe!.contentWindow?.postMessage({ type: 'verifyUser' }, PERCHANCE_ORIGIN)
+        send()
+        return
+      }
+
+      if (event.data?.type === 'verifying') {
+        iframe!.style.display = ''
         return
       }
 
       if (event.data?.type === 'verified') {
-        iframe!.dataset.ready = 'true'
-        if (!ready) ready = true
-        send()
+        iframe!.style.display = 'none'
         return
       }
 
@@ -122,15 +139,23 @@ function getPerchanceText(instruction: string): Promise<string> {
       } else if (event.data?.type === 'streamEnd') {
         finish(output)
       } else if (event.data?.type === 'streamError') {
-        fail(new Error(`Prompt enhancer error: ${String(event.data.status ?? 'unknown error').replace(/_/g, ' ')}`))
+        const status = String(event.data.status ?? 'unknown error').replace(/_/g, ' ')
+        fail(new Error(\`Prompt enhancer error: \${status}\`))
       }
     }
 
-    const timeout = window.setTimeout(() => fail(new Error('Prompt enhancement timed out. Please try again.')), 90000)
+    const timeout = window.setTimeout(
+      () => fail(new Error('Prompt enhancement timed out. Please try again.')),
+      90000
+    )
+
     window.addEventListener('message', onMessage)
 
-    if (ready) send()
-    else if (iframe.contentWindow) iframe.contentWindow.postMessage({ type: 'verifyUser' }, PERCHANCE_ORIGIN)
+    if (ready) {
+      send()
+    } else if (iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'verifyUser' }, PERCHANCE_ORIGIN)
+    }
   })
 }
 
