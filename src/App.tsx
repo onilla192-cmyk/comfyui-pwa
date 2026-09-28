@@ -156,6 +156,7 @@ export default function App() {
   const [comfyPowerState, setComfyPowerState] = useState<'off' | 'idle' | 'active'>('off')
   const standbyReleased = useRef(false)
   const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
+  const [sleepLocked, setSleepLocked] = useState(saved.sleepLocked ?? false)
   const [logsOpen, setLogsOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
   const [standbyLogs, setStandbyLogs] = useState<string[]>([])
@@ -371,11 +372,11 @@ export default function App() {
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
-      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, sleepSeconds,
+      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, sleepSeconds, sleepLocked,
       promptId: currentPromptId.current, progress,
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds])
+  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
@@ -441,7 +442,7 @@ export default function App() {
   }, [isBusy, startingComfy])
 
   useEffect(() => {
-    if (isBusy || comfySleeping || startingComfy || sleepSeconds > 0 || standbyReleased.current) return
+    if (sleepLocked || isBusy || comfySleeping || startingComfy || sleepSeconds > 0 || standbyReleased.current) return
     // Standby: keep the ComfyUI server alive, but unload models and release
     // cached GPU memory so other software can use the VRAM.
     standbyReleased.current = true
