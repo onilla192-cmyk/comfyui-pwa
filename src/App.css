@@ -108,10 +108,21 @@
 .settings-backdrop,.history-backdrop{overscroll-behavior:contain;touch-action:none}
 .settings-drawer,.history-panel{touch-action:auto}
 .history-list{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.history-item{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer;touch-action:manipulation;transition:border-color .35s ease,box-shadow .35s ease,background .35s ease}
-.history-item-tap-armed{border-color:#38d98b !important;box-shadow:0 0 0 2px rgba(56,217,139,.22),0 0 18px rgba(56,217,139,.18);background:#18221d}
+.history-item{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer;touch-action:manipulation;transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.history-item:active{transform:scale(.985)}
+.history-item-tap-armed{
+  border-color:#38d98b !important;
+  box-shadow:0 0 0 2px rgba(56,217,139,.24),0 0 20px rgba(56,217,139,.2) !important;
+  background:#18221d !important;
+  animation:history-card-pop .28s cubic-bezier(.2,.85,.25,1);
+}
 .history-item img{user-select:none;-webkit-user-drag:none}
-.history-hold-hint{margin:-2px 0 8px;color:#6f7786;font-size:10px}
+.history-hold-hint{margin:0 0 7px;color:#7f8795;font-size:10px}
+@keyframes history-card-pop{
+  0%{transform:scale(1)}
+  45%{transform:scale(1.035)}
+  100%{transform:scale(1)}
+}
 
 
 /* Strong iPhone background scroll lock + fixed history cards */
@@ -6398,4 +6409,23 @@ body:has(.history-backdrop) .history-grid .history-actions {
     font-size: 10px !important;
     -webkit-line-clamp: 2 !important;
   }
+}
+
+
+/* Double-tap feedback for compact History cards. */
+body:has(.history-backdrop) .history-grid .history-item {
+  transform-origin: center center;
+}
+body:has(.history-backdrop) .history-grid .history-item-tap-armed {
+  border-color: #38d98b !important;
+  box-shadow: 0 0 0 2px rgba(56,217,139,.28), 0 8px 22px rgba(56,217,139,.12) !important;
+  animation: history-card-pop .28s cubic-bezier(.2,.85,.25,1);
+}
+body:has(.history-backdrop) .history-grid .history-hold-hint {
+  display: none !important;
+}
+@keyframes history-card-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.04); }
+  100% { transform: scale(1); }
 }
