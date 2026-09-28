@@ -6123,3 +6123,5 @@ button:not(:disabled):focus-visible {
 .dataset-record-prompt{display:block;width:100%;min-height:54px;box-sizing:border-box;resize:vertical;border:0;outline:0;background:transparent;color:#aeb5c1;font:inherit;font-size:10px;line-height:1.35;padding:4px 0 0;white-space:pre-wrap;overflow:auto;user-select:text;-webkit-user-select:text}
 .dataset-record-prompt:focus{color:#f3f4f6}
 .dataset-record-prompt::placeholder{color:#707987}
+
+.dataset-record-prompt{position:relative;z-index:5;pointer-events:auto;touch-action:manipulation;user-select:text!important;-webkit-user-select:text!important;-webkit-touch-callout:default}
