@@ -6429,3 +6429,88 @@ body:has(.history-backdrop) .history-grid .history-hold-hint {
   45% { transform: scale(1.04); }
   100% { transform: scale(1); }
 }
+
+
+/* Single-tap expanded History cards. */
+body:has(.history-backdrop) .history-grid .history-item {
+  cursor: pointer !important;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease !important;
+}
+
+body:has(.history-backdrop) .history-grid .history-item-expanded {
+  border-color: #38d98b !important;
+  box-shadow: 0 0 0 2px rgba(56,217,139,.22) !important;
+}
+
+body:has(.history-backdrop) .history-grid .history-item-expanded .history-details {
+  padding: 10px !important;
+}
+
+body:has(.history-backdrop) .history-grid .history-item-expanded .history-prompt {
+  display: none !important;
+}
+
+body:has(.history-backdrop) .history-expanded-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+
+body:has(.history-backdrop) .history-expanded-content label {
+  display: block !important;
+  color: #cfcfcf !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+body:has(.history-backdrop) .history-expanded-content textarea {
+  display: block !important;
+  width: 100% !important;
+  min-height: 130px !important;
+  resize: vertical !important;
+  box-sizing: border-box !important;
+  padding: 9px !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 8px !important;
+  background: #111 !important;
+  color: #f2f2f2 !important;
+  font: inherit !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  outline: none !important;
+}
+
+body:has(.history-backdrop) .history-expanded-content textarea:focus {
+  border-color: #38d98b !important;
+  box-shadow: 0 0 0 1px rgba(56,217,139,.2) !important;
+}
+
+body:has(.history-backdrop) .history-expanded-actions {
+  display: flex !important;
+  gap: 7px !important;
+  flex-wrap: wrap !important;
+}
+
+body:has(.history-backdrop) .history-expanded-actions button {
+  flex: 1 1 auto !important;
+  min-height: 34px !important;
+  border-radius: 8px !important;
+}
+
+body:has(.history-backdrop) .history-delete-btn {
+  background: #8f2525 !important;
+  color: #fff !important;
+  border: 1px solid #b53a3a !important;
+}
+
+@media (max-width: 700px) {
+  body:has(.history-backdrop) .history-grid .history-item-expanded .history-details {
+    padding: 9px !important;
+  }
+
+  body:has(.history-backdrop) .history-expanded-content textarea {
+    min-height: 120px !important;
+    font-size: 10px !important;
+  }
+}
