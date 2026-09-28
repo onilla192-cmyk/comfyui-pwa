@@ -5934,3 +5934,38 @@ button:not(:disabled):focus-visible {
 .app-footer.footer-expanded .footer-status {
   display: none !important;
 }
+
+
+/* Main prompt embed status dock */
+.generation-embed > .footer-status {
+  width: 100%;
+  margin-top: 10px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.generation-embed > .footer-status .footer-status-bubble {
+  min-width: 0;
+  justify-content: center;
+}
+.generation-embed > .footer-status .sleep-timer {
+  min-height: 28px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(255,212,0,.08);
+  border: 1px solid rgba(255,212,0,.24);
+  color: #ffd84a;
+}
+.generation-embed > .footer-status .sleep-timer strong {
+  color: #fff;
+}
+.generation-embed > .footer-status .vram-status {
+  min-height: 28px;
+  justify-content: center;
+}
+@media(max-width:480px) {
+  .generation-embed > .footer-status {
+    gap: 6px;
+  }
+}
