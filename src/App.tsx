@@ -1919,6 +1919,23 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
               placeholder="No prompt was saved for this generation."
               aria-label="Edit generation prompt"
             />
+            <div className="history-prompt-page-actions">
+              <button
+                type="button"
+                className="history-send-main-prompt"
+                disabled={!prompt.trim()}
+                onClick={() => {
+                  const confirmed = window.confirm('Send this entire prompt to the Main Prompt box? This will only replace the Main Prompt text and will not generate or send anything.')
+                  if (!confirmed) return
+                  setPrompt(prompt)
+                  // Intentionally only updates the main prompt field.
+                  window.dispatchEvent(new CustomEvent('history-send-to-main-prompt', { detail: prompt }))
+                  setPromptOpen(false)
+                }}
+              >
+                Send to Main Prompt
+              </button>
+            </div>
           </div>
         </section>
       </div>,
