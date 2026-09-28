@@ -7383,3 +7383,82 @@ body:has(.history-prompt-page-backdrop) .history-send-main-prompt:disabled {
     font-size: 13px !important;
   }
 }
+
+
+/* Hook Prompts: restore the dedicated crown button and make the page a true full-screen surface. */
+.prompt-header-actions .prompt-hook-btn {
+  width: 56px !important;
+  min-width: 56px !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+  border: 2px solid #a98212 !important;
+  border-radius: 50% !important;
+  background: linear-gradient(180deg, #d7a51e 0%, #9a6f05 100%) !important;
+  color: #fff4bd !important;
+  box-shadow: 0 4px 0 #684b03, 0 0 18px rgba(215,165,30,.16) !important;
+  cursor: pointer !important;
+}
+
+.prompt-header-actions .prompt-hook-btn svg {
+  width: 29px !important;
+  height: 29px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.prompt-header-actions .prompt-hook-btn:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 2px 0 #684b03 !important;
+}
+
+body:has(.hook-prompts-page) {
+  overflow: hidden !important;
+}
+
+body:has(.hook-prompts-page) .app-footer,
+body:has(.hook-prompts-page) .navigation-footer,
+body:has(.hook-prompts-page) .footer-nav {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-page {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2000 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: none !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  background: #151515 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-page-header {
+  padding-top: max(16px, env(safe-area-inset-top)) !important;
+}
+
+@media (max-width: 600px) {
+  .prompt-header-actions .prompt-hook-btn {
+    width: 50px !important;
+    min-width: 50px !important;
+    height: 50px !important;
+    min-height: 50px !important;
+  }
+
+  .prompt-header-actions .prompt-hook-btn svg {
+    width: 26px !important;
+    height: 26px !important;
+  }
+}
