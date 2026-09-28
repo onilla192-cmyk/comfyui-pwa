@@ -6603,3 +6603,42 @@ body:has(.history-prompt-page-backdrop) .history-grid .history-item-expanded tex
     border-radius: 10px !important;
   }
 }
+
+
+/* Recycle Bin bulk-delete control and app version marker. */
+body:has(.history-backdrop) .history-delete-all-btn {
+  border: 1px solid rgba(255,59,48,.45) !important;
+  border-radius: 8px !important;
+  background: rgba(255,59,48,.14) !important;
+  color: #ff6961 !important;
+  padding: 6px 10px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+body:has(.history-backdrop) .history-delete-all-btn:active {
+  background: rgba(255,59,48,.24) !important;
+}
+
+.app-version {
+  width: 100%;
+  padding: 2px 0 max(2px, env(safe-area-inset-bottom));
+  text-align: center;
+  color: rgba(255,255,255,.42);
+  font-size: 9px;
+  line-height: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  pointer-events: none;
+  user-select: none;
+}
+
+body:has(.history-backdrop) .app-version {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  .app-version {
+    font-size: 8px;
+  }
+}
