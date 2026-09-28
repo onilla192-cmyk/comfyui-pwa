@@ -9,11 +9,11 @@ import { DatasetPage } from './components/DatasetPage'
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 6
+const APP_VERSION = 7
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
-interface HookPrompt { id: string; name: string; text: string }
+interface HookPrompt { id: string; name: string; text: string; enabled: boolean }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
@@ -76,7 +76,7 @@ export default function App() {
   const savedPromptLabels = withLabelIds(Array.isArray(saved.promptLabels) ? saved.promptLabels : [])
   const savedPromptLabelTrash = withLabelIds(Array.isArray(saved.promptLabelTrash) ? saved.promptLabelTrash : [])
   const savedHookPrompts: HookPrompt[] = Array.isArray(saved.hookPrompts)
-    ? saved.hookPrompts.filter((item: unknown): item is HookPrompt => !!item && typeof item === 'object' && typeof (item as HookPrompt).id === 'string' && typeof (item as HookPrompt).name === 'string' && typeof (item as HookPrompt).text === 'string')
+    ? saved.hookPrompts.filter((item: unknown): item is HookPrompt => !!item && typeof item === 'object' && typeof (item as HookPrompt).id === 'string' && typeof (item as HookPrompt).name === 'string' && typeof (item as HookPrompt).text === 'string').map((item) => ({ ...item, enabled: item.enabled !== false }))
     : []
   const savedMasterPrompts: MasterPrompt[] = Array.isArray(saved.masterPrompts)
     ? saved.masterPrompts
@@ -218,7 +218,7 @@ export default function App() {
   }
 
   function createHookPrompt() {
-    setHookPromptEditing({ id: '', name: '', text: '' })
+    setHookPromptEditing({ id: '', name: '', text: '', enabled: true })
   }
 
   function saveHookPrompt() {
@@ -229,9 +229,13 @@ export default function App() {
     if (hookPromptEditing.id) {
       setHookPrompts((current) => current.map((item) => item.id === hookPromptEditing.id ? { ...item, name, text } : item))
     } else {
-      setHookPrompts((current) => [...current, { id: 'hook-' + Date.now() + '-' + Math.random().toString(36).slice(2), name, text }])
+      setHookPrompts((current) => [...current, { id: 'hook-' + Date.now() + '-' + Math.random().toString(36).slice(2), name, text, enabled: true }])
     }
     setHookPromptEditing(null)
+  }
+
+  function toggleHookPrompt(id: string) {
+    setHookPrompts((current) => current.map((item) => item.id === id ? { ...item, enabled: !item.enabled } : item))
   }
 
   function deleteHookPrompt(id: string) {
@@ -708,7 +712,7 @@ export default function App() {
 
   async function handleGenerate() {
     const mainGenerationPrompt = promptBuilderOpen ? buildPromptBuilderPrompt() : prompt.trim()
-    const hookBlock = hookPrompts.map((item) => item.text.trim()).filter(Boolean).join('\n\n')
+    const hookBlock = hookPrompts.filter((item) => item.enabled).map((item) => item.text.trim()).filter(Boolean).join('\n\n')
     const generationPrompt = hookBlock ? hookBlock + (mainGenerationPrompt ? '\n\n' + mainGenerationPrompt : '') : mainGenerationPrompt
     if (!generationPrompt || uploading.one || uploading.two || startingComfy) return
     setLatestResultId(null)
@@ -1274,7 +1278,7 @@ export default function App() {
               {cancelling ? 'Cancelling...' : 'Stop Generation'}
             </button>
           ) : (
-            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !(hookPrompts.some((item) => item.text.trim()) || (promptBuilderOpen ? buildPromptBuilderPrompt().trim() : prompt.trim()))}>
+            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !(hookPrompts.some((item) => item.enabled && item.text.trim()) || (promptBuilderOpen ? buildPromptBuilderPrompt().trim() : prompt.trim()))}>
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
@@ -1317,7 +1321,7 @@ export default function App() {
               <span className="prompt-hook-preview-title">Hook Prompts · {hookPrompts.length}</span>
               {hookPreviewExpanded && (
                 <span className="prompt-hook-preview-content">
-                  {hookPrompts.map((item) => <span className="prompt-hook-preview-item" key={item.id}>{item.text}</span>)}
+                  {hookPrompts.filter((item) => item.enabled).map((item) => <span className="prompt-hook-preview-item" key={item.id}>{item.text}</span>)}
                   <span className="prompt-hook-return" />
                 </span>
               )}
@@ -1486,7 +1490,7 @@ export default function App() {
       {hookPromptsPageOpen && (
         <section className="hook-prompts-page" aria-label="Hook Prompts">
           <div className="hook-prompts-page-header">
-            <div><h2>Hook Prompts</h2><span>Always placed first in the generated prompt, in list order.</span></div>
+            <div><h2>Hook Prompts</h2><span>Enabled hooks stay at the top of the generated prompt, in list order.</span></div>
             <button className="close-btn" type="button" onClick={() => { setHookPromptsPageOpen(false); setHookPromptEditing(null) }} aria-label="Close Hook Prompts">×</button>
           </div>
           <div className="hook-prompts-page-tools">
@@ -1494,9 +1498,12 @@ export default function App() {
           </div>
           <div className="hook-prompts-page-list">
             {hookPrompts.map((item, index) => (
-              <div className="hook-prompt-row" key={item.id}>
+              <div className={`hook-prompt-row${item.enabled ? '' : ' disabled'}`} key={item.id}>
                 <button type="button" className="hook-prompt-button" onClick={() => setHookPromptEditing(item)} disabled={isBusy}>
                   <strong>{item.name}</strong><span>{item.text}</span>
+                </button>
+                <button type="button" className={`hook-prompt-toggle${item.enabled ? ' enabled' : ' disabled'}`} onClick={() => toggleHookPrompt(item.id)} disabled={isBusy} aria-label={item.enabled ? 'Disable ' + item.name : 'Enable ' + item.name} title={item.enabled ? 'Disable' : 'Enable'}>
+                  {item.enabled ? 'ON' : 'OFF'}
                 </button>
                 <div className="hook-prompt-order">
                   <button type="button" onClick={() => moveHookPrompt(item.id, -1)} disabled={isBusy || index === 0} aria-label="Move hook prompt up">↑</button>
@@ -1511,7 +1518,7 @@ export default function App() {
             <div className="hook-prompt-editor-backdrop" onClick={() => setHookPromptEditing(null)}>
               <section className="hook-prompt-editor" onClick={(event) => event.stopPropagation()}>
                 <div className="hook-prompt-editor-header">
-                  <div><h2>{hookPromptEditing.id ? 'Edit Hook Prompt' : 'New Hook Prompt'}</h2><span>Hook Prompts are always placed first.</span></div>
+                  <div><h2>{hookPromptEditing.id ? 'Edit Hook Prompt' : 'New Hook Prompt'}</h2><span>Enabled Hook Prompts are placed first. Disabled hooks are kept for later.</span></div>
                   <button className="close-btn" type="button" onClick={() => setHookPromptEditing(null)} aria-label="Close Hook Prompt editor">×</button>
                 </div>
                 <label>Name<input value={hookPromptEditing.name} onChange={(e) => setHookPromptEditing((current) => current ? { ...current, name: e.target.value } : current)} placeholder="Example: Preservation" autoFocus /></label>
