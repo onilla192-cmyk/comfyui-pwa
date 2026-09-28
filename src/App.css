@@ -5928,3 +5928,9 @@ button:not(:disabled):focus-visible {
   background: linear-gradient(180deg, #ff8a45 0%, #df4d14 100%) !important;
   border-color: #96310c !important;
 }
+
+
+/* Hide status bubbles while the footer navigation is expanded */
+.app-footer.footer-expanded .footer-status {
+  display: none !important;
+}
