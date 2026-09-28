@@ -6117,3 +6117,9 @@ button:not(:disabled):focus-visible {
 .dataset-viewer-prompt strong{color:#fff;font-size:12px}
 .dataset-viewer-prompt button{border:1px solid #315ea8;border-radius:7px;background:#19345d;color:#fff;padding:5px 10px;font-size:11px;font-weight:800;cursor:pointer}
 .dataset-viewer-prompt p{margin:8px 0 0;color:#c5cad3;font-size:12px;line-height:1.55;white-space:pre-wrap;max-height:150px;overflow:auto}
+
+.dataset-record-image-button{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer}
+.dataset-record-image-button:focus-visible{outline:2px solid #6fa0ff;outline-offset:-2px}
+.dataset-record-prompt{display:block;width:100%;min-height:54px;box-sizing:border-box;resize:vertical;border:0;outline:0;background:transparent;color:#aeb5c1;font:inherit;font-size:10px;line-height:1.35;padding:4px 0 0;white-space:pre-wrap;overflow:auto;user-select:text;-webkit-user-select:text}
+.dataset-record-prompt:focus{color:#f3f4f6}
+.dataset-record-prompt::placeholder{color:#707987}
