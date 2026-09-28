@@ -1672,6 +1672,7 @@ export default function App() {
     })()}
     </main>
     <footer className={`app-footer${resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
+      <div className="footer-dock">
       <div className="footer-status" aria-label="ComfyUI status">
           <div className="sleep-timer footer-status-bubble" aria-live="polite">
             {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>Standby</span> : sleepSeconds === 0 ? <span>Standby</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
@@ -1680,7 +1681,6 @@ export default function App() {
             <span>{isBusy || startingComfy ? 'VRAM active' : comfySleeping ? 'VRAM free' : 'VRAM active'}</span>
           </div>
         </div>
-      <div className="footer-dock">
         <div className="footer-actions">
         <button
           className={`icon-btn sleep-lock-btn ${sleepLocked ? 'locked' : 'unlocked'}`}
