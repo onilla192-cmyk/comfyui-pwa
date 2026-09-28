@@ -904,14 +904,6 @@ export default function App() {
     }, 700)
   }
 
-  function handleHistoryHold(id: string) {
-    if (historySection === 'history') {
-      if (window.confirm('Delete this generation? It will be moved to the Recycle Bin.')) moveToTrash(id)
-    } else {
-      if (window.confirm('Permanently delete this generation? This cannot be undone.')) permanentlyDelete(id)
-    }
-  }
-
   function updateHistoryPrompt(id: string, nextPrompt: string) {
     setResults((prev) => prev.map((item) => item.id === id ? { ...item, prompt: nextPrompt } : item))
     setTrash((prev) => prev.map((item) => item.id === id ? { ...item, prompt: nextPrompt } : item))
@@ -1750,7 +1742,7 @@ export default function App() {
   </div>
 }
 
-function HistoryItem({ img, index, section, onOpen, onRestore, onPermanentDelete }: { img: ResultImage; index: number; section: 'history' | 'trash'; onHold: () => void; onOpen: () => void; onRestore: () => void; onPermanentDelete: () => void }) {
+function HistoryItem({ img, index, section, onOpen, onRestore, onPermanentDelete }: { img: ResultImage; index: number; section: 'history' | 'trash'; onOpen: () => void; onRestore: () => void; onPermanentDelete: () => void }) {
   const tapTimer = useRef<number | null>(null)
   const [tapArmed, setTapArmed] = useState(false)
 
