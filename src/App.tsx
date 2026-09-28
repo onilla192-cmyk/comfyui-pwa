@@ -9,7 +9,7 @@ import { DatasetPage } from './components/DatasetPage'
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 4
+const APP_VERSION = 5
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -1157,9 +1157,9 @@ export default function App() {
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
             <div className="prompt-header-actions">
-              <button type="button" className="prompt-hook-btn" onClick={() => setHookPromptsPageOpen(true)} aria-label="Open Hook Prompts" title="Hook Prompts">
+              {!promptBuilderOpen && <button type="button" className="prompt-hook-btn" onClick={() => setHookPromptsPageOpen(true)} aria-label="Open Hook Prompts" title="Hook Prompts">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.5 4.5a5 5 0 0 1-11 0L5 8Z"/><path d="M8 8 9.5 5h5L16 8M7 17l-1 3h12l-1-3"/><path d="M12 11v4"/></svg>
-              </button>
+              </button>}
               <button
                 type="button"
                 className={`prompt-menu-btn${promptHeaderMenuOpen ? ' active' : ''}`}
