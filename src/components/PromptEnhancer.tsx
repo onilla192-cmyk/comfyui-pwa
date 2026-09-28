@@ -122,7 +122,7 @@ function getPerchanceText(instruction: string): Promise<string> {
       } else if (event.data?.type === 'streamEnd') {
         finish(output)
       } else if (event.data?.type === 'streamError') {
-        fail(new Error(`Prompt enhancer error: ${String(event.data.status ?? 'unknown error').replaceAll('_', ' ')}`))
+        fail(new Error(`Prompt enhancer error: ${String(event.data.status ?? 'unknown error').replace(/_/g, ' ')}`))
       }
     }
 
