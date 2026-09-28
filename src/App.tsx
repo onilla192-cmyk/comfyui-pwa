@@ -475,15 +475,15 @@ export default function App() {
             setSleepSeconds(0)
           })
       })
-  }, [isBusy, comfySleeping, startingComfy, sleepSeconds])
+  }, [isBusy, comfySleeping, startingComfy, sleepSeconds, sleepLocked])
 
   useEffect(() => {
-    if (isBusy || comfySleeping || startingComfy) return
+    if (sleepLocked || isBusy || comfySleeping || startingComfy) return
     const timer = window.setInterval(() => {
       setSleepSeconds((current: number) => Math.max(0, current - 1))
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [isBusy, comfySleeping, startingComfy])
+  }, [isBusy, comfySleeping, startingComfy, sleepLocked])
 
   useEffect(() => {
     if (!logsOpen) return
