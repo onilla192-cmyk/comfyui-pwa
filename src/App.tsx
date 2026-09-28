@@ -4,7 +4,6 @@ import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
-import { PromptEnhancer } from './components/PromptEnhancer'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -1115,14 +1114,6 @@ export default function App() {
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
             <div className="prompt-header-actions">
-              <PromptEnhancer
-                initialPrompt={prompt}
-                disabled={isBusy || promptBuilderOpen}
-                onUsePrompt={(enhancedPrompt) => {
-                  setPrompt(enhancedPrompt)
-                  setPromptExpanded(true)
-                }}
-              />
               <button
                 type="button"
                 className={`prompt-menu-btn${promptHeaderMenuOpen ? ' active' : ''}`}
