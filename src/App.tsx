@@ -1639,7 +1639,6 @@ export default function App() {
               img={img}
               index={(safeHistoryPage - 1) * HISTORY_PAGE_SIZE + i}
               section={historySection}
-              onHold={() => handleHistoryHold(img.id)}
               onOpen={() => setSelectedHistoryId(img.id)}
               onRestore={() => restoreFromTrash(img.id)}
               onPermanentDelete={() => permanentlyDelete(img.id)}
@@ -1751,7 +1750,7 @@ export default function App() {
   </div>
 }
 
-function HistoryItem({ img, index, section, onHold, onOpen, onRestore, onPermanentDelete }: { img: ResultImage; index: number; section: 'history' | 'trash'; onHold: () => void; onOpen: () => void; onRestore: () => void; onPermanentDelete: () => void }) {
+function HistoryItem({ img, index, section, onOpen, onRestore, onPermanentDelete }: { img: ResultImage; index: number; section: 'history' | 'trash'; onHold: () => void; onOpen: () => void; onRestore: () => void; onPermanentDelete: () => void }) {
   const tapTimer = useRef<number | null>(null)
   const [tapArmed, setTapArmed] = useState(false)
 
