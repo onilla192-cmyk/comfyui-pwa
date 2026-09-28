@@ -890,16 +890,6 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
     min-height: 88px;
   }
 }
-   .app-header .header-subfooters { bottom: 7px; }
-  .sleep-timer {
-    min-width: 0;
-    padding: 6px 8px;
-    gap: 5px;
-    font-size: 11px;
-  }
-  .sleep-timer strong { font-size: 13px; }
-}
-
 .sleep-start-bar{width:72px;height:5px;overflow:hidden;border-radius:99px;background:#292d35}.sleep-start-bar>div{height:100%;background:#6686d0;transition:width .4s ease}
 
 
