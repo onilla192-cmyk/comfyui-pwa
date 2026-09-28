@@ -6856,3 +6856,267 @@ body:has(.history-backdrop) .history-list.history-grid {
   background: linear-gradient(180deg, #45e6d2 0%, #139f9a 100%) !important;
   border-color: #08736f !important;
 }
+
+
+/* Hook Prompts: crown control and isolated full-screen management page. */
+.prompt-hook-btn {
+  width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 2px solid #d7a91e !important;
+  border-radius: 50% !important;
+  background: linear-gradient(180deg, #ffe477 0%, #d49b00 100%) !important;
+  color: #4b3500 !important;
+  cursor: pointer !important;
+  box-shadow: 0 3px 0 #8b6500 !important;
+}
+.prompt-hook-btn svg {
+  width: 24px !important;
+  height: 24px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+.prompt-hook-btn:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 #8b6500 !important;
+}
+
+.hook-prompts-page {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 230 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: max(18px, env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)) !important;
+  background: #111 !important;
+  color: #fff !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+}
+.hook-prompts-page-header {
+  flex: 0 0 auto !important;
+  min-height: 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 0 2px 14px !important;
+  border-bottom: 1px solid #303030 !important;
+}
+.hook-prompts-page-header h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+}
+.hook-prompts-page-header span {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #9b9b9b !important;
+  font-size: 12px !important;
+}
+.hook-prompts-page-tools {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  gap: 8px !important;
+  padding: 12px 0 !important;
+}
+.hook-prompts-page-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 2px 0 20px !important;
+}
+.hook-prompt-row {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) auto auto !important;
+  gap: 8px !important;
+  align-items: stretch !important;
+  margin-bottom: 9px !important;
+}
+.hook-prompt-button {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 5px !important;
+  padding: 12px !important;
+  border: 1px solid #514518 !important;
+  border-radius: 12px !important;
+  background: #242424 !important;
+  color: #fff !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+.hook-prompt-button strong {
+  color: #ffe36a !important;
+  font-size: 13px !important;
+}
+.hook-prompt-button span {
+  color: #d7d7d7 !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+}
+.hook-prompt-order {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+.hook-prompt-order button,
+.hook-prompt-delete {
+  width: 40px !important;
+  min-height: 40px !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 9px !important;
+  background: #292929 !important;
+  color: #fff !important;
+  cursor: pointer !important;
+}
+.hook-prompt-delete {
+  color: #ff6961 !important;
+  border-color: #71322f !important;
+}
+.hook-prompt-editor-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 10 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px !important;
+  background: rgba(0,0,0,.72) !important;
+}
+.hook-prompt-editor {
+  width: min(760px, 100%) !important;
+  max-height: min(88dvh, 760px) !important;
+  overflow-y: auto !important;
+  padding: 18px !important;
+  border: 1px solid #514518 !important;
+  border-radius: 16px !important;
+  background: #1c1c1c !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5) !important;
+}
+.hook-prompt-editor-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-bottom: 16px !important;
+}
+.hook-prompt-editor-header h2 {
+  margin: 0 !important;
+  font-size: 20px !important;
+}
+.hook-prompt-editor-header span {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #999 !important;
+  font-size: 11px !important;
+}
+.hook-prompt-editor label {
+  display: block !important;
+  margin: 12px 0 !important;
+  color: #d7d7d7 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.hook-prompt-editor input,
+.hook-prompt-editor textarea {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 6px !important;
+  padding: 11px !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 9px !important;
+  background: #101010 !important;
+  color: #fff !important;
+  outline: none !important;
+}
+.hook-prompt-editor textarea {
+  min-height: 220px !important;
+  resize: vertical !important;
+  line-height: 1.5 !important;
+}
+.hook-prompt-editor input:focus,
+.hook-prompt-editor textarea:focus {
+  border-color: #d7a91e !important;
+  box-shadow: 0 0 0 2px rgba(215,169,30,.14) !important;
+}
+.hook-prompt-editor-actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  margin-top: 14px !important;
+}
+.hook-prompt-editor-actions button {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 9px !important;
+  background: #292929 !important;
+  color: #fff !important;
+  cursor: pointer !important;
+}
+.hook-prompt-editor-actions .primary {
+  background: linear-gradient(180deg, #ffe477 0%, #d49b00 100%) !important;
+  border-color: #8b6500 !important;
+  color: #3b2a00 !important;
+}
+
+.prompt-hook-preview {
+  flex: 0 0 auto !important;
+  margin: 0 0 10px !important;
+  padding: 14px 16px !important;
+  border: 2px solid #514518 !important;
+  border-radius: 14px !important;
+  background: #171717 !important;
+}
+.prompt-hook-preview-item {
+  color: #ffe45c !important;
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+}
+.prompt-hook-preview-item + .prompt-hook-preview-item {
+  margin-top: 14px !important;
+}
+.prompt-hook-return {
+  height: 14px !important;
+  border-top: 1px solid rgba(255,228,92,.18) !important;
+  margin-top: 14px !important;
+}
+.prompt-editor-page .prompt-hook-preview + textarea {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+@media (max-width: 600px) {
+  .prompt-hook-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
+  .hook-prompts-page {
+    padding: max(12px, env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+  .hook-prompt-row {
+    grid-template-columns: minmax(0,1fr) auto auto !important;
+  }
+  .hook-prompt-order button,
+  .hook-prompt-delete {
+    width: 36px !important;
+    min-height: 36px !important;
+  }
+  .prompt-hook-preview-item {
+    font-size: 15px !important;
+  }
+}
