@@ -6818,3 +6818,41 @@ body:has(.history-backdrop) .history-list.history-grid {
     font-size: 10px !important;
   }
 }
+
+
+/* Footer: every navigation button uses a distinct console color. */
+.app-footer .footer-actions .footer-power-btn.off {
+  color: #fff !important;
+  background: linear-gradient(180deg, #ff5b62 0%, #d51f2b 100%) !important;
+  border-color: #8e1018 !important;
+}
+.app-footer .footer-actions .footer-power-btn.idle {
+  color: #fff !important;
+  background: linear-gradient(180deg, #ffd84a 0%, #e5a900 100%) !important;
+  border-color: #9a6900 !important;
+}
+.app-footer .footer-actions .footer-power-btn.active {
+  color: #fff !important;
+  background: linear-gradient(180deg, #39e879 0%, #00a84f 100%) !important;
+  border-color: #007536 !important;
+}
+.app-footer .footer-actions .history-icon {
+  color: #fff !important;
+  background: linear-gradient(180deg, #5b9cff 0%, #2463d8 100%) !important;
+  border-color: #16438f !important;
+}
+.app-footer .footer-actions .logs-icon {
+  color: #fff !important;
+  background: linear-gradient(180deg, #b06cff 0%, #7132c7 100%) !important;
+  border-color: #4b208a !important;
+}
+.app-footer .footer-actions .settings-icon {
+  color: #fff !important;
+  background: linear-gradient(180deg, #ff8a45 0%, #df4d14 100%) !important;
+  border-color: #96310c !important;
+}
+.app-footer .footer-actions .dataset-icon {
+  color: #fff !important;
+  background: linear-gradient(180deg, #45e6d2 0%, #139f9a 100%) !important;
+  border-color: #08736f !important;
+}
