@@ -6088,3 +6088,8 @@ button:not(:disabled):focus-visible {
 .dataset-results strong { color: #55df9c; }
 @media(max-width:720px){.dataset-source-list{grid-template-columns:1fr}.dataset-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dataset-page-list{width:180px;flex-basis:180px}}
 @media(max-width:520px){.dataset-imported-layout{flex-direction:column}.dataset-page-list{width:100%;flex:0 0 auto;max-height:150px;border-right:0;border-bottom:1px solid #292e37}.dataset-record-grid{grid-template-columns:1fr}.dataset-toolbar{align-items:flex-start;flex-direction:column}.dataset-toolbar-actions{width:100%}.dataset-toolbar-actions button{flex:1}}
+
+.dataset-content-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dataset-danger{border:1px solid #8f1d1d;background:linear-gradient(180deg,#d94a4a 0%,#a91f1f 100%);color:#fff;border-radius:8px;padding:9px 12px;font-weight:800;box-shadow:0 2px 0 #641010;cursor:pointer}
+.dataset-danger:active{transform:translateY(2px);box-shadow:0 0 0 #641010}
+.dataset-danger:disabled{opacity:.45;cursor:not-allowed}
