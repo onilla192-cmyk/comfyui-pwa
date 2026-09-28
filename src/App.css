@@ -6267,3 +6267,86 @@ button:not(:disabled):focus-visible {
     font-size: .76rem;
   }
 }
+
+
+
+/* Final full-screen History workspace fix */
+.history-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  overflow: hidden !important;
+  touch-action: none !important;
+}
+
+.history-panel {
+  position: relative !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+}
+
+.history-header,
+.history-section-tabs,
+.history-toolbar,
+.history-pagination {
+  flex: 0 0 auto !important;
+}
+
+.history-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+}
+
+.history-pagination {
+  position: relative !important;
+  z-index: 2 !important;
+  min-height: 58px !important;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+  padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+  background: #171a20 !important;
+  border-top: 1px solid #2a2e37 !important;
+}
+
+.history-pagination button {
+  min-height: 40px !important;
+  min-width: 92px !important;
+  touch-action: manipulation !important;
+}
+
+.history-pagination span {
+  min-width: 54px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .history-backdrop {
+    padding: 0 !important;
+  }
+
+  .history-panel {
+    height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+}
