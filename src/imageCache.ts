@@ -74,3 +74,17 @@ export async function deleteCachedImage(key: string): Promise<void> {
     db.close()
   } catch {}
 }
+export async function deleteCachedFiles(keys: string[]): Promise<void> {
+  if (!keys.length) return
+  try {
+    const db = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite')
+      const store = tx.objectStore(STORE_NAME)
+      for (const key of keys) store.delete(key)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+    db.close()
+  } catch {}
+}
