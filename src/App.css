@@ -6350,3 +6350,91 @@ button:not(:disabled):focus-visible {
     border-radius: 0 !important;
   }
 }
+
+
+/* History is a dedicated full-screen page: hide the main app footer and remove the sheet effect. */
+body:has(.history-backdrop) .app-footer,
+body:has(.history-backdrop) .navigation-footer,
+body:has(.history-backdrop) .footer-nav {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body:has(.history-backdrop) .history-backdrop {
+  background: #111 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body:has(.history-backdrop) .history-panel {
+  background: #181818 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+body:has(.history-backdrop) .history-header {
+  padding: max(18px, env(safe-area-inset-top)) 18px 16px !important;
+  background: #181818 !important;
+}
+
+body:has(.history-backdrop) .history-section-tabs {
+  padding: 10px 18px 0 !important;
+  background: #181818 !important;
+}
+
+body:has(.history-backdrop) .history-toolbar {
+  padding: 12px 18px !important;
+  background: #181818 !important;
+}
+
+body:has(.history-backdrop) .history-list {
+  padding: 14px 18px 18px !important;
+  background: #111 !important;
+}
+
+body:has(.history-backdrop) .history-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+body:has(.history-backdrop) .history-grid .history-item {
+  overflow: hidden !important;
+  border-radius: 14px !important;
+  background: #202020 !important;
+  border: 1px solid #383838 !important;
+  box-shadow: none !important;
+}
+
+body:has(.history-backdrop) .history-grid .history-item > img {
+  display: block !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+  background: #151515 !important;
+}
+
+body:has(.history-backdrop) .history-grid .history-details {
+  padding: 11px !important;
+}
+
+body:has(.history-backdrop) .history-pagination {
+  min-height: 64px !important;
+  padding: 8px 18px max(8px, env(safe-area-inset-bottom)) !important;
+  background: #181818 !important;
+}
+
+@media (max-width: 600px) {
+  body:has(.history-backdrop) .history-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body:has(.history-backdrop) .history-grid .history-item > img {
+    aspect-ratio: 16 / 10 !important;
+    object-fit: cover !important;
+  }
+
+  body:has(.history-backdrop) .history-grid .history-details {
+    padding: 12px 14px !important;
+  }
+}
