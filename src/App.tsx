@@ -168,7 +168,6 @@ export default function App() {
   const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid')
   const [historyPage, setHistoryPage] = useState(1)
   const [historySection, setHistorySection] = useState<'history' | 'trash'>('history')
-  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
   const [trash, setTrash] = useState<ResultImage[]>(savedTrash)
   const currentGenerationPrompt = useRef<{ prompt: string; negativePrompt: string; cfg: number; steps: number; megapixels: number } | null>(null)
   const cleanupProgress = useRef<null | (() => void)>(null)
@@ -909,10 +908,6 @@ export default function App() {
     setTrash((prev) => prev.map((item) => item.id === id ? { ...item, prompt: nextPrompt } : item))
   }
 
-  function copyHistoryPrompt(value: string) {
-    void navigator.clipboard?.writeText(value)
-  }
-
   function handleCompletedImageTap() {
     if (completedTapTimer.current !== null) {
       window.clearTimeout(completedTapTimer.current)
@@ -936,6 +931,18 @@ export default function App() {
     setHistorySection('history')
     setHistoryPage(1)
     setHistoryOpen(true)
+  }
+
+  function moveToTrash(id: string) {
+    const item = results.find((x) => x.id === id)
+    if (!item) return
+    setResults((prev) => prev.filter((x) => x.id !== id))
+    setTrash((prev) => [item, ...prev])
+    setHistoryPage((page) => {
+      const remaining = results.length - 1
+      const pageCount = Math.max(1, Math.ceil(remaining / HISTORY_PAGE_SIZE))
+      return Math.min(page, pageCount)
+    })
   }
 
   function restoreFromTrash(id: string) {
@@ -1619,9 +1626,10 @@ export default function App() {
               img={img}
               index={(safeHistoryPage - 1) * HISTORY_PAGE_SIZE + i}
               section={historySection}
-              onOpen={() => setSelectedHistoryId(img.id)}
               onRestore={() => restoreFromTrash(img.id)}
               onPermanentDelete={() => permanentlyDelete(img.id)}
+              onTrash={() => moveToTrash(img.id)}
+              onPromptChange={(prompt) => updateHistoryPrompt(img.id, prompt)}
             />)}
           </div> : <div className="history-empty">{historySection === 'history' ? 'No generations in history.' : 'Recycle Bin is empty.'}</div>}
           {activePageCount > 1 && <div className="history-pagination">
@@ -1632,42 +1640,6 @@ export default function App() {
         </section>
       </div>}
 
-    {selectedHistoryId && (() => {
-      const item = [...results, ...trash].find((x) => x.id === selectedHistoryId)
-      if (!item) return null
-      return <div className="history-viewer-backdrop" onClick={() => setSelectedHistoryId(null)}>
-        <section className="history-viewer" onClick={(e) => e.stopPropagation()}>
-          <div className="history-viewer-header">
-            <div><h2>Generation</h2><span>{item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}</span></div>
-            <button className="close-btn" type="button" onClick={() => setSelectedHistoryId(null)}>×</button>
-          </div>
-          <div className="history-viewer-scroll">
-            <img className="history-viewer-image" src={item.url} alt="Full generated result" />
-            <div className="history-viewer-info">
-              <label>Prompt</label>
-              <textarea defaultValue={item.prompt || ''} placeholder="No prompt was saved for this generation." rows={6} id={`history-prompt-${item.id}`} />
-              <div className="history-viewer-buttons">
-                <button type="button" onClick={() => { const el = document.getElementById(`history-prompt-${item.id}`) as HTMLTextAreaElement | null; if (el) updateHistoryPrompt(item.id, el.value) }}>Save Prompt</button>
-                <button type="button" onClick={() => { const el = document.getElementById(`history-prompt-${item.id}`) as HTMLTextAreaElement | null; if (el) copyHistoryPrompt(el.value) }}>Copy Prompt</button>
-              </div>
-              {item.negativePrompt && <><label>Negative Prompt</label><div className="history-viewer-text">{item.negativePrompt}</div></>}
-              <div className="history-viewer-settings">
-                <div><span>CFG</span><b>{item.cfg ?? '—'}</b></div>
-                <div><span>Steps</span><b>{item.steps ?? '—'}</b></div>
-                <div><span>Megapixels</span><b>{item.megapixels ?? '—'}</b></div>
-              </div>
-              <div className="history-use-generated">
-                <label>Use this generated image as</label>
-                <div>
-                  <button type="button" onClick={() => void useGeneratedAsFigure(item, 'one').then((ok) => { if (ok) setSelectedHistoryId(null) })} disabled={isBusy || isUploading}>Figure A</button>
-                  <button type="button" onClick={() => void useGeneratedAsFigure(item, 'two').then((ok) => { if (ok) setSelectedHistoryId(null) })} disabled={isBusy || isUploading}>Figure B</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    })()}
     </main>
     <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
@@ -1730,48 +1702,60 @@ export default function App() {
   </div>
 }
 
-function HistoryItem({ img, index, section, onOpen, onRestore, onPermanentDelete }: { img: ResultImage; index: number; section: 'history' | 'trash'; onOpen: () => void; onRestore: () => void; onPermanentDelete: () => void }) {
-  const tapTimer = useRef<number | null>(null)
-  const [tapArmed, setTapArmed] = useState(false)
+function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTrash, onPromptChange }: {
+  img: ResultImage
+  index: number
+  section: 'history' | 'trash'
+  onRestore: () => void
+  onPermanentDelete: () => void
+  onTrash: () => void
+  onPromptChange: (prompt: string) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [prompt, setPrompt] = useState(img.prompt || '')
 
-  const handleTap = () => {
-    if (tapArmed) {
-      if (tapTimer.current !== null) {
-        window.clearTimeout(tapTimer.current)
-        tapTimer.current = null
-      }
-      setTapArmed(false)
-      onOpen()
-      return
-    }
+  useEffect(() => {
+    setPrompt(img.prompt || '')
+  }, [img.prompt])
 
-    setTapArmed(true)
+  const handleCardTap = () => {
+    setExpanded((current) => !current)
     if (navigator.vibrate) navigator.vibrate(12)
-    if (tapTimer.current !== null) window.clearTimeout(tapTimer.current)
-    tapTimer.current = window.setTimeout(() => {
-      tapTimer.current = null
-      setTapArmed(false)
-    }, 700)
   }
 
-  useEffect(() => () => {
-    if (tapTimer.current !== null) window.clearTimeout(tapTimer.current)
-  }, [])
-
   return <article
-    className={`history-item${tapArmed ? ' history-item-tap-armed' : ''}`}
-    onClick={handleTap}
+    className={`history-item${expanded ? ' history-item-expanded' : ''}`}
+    onClick={handleCardTap}
     onContextMenu={(e) => e.preventDefault()}
-    aria-label={`${section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}. Tap twice to open details.`}
+    aria-label={`${section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}${expanded ? '. Expanded.' : '. Tap to expand.'}`}
   >
     <img src={img.url} alt={`Generated result ${index + 1}`} loading="lazy" draggable={false} />
     <div className="history-details">
       <div className="history-meta">{section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}</div>
-      <div className="history-hold-hint">Tap twice to open details</div>
-      <div className="history-prompt"><strong>Prompt</strong><p>{img.prompt || 'Prompt not saved for this generation.'}</p></div>
-      {img.negativePrompt && <div className="history-prompt negative"><strong>Negative prompt</strong><p>{img.negativePrompt}</p></div>}
-      <div className="history-settings"><span>CFG <b>{img.cfg ?? '—'}</b></span><span>Steps <b>{img.steps ?? '—'}</b></span><span>Megapixels <b>{img.megapixels ?? '—'}</b></span></div>
-      {section === 'trash' && <div className="history-actions"><button className="history-restore-btn" type="button" onPointerDown={(e) => e.stopPropagation()} onClick={onRestore}>Restore</button><button className="history-delete-btn permanent" type="button" onPointerDown={(e) => e.stopPropagation()} onClick={onPermanentDelete}>Delete Permanently</button></div>}
+      {!expanded && <div className="history-prompt"><p>{img.prompt || 'Prompt not saved for this generation.'}</p></div>}
+      {expanded && <div className="history-expanded-content" onClick={(e) => e.stopPropagation()}>
+        <label htmlFor={`history-prompt-${img.id}`}>Prompt</label>
+        <textarea
+          id={`history-prompt-${img.id}`}
+          value={prompt}
+          onChange={(e) => {
+            const next = e.target.value
+            setPrompt(next)
+            onPromptChange(next)
+          }}
+          placeholder="No prompt was saved for this generation."
+          rows={7}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <div className="history-expanded-actions">
+          {section === 'history'
+            ? <button className="history-delete-btn" type="button" onClick={(e) => { e.stopPropagation(); onTrash() }}>Trash</button>
+            : <>
+                <button className="history-restore-btn" type="button" onClick={(e) => { e.stopPropagation(); onRestore() }}>Restore</button>
+                <button className="history-delete-btn permanent" type="button" onClick={(e) => { e.stopPropagation(); onPermanentDelete() }}>Delete Permanently</button>
+              </>}
+        </div>
+      </div>}
     </div>
   </article>
 }
