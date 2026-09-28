@@ -1098,7 +1098,7 @@ export default function App() {
         {showImageTwo && <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />}
       </section>
 
-      <section className={`generation-embed${promptExpanded ? ' prompt-expanded' : ''}`}>
+      <section className="generation-embed">
         <div className="field">
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
@@ -1205,13 +1205,6 @@ export default function App() {
             </div>
           ) : (
             <>
-              <div className="prompt-expanded-header">
-                <div>
-                  <span className="prompt-expanded-title">Prompt</span>
-                  <span className="prompt-expanded-subtitle">Full-screen editor</span>
-                </div>
-                <button type="button" className="prompt-expanded-close" onClick={() => setPromptExpanded(false)} aria-label="Close expanded prompt">×</button>
-              </div>
               <textarea id="prompt" value={prompt} onFocus={() => setPromptExpanded(true)} onChange={(e) => setPrompt(e.target.value)} placeholder="Describe what you want to generate..." rows={4} />
             </>
           )}</div>
@@ -1236,6 +1229,25 @@ export default function App() {
           </button>
         </div>
       </section>
+
+      {promptExpanded && (
+        <div className="prompt-editor-page" role="dialog" aria-modal="true" aria-label="Prompt editor">
+          <div className="prompt-editor-page-header">
+            <div>
+              <span className="prompt-expanded-title">Prompt</span>
+              <span className="prompt-expanded-subtitle">Full-screen editor</span>
+            </div>
+            <button type="button" className="prompt-expanded-close" onClick={() => setPromptExpanded(false)} aria-label="Close expanded prompt">×</button>
+          </div>
+          <textarea
+            id="prompt-expanded-editor"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Describe what you want to generate..."
+            autoFocus
+          />
+        </div>
+      )}
 
       {promptBuilderPageOpen && (
         <section className="prompt-builder-page" aria-label="Prompt Builder">
