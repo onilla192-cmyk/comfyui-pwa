@@ -7359,3 +7359,63 @@ body:has(.history-backdrop) .history-list.history-grid {
     line-height: 1.45 !important;
   }
 }
+
+
+/* Hook Prompt enable/disable controls. */
+.hook-prompt-row {
+  grid-template-columns: minmax(0, 1fr) 44px 40px 40px !important;
+}
+
+.hook-prompt-row.disabled .hook-prompt-button {
+  opacity: .48 !important;
+  border-color: #3b3b3b !important;
+  background: #1a1a1a !important;
+}
+
+.hook-prompt-row.disabled .hook-prompt-button strong {
+  color: #999 !important;
+}
+
+.hook-prompt-toggle {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  align-self: center !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  border: 1px solid #555 !important;
+  border-radius: 9px !important;
+  background: #292929 !important;
+  color: #999 !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: .04em !important;
+  cursor: pointer !important;
+}
+
+.hook-prompt-toggle.enabled {
+  border-color: #08736f !important;
+  background: linear-gradient(180deg, #45e6d2 0%, #139f9a 100%) !important;
+  color: #073b39 !important;
+}
+
+.hook-prompt-toggle.disabled {
+  border-color: #4b4b4b !important;
+  background: #252525 !important;
+  color: #8b8b8b !important;
+}
+
+@media (max-width: 600px) {
+  .hook-prompt-row {
+    grid-template-columns: minmax(0, 1fr) 40px 36px 36px !important;
+  }
+
+  .hook-prompt-toggle {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 33px !important;
+    min-height: 33px !important;
+    font-size: 8px !important;
+  }
+}
