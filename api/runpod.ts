@@ -17,6 +17,7 @@ export default async function handler(req: any, res: any) {
   try {
     if (req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+      if (body?.action === 'cancel' && body?.jobId) { const r = await rp(`/cancel/${encodeURIComponent(body.jobId)}`); const data = await r.json(); return send(res,r.ok?200:r.status,data) }
       if (!body?.workflow) return send(res,400,{error:'workflow is required'})
       const r = await rp('/run',{method:'POST',body:JSON.stringify({input:{workflow:body.workflow,images:Array.isArray(body.images)?body.images:[]}})})
       const data = await r.json()
