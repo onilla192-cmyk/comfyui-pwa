@@ -1,5 +1,6 @@
 export type WorkflowPrompt = Record<string,{inputs:Record<string,any>;class_type:string;_meta?:Record<string,any>}>
-const REMOTE_MODE = import.meta.env.VITE_GENERATION_MODE === 'remote'
+export const isRemoteGeneration = import.meta.env.VITE_GENERATION_MODE === 'remote'
+const REMOTE_MODE = isRemoteGeneration
 const COMFY_BASE_URL = import.meta.env.PROD ? 'https://comfyui.tail84bda1.ts.net' : ''
 const LAUNCHER_BASE_URL = import.meta.env.PROD ? 'https://comfyui.tail84bda1.ts.net/launcher' : '/launcher'
 const REMOTE_API_URL = '/api/runpod'
