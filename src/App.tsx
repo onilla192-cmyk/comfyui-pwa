@@ -3,6 +3,7 @@ import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, in
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
+import { DatasetPage } from './components/DatasetPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -159,6 +160,7 @@ export default function App() {
   const [sleepLocked, setSleepLocked] = useState(saved.sleepLocked ?? false)
   const [footerExpanded, setFooterExpanded] = useState(false)
   const [logsOpen, setLogsOpen] = useState(false)
+  const [datasetOpen, setDatasetOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
   const [standbyLogs, setStandbyLogs] = useState<string[]>([])
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
@@ -1080,6 +1082,13 @@ export default function App() {
       </div>
     </div>}
 
+    {datasetOpen && (
+      <DatasetPage
+        onClose={() => setDatasetOpen(false)}
+        sourceItems={results.map((item) => ({ id: item.id, prompt: item.prompt, url: item.url, createdAt: item.createdAt }))}
+      />
+    )}
+
     <main className="app-main">
       {isBusy && progress && (
         <div className="progress-wrap" aria-label="Generation progress">
@@ -1681,7 +1690,7 @@ export default function App() {
       </div>
     })()}
     </main>
-    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
+    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <button
           className={`footer-menu-toggle ${footerExpanded ? 'expanded' : 'collapsed'}`}
@@ -1726,6 +1735,9 @@ export default function App() {
         </button>
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
+        </button>
+        <button className="icon-btn dataset-icon" type="button" onClick={() => { setDatasetOpen(true); setFooterExpanded(false) }} aria-label="Open datasets" title="Datasets">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg>
         </button>
         <button className="icon-btn logs-icon" type="button" onClick={() => setLogsOpen(true)} aria-label="Open launcher logs" title="Launcher logs">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
