@@ -1682,7 +1682,7 @@ export default function App() {
           aria-label={footerExpanded ? 'Collapse footer menu' : 'Expand footer menu'}
           title={footerExpanded ? 'Collapse footer menu' : 'Expand footer menu'}
         >
-          <span className="footer-menu-bars" aria-hidden="true"><i /><i /><i /></span>
+          <span className="footer-menu-chevron" aria-hidden="true" />
         </button>
       <div className="footer-status" aria-label="ComfyUI status">
           <div className="sleep-timer footer-status-bubble" aria-live="polite">
