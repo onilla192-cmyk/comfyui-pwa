@@ -76,7 +76,7 @@ export default function App() {
   const savedPromptLabels = withLabelIds(Array.isArray(saved.promptLabels) ? saved.promptLabels : [])
   const savedPromptLabelTrash = withLabelIds(Array.isArray(saved.promptLabelTrash) ? saved.promptLabelTrash : [])
   const savedHookPrompts: HookPrompt[] = Array.isArray(saved.hookPrompts)
-    ? saved.hookPrompts.filter((item: unknown): item is HookPrompt => !!item && typeof item === 'object' && typeof (item as HookPrompt).id === 'string' && typeof (item as HookPrompt).name === 'string' && typeof (item as HookPrompt).text === 'string').map((item) => ({ ...item, enabled: item.enabled !== false }))
+    ? saved.hookPrompts.filter((item: unknown): item is HookPrompt => !!item && typeof item === 'object' && typeof (item as HookPrompt).id === 'string' && typeof (item as HookPrompt).name === 'string' && typeof (item as HookPrompt).text === 'string').map((item: HookPrompt) => ({ ...item, enabled: item.enabled !== false }))
     : []
   const savedMasterPrompts: MasterPrompt[] = Array.isArray(saved.masterPrompts)
     ? saved.masterPrompts
