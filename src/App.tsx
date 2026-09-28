@@ -9,10 +9,11 @@ import { DatasetPage } from './components/DatasetPage'
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 3
+const APP_VERSION = 4
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
+interface HookPrompt { id: string; name: string; text: string }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
@@ -74,6 +75,9 @@ export default function App() {
   const savedTrash = withHistoryIds(Array.isArray(saved.trash) ? saved.trash : [])
   const savedPromptLabels = withLabelIds(Array.isArray(saved.promptLabels) ? saved.promptLabels : [])
   const savedPromptLabelTrash = withLabelIds(Array.isArray(saved.promptLabelTrash) ? saved.promptLabelTrash : [])
+  const savedHookPrompts: HookPrompt[] = Array.isArray(saved.hookPrompts)
+    ? saved.hookPrompts.filter((item: unknown): item is HookPrompt => !!item && typeof item === 'object' && typeof (item as HookPrompt).id === 'string' && typeof (item as HookPrompt).name === 'string' && typeof (item as HookPrompt).text === 'string')
+    : []
   const savedMasterPrompts: MasterPrompt[] = Array.isArray(saved.masterPrompts)
     ? saved.masterPrompts
         .filter((item: unknown): item is MasterPrompt => !!item && typeof item === 'object' && typeof (item as MasterPrompt).id === 'string' && typeof (item as MasterPrompt).name === 'string' && typeof (item as MasterPrompt).text === 'string')
@@ -99,6 +103,9 @@ export default function App() {
     return [...PROMPT_BUILDER_LABELS]
   })
   const [masterPrompts, setMasterPrompts] = useState<MasterPrompt[]>(savedMasterPrompts)
+  const [hookPrompts, setHookPrompts] = useState<HookPrompt[]>(savedHookPrompts)
+  const [hookPromptsPageOpen, setHookPromptsPageOpen] = useState(false)
+  const [hookPromptEditing, setHookPromptEditing] = useState<HookPrompt | null>(null)
   const [masterPromptsPageOpen, setMasterPromptsPageOpen] = useState(false)
   const [masterPromptEditing, setMasterPromptEditing] = useState<MasterPrompt | null>(null)
   const [promptBuilderPreviewOpen, setPromptBuilderPreviewOpen] = useState(false)
@@ -207,6 +214,40 @@ export default function App() {
       return next
     })
     if (activePromptBuilderLabel === label) setActivePromptBuilderLabel(null)
+  }
+
+  function createHookPrompt() {
+    setHookPromptEditing({ id: '', name: '', text: '' })
+  }
+
+  function saveHookPrompt() {
+    if (!hookPromptEditing) return
+    const name = hookPromptEditing.name.trim()
+    const text = hookPromptEditing.text.trim()
+    if (!name || !text) return
+    if (hookPromptEditing.id) {
+      setHookPrompts((current) => current.map((item) => item.id === hookPromptEditing.id ? { ...item, name, text } : item))
+    } else {
+      setHookPrompts((current) => [...current, { id: 'hook-' + Date.now() + '-' + Math.random().toString(36).slice(2), name, text }])
+    }
+    setHookPromptEditing(null)
+  }
+
+  function deleteHookPrompt(id: string) {
+    if (!window.confirm('Delete this Hook Prompt?')) return
+    setHookPrompts((current) => current.filter((item) => item.id !== id))
+  }
+
+  function moveHookPrompt(id: string, direction: -1 | 1) {
+    setHookPrompts((current) => {
+      const index = current.findIndex((item) => item.id === id)
+      const next = index + direction
+      if (index < 0 || next < 0 || next >= current.length) return current
+      const copy = [...current]
+      const [item] = copy.splice(index, 1)
+      copy.splice(next, 0, item)
+      return copy
+    })
   }
 
   function createMasterPrompt() {
@@ -371,7 +412,7 @@ export default function App() {
 
   useEffect(() => {
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, disabledPromptBuilderLabels, masterPrompts, negativePrompt, results, trash,
+      prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, disabledPromptBuilderLabels, masterPrompts, hookPrompts, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
@@ -665,7 +706,9 @@ export default function App() {
 
 
   async function handleGenerate() {
-    const generationPrompt = promptBuilderOpen ? buildPromptBuilderPrompt() : prompt.trim()
+    const mainGenerationPrompt = promptBuilderOpen ? buildPromptBuilderPrompt() : prompt.trim()
+    const hookBlock = hookPrompts.map((item) => item.text.trim()).filter(Boolean).join('\n\n')
+    const generationPrompt = hookBlock ? hookBlock + (mainGenerationPrompt ? '\n\n' + mainGenerationPrompt : '') : mainGenerationPrompt
     if (!generationPrompt || uploading.one || uploading.two || startingComfy) return
     setLatestResultId(null)
     standbyReleased.current = false
@@ -1114,6 +1157,9 @@ export default function App() {
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
             <div className="prompt-header-actions">
+              <button type="button" className="prompt-hook-btn" onClick={() => setHookPromptsPageOpen(true)} aria-label="Open Hook Prompts" title="Hook Prompts">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.5 4.5a5 5 0 0 1-11 0L5 8Z"/><path d="M8 8 9.5 5h5L16 8M7 17l-1 3h12l-1-3"/><path d="M12 11v4"/></svg>
+              </button>
               <button
                 type="button"
                 className={`prompt-menu-btn${promptHeaderMenuOpen ? ' active' : ''}`}
@@ -1259,6 +1305,12 @@ export default function App() {
             </div>
             <button type="button" className="prompt-expanded-close" onClick={() => setPromptExpanded(false)} aria-label="Close expanded prompt">×</button>
           </div>
+          {hookPrompts.length > 0 && (
+            <div className="prompt-hook-preview" aria-label="Hook Prompts">
+              {hookPrompts.map((item) => <div className="prompt-hook-preview-item" key={item.id}>{item.text}</div>)}
+              <div className="prompt-hook-return" />
+            </div>
+          )}
           <textarea
             id="prompt-expanded-editor"
             value={prompt}
@@ -1413,6 +1465,49 @@ export default function App() {
                 const value = promptBuilderValues[draggingPromptBuilderLabel] ?? ''
                 return value.trim() ? draggingPromptBuilderLabel + ': ' + value : draggingPromptBuilderLabel
               })()}
+            </div>
+          )}
+        </section>
+      )}
+
+      {hookPromptsPageOpen && (
+        <section className="hook-prompts-page" aria-label="Hook Prompts">
+          <div className="hook-prompts-page-header">
+            <div><h2>Hook Prompts</h2><span>Always placed first in the generated prompt, in list order.</span></div>
+            <button className="close-btn" type="button" onClick={() => { setHookPromptsPageOpen(false); setHookPromptEditing(null) }} aria-label="Close Hook Prompts">×</button>
+          </div>
+          <div className="hook-prompts-page-tools">
+            <button type="button" className="prompt-builder-tool-btn master" onClick={createHookPrompt} disabled={isBusy}>+ Add Hook Prompt</button>
+          </div>
+          <div className="hook-prompts-page-list">
+            {hookPrompts.map((item, index) => (
+              <div className="hook-prompt-row" key={item.id}>
+                <button type="button" className="hook-prompt-button" onClick={() => setHookPromptEditing(item)} disabled={isBusy}>
+                  <strong>{item.name}</strong><span>{item.text}</span>
+                </button>
+                <div className="hook-prompt-order">
+                  <button type="button" onClick={() => moveHookPrompt(item.id, -1)} disabled={isBusy || index === 0} aria-label="Move hook prompt up">↑</button>
+                  <button type="button" onClick={() => moveHookPrompt(item.id, 1)} disabled={isBusy || index === hookPrompts.length - 1} aria-label="Move hook prompt down">↓</button>
+                </div>
+                <button type="button" className="hook-prompt-delete" onClick={() => deleteHookPrompt(item.id)} disabled={isBusy} aria-label={'Delete ' + item.name}>×</button>
+              </div>
+            ))}
+            {!hookPrompts.length && <div className="prompt-builder-empty">No Hook Prompts yet. Add one above.</div>}
+          </div>
+          {hookPromptEditing && (
+            <div className="hook-prompt-editor-backdrop" onClick={() => setHookPromptEditing(null)}>
+              <section className="hook-prompt-editor" onClick={(event) => event.stopPropagation()}>
+                <div className="hook-prompt-editor-header">
+                  <div><h2>{hookPromptEditing.id ? 'Edit Hook Prompt' : 'New Hook Prompt'}</h2><span>Hook Prompts are always placed first.</span></div>
+                  <button className="close-btn" type="button" onClick={() => setHookPromptEditing(null)} aria-label="Close Hook Prompt editor">×</button>
+                </div>
+                <label>Name<input value={hookPromptEditing.name} onChange={(e) => setHookPromptEditing((current) => current ? { ...current, name: e.target.value } : current)} placeholder="Example: Preservation" autoFocus /></label>
+                <label>Prompt text<textarea value={hookPromptEditing.text} onChange={(e) => setHookPromptEditing((current) => current ? { ...current, text: e.target.value } : current)} placeholder="Enter the hook prompt text..." rows={10} /></label>
+                <div className="hook-prompt-editor-actions">
+                  <button type="button" onClick={() => setHookPromptEditing(null)}>Cancel</button>
+                  <button type="button" className="primary" onClick={saveHookPrompt} disabled={!hookPromptEditing.name.trim() || !hookPromptEditing.text.trim()}>Save</button>
+                </div>
+              </section>
             </div>
           )}
         </section>
