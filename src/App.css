@@ -6642,3 +6642,179 @@ body:has(.history-backdrop) .app-version {
     font-size: 8px;
   }
 }
+
+
+/* History: unified compact header with icon-only navigation. */
+body:has(.history-backdrop) .history-header {
+  min-height: 82px !important;
+  padding: max(12px, env(safe-area-inset-top)) 16px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  border-bottom: 1px solid #343434 !important;
+  background: #181818 !important;
+}
+
+body:has(.history-backdrop) .history-header-title {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+body:has(.history-backdrop) .history-header-title h2 {
+  margin: 0 !important;
+  font-size: 22px !important;
+  line-height: 1.05 !important;
+}
+
+body:has(.history-backdrop) .history-header-title span {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #999 !important;
+  font-size: 12px !important;
+}
+
+body:has(.history-backdrop) .history-header-controls {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
+  flex: 0 0 auto !important;
+}
+
+body:has(.history-backdrop) .history-mode-icon {
+  position: relative !important;
+  width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid #444 !important;
+  border-radius: 11px !important;
+  background: #242424 !important;
+  color: #aaa !important;
+  cursor: pointer !important;
+}
+
+body:has(.history-backdrop) .history-mode-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+body:has(.history-backdrop) .history-mode-icon.active {
+  color: #fff !important;
+  background: #3a3a3a !important;
+  border-color: #5a5a5a !important;
+}
+
+body:has(.history-backdrop) .history-mode-icon.active.trash {
+  color: #ff6961 !important;
+  border-color: rgba(255,59,48,.45) !important;
+  background: rgba(255,59,48,.12) !important;
+}
+
+body:has(.history-backdrop) .history-mode-icon span {
+  position: absolute !important;
+  top: -5px !important;
+  right: -5px !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: #e60012 !important;
+  color: #fff !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+body:has(.history-backdrop) .history-page-indicator {
+  color: #aaa !important;
+  font-size: 11px !important;
+  white-space: nowrap !important;
+}
+
+body:has(.history-backdrop) .history-close-btn {
+  width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid #a9000c !important;
+  border-radius: 11px !important;
+  background: #e60012 !important;
+  color: #fff !important;
+  font-size: 27px !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 3px 0 #8d000a !important;
+}
+
+body:has(.history-backdrop) .history-close-btn:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 #8d000a !important;
+}
+
+body:has(.history-backdrop) .history-delete-all-btn {
+  min-height: 36px !important;
+  padding: 0 9px !important;
+  white-space: nowrap !important;
+}
+
+body:has(.history-backdrop) .history-list.history-grid {
+  padding-top: 14px !important;
+}
+
+@media (max-width: 600px) {
+  body:has(.history-backdrop) .history-header {
+    min-height: 72px !important;
+    padding: max(10px, env(safe-area-inset-top)) 10px 10px !important;
+    gap: 7px !important;
+  }
+
+  body:has(.history-backdrop) .history-header-title h2 {
+    font-size: 19px !important;
+  }
+
+  body:has(.history-backdrop) .history-header-title span {
+    font-size: 10px !important;
+  }
+
+  body:has(.history-backdrop) .history-header-controls {
+    gap: 5px !important;
+  }
+
+  body:has(.history-backdrop) .history-mode-icon,
+  body:has(.history-backdrop) .history-close-btn {
+    width: 37px !important;
+    height: 37px !important;
+    border-radius: 9px !important;
+  }
+
+  body:has(.history-backdrop) .history-mode-icon svg {
+    width: 19px !important;
+    height: 19px !important;
+  }
+
+  body:has(.history-backdrop) .history-close-btn {
+    font-size: 24px !important;
+  }
+
+  body:has(.history-backdrop) .history-page-indicator {
+    display: none !important;
+  }
+
+  body:has(.history-backdrop) .history-delete-all-btn {
+    min-height: 32px !important;
+    padding: 0 7px !important;
+    font-size: 10px !important;
+  }
+}
