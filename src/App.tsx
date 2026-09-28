@@ -1494,19 +1494,26 @@ export default function App() {
           </div>
           <div className="hook-prompts-page-list">
             {hookPrompts.map((item, index) => (
-              <div className={`hook-prompt-row${item.enabled ? '' : ' disabled'}`} key={item.id}>
+              <article className={`hook-prompt-row${item.enabled ? '' : ' disabled'}`} key={item.id}>
                 <button type="button" className="hook-prompt-button" onClick={() => setHookPromptEditing(item)} disabled={isBusy}>
-                  <strong>{item.name}</strong><span>{item.text}</span>
+                  <span className="hook-prompt-index">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="hook-prompt-card-copy">
+                    <strong>{item.name}</strong>
+                    <span>{item.text}</span>
+                  </span>
+                  <span className="hook-prompt-status">{item.enabled ? 'Included' : 'Disabled'}</span>
                 </button>
-                <button type="button" className={`hook-prompt-toggle${item.enabled ? ' enabled' : ' disabled'}`} onClick={() => toggleHookPrompt(item.id)} disabled={isBusy} aria-label={item.enabled ? 'Disable ' + item.name : 'Enable ' + item.name} title={item.enabled ? 'Disable' : 'Enable'}>
-                  {item.enabled ? 'ON' : 'OFF'}
-                </button>
-                <div className="hook-prompt-order">
-                  <button type="button" onClick={() => moveHookPrompt(item.id, -1)} disabled={isBusy || index === 0} aria-label="Move hook prompt up">↑</button>
-                  <button type="button" onClick={() => moveHookPrompt(item.id, 1)} disabled={isBusy || index === hookPrompts.length - 1} aria-label="Move hook prompt down">↓</button>
+                <div className="hook-prompt-controls">
+                  <button type="button" className={`hook-prompt-toggle${item.enabled ? ' enabled' : ' disabled'}`} onClick={() => toggleHookPrompt(item.id)} disabled={isBusy} aria-label={item.enabled ? 'Disable ' + item.name : 'Enable ' + item.name}>
+                    {item.enabled ? 'ON' : 'OFF'}
+                  </button>
+                  <div className="hook-prompt-order">
+                    <button type="button" onClick={() => moveHookPrompt(item.id, -1)} disabled={isBusy || index === 0} aria-label="Move hook prompt up">↑</button>
+                    <button type="button" onClick={() => moveHookPrompt(item.id, 1)} disabled={isBusy || index === hookPrompts.length - 1} aria-label="Move hook prompt down">↓</button>
+                  </div>
+                  <button type="button" className="hook-prompt-delete" onClick={() => deleteHookPrompt(item.id)} disabled={isBusy} aria-label={'Delete ' + item.name}>Delete</button>
                 </div>
-                <button type="button" className="hook-prompt-delete" onClick={() => deleteHookPrompt(item.id)} disabled={isBusy} aria-label={'Delete ' + item.name}>×</button>
-              </div>
+              </article>
             ))}
             {!hookPrompts.length && <div className="prompt-builder-empty">No Hook Prompts yet. Add one above.</div>}
           </div>
