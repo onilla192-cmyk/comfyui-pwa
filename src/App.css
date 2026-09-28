@@ -7120,3 +7120,133 @@ body:has(.history-backdrop) .history-list.history-grid {
     font-size: 15px !important;
   }
 }
+
+
+/* Hook Prompts: compact cards so long text never stretches the page. */
+.hook-prompts-page {
+  background: #151515 !important;
+}
+
+.hook-prompts-page-header {
+  padding-bottom: 12px !important;
+}
+
+.hook-prompts-page-tools {
+  padding: 10px 0 12px !important;
+}
+
+.hook-prompts-page-list {
+  padding: 0 0 24px !important;
+}
+
+.hook-prompt-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 40px 40px !important;
+  gap: 7px !important;
+  align-items: stretch !important;
+  margin: 0 0 8px !important;
+}
+
+.hook-prompt-button {
+  min-width: 0 !important;
+  height: 82px !important;
+  min-height: 82px !important;
+  box-sizing: border-box !important;
+  padding: 10px 12px !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  border: 1px solid #514518 !important;
+  border-radius: 11px !important;
+  background: #202020 !important;
+}
+
+.hook-prompt-button strong {
+  width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  color: #ffe36a !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+
+.hook-prompt-button span {
+  display: -webkit-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-height: 34px !important;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  text-overflow: ellipsis !important;
+  color: #d0d0d0 !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.hook-prompt-order {
+  width: 40px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+
+.hook-prompt-order button,
+.hook-prompt-delete {
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+}
+
+.hook-prompt-delete {
+  align-self: center !important;
+}
+
+@media (max-width: 600px) {
+  .hook-prompts-page {
+    padding: max(12px, env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .hook-prompts-page-header h2 {
+    font-size: 21px !important;
+  }
+
+  .hook-prompts-page-header span {
+    max-width: 260px !important;
+    font-size: 10px !important;
+  }
+
+  .hook-prompt-row {
+    grid-template-columns: minmax(0, 1fr) 36px 36px !important;
+    gap: 5px !important;
+  }
+
+  .hook-prompt-button {
+    height: 72px !important;
+    min-height: 72px !important;
+    padding: 8px 10px !important;
+  }
+
+  .hook-prompt-button span {
+    max-height: 30px !important;
+    font-size: 10px !important;
+    line-height: 1.45 !important;
+  }
+
+  .hook-prompt-order {
+    width: 36px !important;
+  }
+
+  .hook-prompt-order button,
+  .hook-prompt-delete {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 33px !important;
+    min-height: 33px !important;
+  }
+}
