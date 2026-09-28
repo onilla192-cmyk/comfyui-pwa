@@ -5811,3 +5811,66 @@ button:not(:disabled):focus-visible {
 .app-footer .sleep-lock-btn:active {
   transform: translateY(2px);
 }
+
+
+/* Collapsible footer navigation */
+.app-footer .footer-dock {
+  position: relative;
+}
+.app-footer .footer-menu-toggle {
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: transparent !important;
+  color: var(--console-white) !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+.app-footer .footer-menu-toggle:active {
+  background: rgba(255,255,255,.08) !important;
+}
+.app-footer .footer-menu-bars {
+  width: 30px;
+  display: grid;
+  gap: 4px;
+}
+.app-footer .footer-menu-bars i {
+  display: block;
+  width: 100%;
+  height: 3px;
+  border-radius: 99px;
+  background: currentColor;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.app-footer .footer-menu-toggle.expanded .footer-menu-bars i:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.app-footer .footer-menu-toggle.expanded .footer-menu-bars i:nth-child(2) {
+  opacity: 0;
+}
+.app-footer .footer-menu-toggle.expanded .footer-menu-bars i:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+.app-footer .footer-actions {
+  overflow: hidden;
+  max-height: 0;
+  min-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-top: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-height .2s ease, opacity .15s ease, padding .2s ease;
+}
+.app-footer.footer-expanded .footer-actions {
+  max-height: 70px;
+  min-height: 61px !important;
+  padding: 5px !important;
+  border-top: 1px solid rgba(84,84,88,.38);
+  opacity: 1;
+  pointer-events: auto;
+}
