@@ -5742,3 +5742,55 @@ button:not(:disabled):focus-visible {
 .prompt-builder-label.disabled.has-value {
   opacity: .55;
 }
+
+
+/* Main Prompt: isolated full-screen editor. It is a sibling overlay, never part of the image-node layout. */
+.prompt-editor-page {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 220 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: max(18px, env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)) !important;
+  background: #111 !important;
+  color: #fff !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+}
+
+.prompt-editor-page-header {
+  flex: 0 0 auto !important;
+  min-height: 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 2px 12px !important;
+}
+
+.prompt-editor-page > textarea {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  resize: none !important;
+  margin: 0 !important;
+  padding: 18px !important;
+  border: 2px solid var(--console-red, #e60012) !important;
+  border-radius: 18px !important;
+  background: #242424 !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  line-height: 1.55 !important;
+  outline: none !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.prompt-editor-page > textarea:focus {
+  border-color: var(--console-red, #e60012) !important;
+  box-shadow: 0 0 0 3px rgba(230,0,18,.16) !important;
+}
