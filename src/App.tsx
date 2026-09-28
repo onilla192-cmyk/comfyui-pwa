@@ -1273,7 +1273,7 @@ export default function App() {
               {cancelling ? 'Cancelling...' : 'Stop Generation'}
             </button>
           ) : (
-            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !(promptBuilderOpen ? buildPromptBuilderPrompt().trim() : prompt.trim())}>
+            <button className="generate-btn" onClick={handleGenerate} disabled={isUploading || !(hookPrompts.some((item) => item.text.trim()) || (promptBuilderOpen ? buildPromptBuilderPrompt().trim() : prompt.trim()))}>
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
