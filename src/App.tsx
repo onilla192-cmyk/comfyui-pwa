@@ -1685,7 +1685,7 @@ export default function App() {
         <button
           className={`icon-btn sleep-lock-btn ${sleepLocked ? 'locked' : 'unlocked'}`}
           type="button"
-          onClick={() => setSleepLocked((current) => !current)}
+          onClick={() => setSleepLocked((current: boolean) => !current)}
           aria-pressed={sleepLocked}
           aria-label={sleepLocked ? 'Unlock auto sleep' : 'Lock auto sleep'}
           title={sleepLocked ? 'Unlock auto sleep' : 'Lock auto sleep'}
