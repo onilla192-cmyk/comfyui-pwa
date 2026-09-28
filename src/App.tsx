@@ -692,10 +692,8 @@ export default function App() {
       }
       if (which === 'one') {
         setImageOne(value)
-        setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.one))
       } else {
         setImageTwo(value)
-        setPrompt((current: string) => addImagePrompt(current, IMAGE_PROMPTS.two))
       }
       setResultsOpen(false)
       return true
