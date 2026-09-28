@@ -7331,3 +7331,55 @@ body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-card-copy st
     min-height: 31px !important;
   }
 }
+
+
+/* History prompt editor — main prompt transfer action. */
+body:has(.history-prompt-page-backdrop) .history-prompt-page-body {
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-body textarea {
+  flex: 1 1 auto !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-actions {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  justify-content: stretch !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-send-main-prompt {
+  width: 100% !important;
+  min-height: 48px !important;
+  border: 1px solid #e33b43 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(180deg, #f21a25 0%, #c9000b 100%) !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 3px 0 #850008 !important;
+  cursor: pointer !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-send-main-prompt:active {
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 #850008 !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-send-main-prompt:disabled {
+  opacity: .45 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 700px) {
+  body:has(.history-prompt-page-backdrop) .history-prompt-page-body {
+    gap: 9px !important;
+  }
+
+  body:has(.history-prompt-page-backdrop) .history-send-main-prompt {
+    min-height: 46px !important;
+    font-size: 13px !important;
+  }
+}
