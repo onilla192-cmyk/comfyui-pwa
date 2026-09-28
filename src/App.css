@@ -7250,3 +7250,112 @@ body:has(.history-backdrop) .history-list.history-grid {
     min-height: 33px !important;
   }
 }
+
+
+/* Full-screen prompt: Hook Prompts stay collapsed so the editable main prompt keeps its full space. */
+.prompt-editor-page .prompt-hook-preview {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-height: 46px !important;
+  box-sizing: border-box !important;
+  margin: 0 0 10px !important;
+  padding: 0 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  border: 2px solid #b88c16 !important;
+  border-radius: 12px !important;
+  background: #29230f !important;
+  color: #ffe45c !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  overflow: hidden !important;
+}
+
+.prompt-editor-page .prompt-hook-preview-title {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  color: #ffe45c !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.prompt-editor-page .prompt-hook-preview-chevron {
+  flex: 0 0 auto !important;
+  color: #ffe45c !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+}
+
+.prompt-editor-page .prompt-hook-preview.expanded {
+  display: block !important;
+  max-height: 38vh !important;
+  min-height: 0 !important;
+  padding: 12px 14px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.prompt-editor-page .prompt-hook-preview-content {
+  display: block !important;
+}
+
+.prompt-editor-page .prompt-hook-preview.expanded .prompt-hook-preview-title {
+  display: block !important;
+  margin-bottom: 10px !important;
+}
+
+.prompt-editor-page .prompt-hook-preview-item {
+  display: block !important;
+  color: #ffe45c !important;
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+}
+
+.prompt-editor-page .prompt-hook-preview-item + .prompt-hook-preview-item {
+  margin-top: 12px !important;
+}
+
+.prompt-editor-page .prompt-hook-return {
+  display: block !important;
+  height: 12px !important;
+  margin-top: 12px !important;
+  border-top: 1px solid rgba(255,228,92,.22) !important;
+}
+
+.prompt-editor-page .prompt-hook-preview.collapsed {
+  flex: 0 0 46px !important;
+}
+
+.prompt-editor-page .prompt-hook-preview + textarea {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+@media (max-width: 600px) {
+  .prompt-editor-page .prompt-hook-preview.collapsed {
+    flex-basis: 42px !important;
+    min-height: 42px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .prompt-editor-page .prompt-hook-preview-title {
+    font-size: 12px !important;
+  }
+
+  .prompt-editor-page .prompt-hook-preview.expanded {
+    max-height: 34vh !important;
+    padding: 10px 12px !important;
+  }
+
+  .prompt-editor-page .prompt-hook-preview-item {
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+  }
+}
