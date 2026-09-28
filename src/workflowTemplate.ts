@@ -52,7 +52,27 @@ export function buildWorkflow(inputs: WorkflowInputs): WorkflowPrompt {
   if (inputs.cfg !== undefined) workflow['459:458'].inputs.cfg = inputs.cfg
   if (inputs.steps !== undefined) workflow['459:458'].inputs.steps = inputs.steps
   if (inputs.scheduler !== undefined) workflow['459:458'].inputs.scheduler = inputs.scheduler
-  if (inputs.aspectRatio !== undefined) workflow['13'].inputs.aspect_ratio = inputs.aspectRatio
+  if (inputs.aspectRatio !== undefined) {
+    const aspectRatioAliases: Record<string, string> = {
+      '1:1': '1:1 (Square)',
+      '1:1 (Square)': '1:1 (Square)',
+      '2:3': '2:3 (Portrait Photo)',
+      '2:3 (Portrait Photo)': '2:3 (Portrait Photo)',
+      '3:2': '3:2 (Photo)',
+      '3:2 (Photo)': '3:2 (Photo)',
+      '3:4': '3:4 (Portrait Standard)',
+      '3:4 (Portrait Standard)': '3:4 (Portrait Standard)',
+      '4:3': '4:3 (Standard)',
+      '4:3 (Standard)': '4:3 (Standard)',
+      '9:16': '9:16 (Portrait Widescreen)',
+      '9:16 (Portrait Widescreen)': '9:16 (Portrait Widescreen)',
+      '16:9': '16:9 (Widescreen)',
+      '16:9 (Widescreen)': '16:9 (Widescreen)',
+      '21:9': '21:9 (Ultrawide)',
+      '21:9 (Ultrawide)': '21:9 (Ultrawide)',
+    }
+    workflow['13'].inputs.aspect_ratio = aspectRatioAliases[inputs.aspectRatio] || inputs.aspectRatio
+  }
   if (inputs.maxDimension !== undefined) {
     // Make Max Dimension authoritative for the generated output as well as the
     // reference-image Scale Image to Max Dimension nodes. ResolutionSelector
