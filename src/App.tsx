@@ -1713,6 +1713,7 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
 }) {
   const [expanded, setExpanded] = useState(false)
   const [prompt, setPrompt] = useState(img.prompt || '')
+  const [promptOpen, setPromptOpen] = useState(false)
 
   useEffect(() => {
     setPrompt(img.prompt || '')
@@ -1745,7 +1746,11 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
           }}
           placeholder="No prompt was saved for this generation."
           rows={7}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation()
+            setPromptOpen(true)
+          }}
+          readOnly
         />
         <div className="history-expanded-actions">
           {section === 'history'
@@ -1757,6 +1762,30 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
         </div>
       </div>}
     </div>
+    {promptOpen && <div className="history-prompt-page-backdrop" onClick={() => setPromptOpen(false)}>
+      <section className="history-prompt-page" onClick={(e) => e.stopPropagation()}>
+        <header className="history-prompt-page-header">
+          <div>
+            <h2>Edit Prompt</h2>
+            <span>{section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}</span>
+          </div>
+          <button type="button" className="close-btn" onClick={() => setPromptOpen(false)} aria-label="Close prompt editor">×</button>
+        </header>
+        <div className="history-prompt-page-body">
+          <textarea
+            autoFocus
+            value={prompt}
+            onChange={(e) => {
+              const next = e.target.value
+              setPrompt(next)
+              onPromptChange(next)
+            }}
+            placeholder="No prompt was saved for this generation."
+            aria-label="Edit generation prompt"
+          />
+        </div>
+      </section>
+    </div>}
   </article>
 }
 function PromptLabelButton({ label, index, armed, onPointerDown, onPointerUp, onTap }: { label: PromptLabel; index: number; armed: boolean; onPointerDown: () => void; onPointerUp: () => void; onTap: () => void }) {
