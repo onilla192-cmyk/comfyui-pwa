@@ -5863,3 +5863,68 @@ button:not(:disabled):focus-visible {
   opacity: 1;
   pointer-events: auto;
 }
+
+
+/* Rich 3D footer icon buttons */
+.app-footer .footer-actions .icon-btn {
+  position: relative;
+  border: 2px solid rgba(0,0,0,.45) !important;
+  border-radius: 12px !important;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.38),
+    inset 0 -3px 0 rgba(0,0,0,.28),
+    0 3px 0 rgba(0,0,0,.55),
+    0 5px 8px rgba(0,0,0,.28) !important;
+  transform: translateY(0);
+  transition: transform .1s ease, box-shadow .1s ease, filter .1s ease;
+  filter: saturate(1.18);
+}
+
+.app-footer .footer-actions .icon-btn:hover {
+  filter: saturate(1.35) brightness(1.06);
+}
+
+.app-footer .footer-actions .icon-btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.22),
+    inset 0 -1px 0 rgba(0,0,0,.24),
+    0 1px 0 rgba(0,0,0,.55),
+    0 2px 4px rgba(0,0,0,.22) !important;
+}
+
+.app-footer .footer-actions .sleep-lock-btn {
+  color: #fff !important;
+  background: linear-gradient(180deg, #ffd84a 0%, #e5a900 100%) !important;
+  border-color: #9a6900 !important;
+}
+
+.app-footer .footer-actions .sleep-lock-btn.locked {
+  color: #fff !important;
+  background: linear-gradient(180deg, #39e879 0%, #00a84f 100%) !important;
+  border-color: #007536 !important;
+}
+
+.app-footer .footer-actions .power-btn {
+  color: #fff !important;
+  background: linear-gradient(180deg, #ff5b62 0%, #d51f2b 100%) !important;
+  border-color: #8e1018 !important;
+}
+
+.app-footer .footer-actions .history-btn {
+  color: #fff !important;
+  background: linear-gradient(180deg, #5b9cff 0%, #2463d8 100%) !important;
+  border-color: #16438f !important;
+}
+
+.app-footer .footer-actions .logs-btn {
+  color: #fff !important;
+  background: linear-gradient(180deg, #b06cff 0%, #7132c7 100%) !important;
+  border-color: #4b208a !important;
+}
+
+.app-footer .footer-actions .settings-btn {
+  color: #fff !important;
+  background: linear-gradient(180deg, #ff8a45 0%, #df4d14 100%) !important;
+  border-color: #96310c !important;
+}
