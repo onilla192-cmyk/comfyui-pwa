@@ -6514,3 +6514,92 @@ body:has(.history-backdrop) .history-delete-btn {
     font-size: 10px !important;
   }
 }
+
+
+/* Full-page prompt editor opened from an expanded History card. */
+body:has(.history-prompt-page-backdrop) .history-prompt-page-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2000 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  background: #111 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page {
+  width: 100% !important;
+  height: 100dvh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #181818 !important;
+  color: #f2f2f2 !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-header {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: max(18px, env(safe-area-inset-top)) 18px 16px !important;
+  border-bottom: 1px solid #303030 !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-header h2 {
+  margin: 0 !important;
+  font-size: 20px !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-header span {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #999 !important;
+  font-size: 12px !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding: 18px !important;
+  display: flex !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-body textarea {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  resize: none !important;
+  box-sizing: border-box !important;
+  padding: 16px !important;
+  border: 1px solid #444 !important;
+  border-radius: 12px !important;
+  background: #101010 !important;
+  color: #f2f2f2 !important;
+  font: inherit !important;
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+  outline: none !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-prompt-page-body textarea:focus {
+  border-color: #38d98b !important;
+  box-shadow: 0 0 0 1px rgba(56,217,139,.2) !important;
+}
+
+body:has(.history-prompt-page-backdrop) .history-grid .history-item-expanded textarea {
+  cursor: pointer !important;
+}
+
+@media (max-width: 700px) {
+  body:has(.history-prompt-page-backdrop) .history-prompt-page-body {
+    padding: 12px !important;
+  }
+
+  body:has(.history-prompt-page-backdrop) .history-prompt-page-body textarea {
+    font-size: 15px !important;
+    border-radius: 10px !important;
+  }
+}
