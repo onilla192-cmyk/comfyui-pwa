@@ -1683,6 +1683,20 @@ export default function App() {
       <div className="footer-dock">
         <div className="footer-actions">
         <button
+          className={`icon-btn sleep-lock-btn ${sleepLocked ? 'locked' : 'unlocked'}`}
+          type="button"
+          onClick={() => setSleepLocked((current) => !current)}
+          aria-pressed={sleepLocked}
+          aria-label={sleepLocked ? 'Unlock auto sleep' : 'Lock auto sleep'}
+          title={sleepLocked ? 'Unlock auto sleep' : 'Lock auto sleep'}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            {sleepLocked
+              ? <><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>
+              : <><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 7.2-2.4" /></>}
+          </svg>
+        </button>
+        <button
           className={`start-comfy-btn footer-power-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
           type="button"
           onClick={() => void handleRemoteStart()}
