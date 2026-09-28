@@ -5969,3 +5969,18 @@ button:not(:disabled):focus-visible {
     gap: 6px;
   }
 }
+
+
+/* Keep all footer buttons fully visible when expanded */
+.app-footer.footer-expanded .footer-dock {
+  overflow: visible !important;
+}
+.app-footer.footer-expanded .footer-actions {
+  overflow: visible !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  max-height: 80px;
+}
+.app-footer.footer-expanded .footer-actions .icon-btn {
+  min-width: 0;
+  width: 100%;
+}
