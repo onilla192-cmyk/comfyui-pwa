@@ -9,6 +9,7 @@ import { DatasetPage } from './components/DatasetPage'
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
+const APP_VERSION = 1
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -961,6 +962,18 @@ export default function App() {
     setTrash((prev) => prev.filter((x) => x.id !== id))
   }
 
+  function deleteAllTrash() {
+    if (!trash.length) return
+    const confirmed = window.confirm('Delete all ' + trash.length + ' item' + (trash.length === 1 ? '' : 's') + ' in the Recycle Bin? This cannot be undone.')
+    if (!confirmed) return
+    for (const item of trash) {
+      if (item.url.startsWith('blob:')) URL.revokeObjectURL(item.url)
+      void deleteCachedImage(item.id)
+    }
+    setTrash([])
+    setHistoryPage(1)
+  }
+
   async function handleRemoteStart() {
     if (remoteStarting || startingComfy || comfyPowerState !== 'off') return
     setRemoteStarting(true)
@@ -1617,6 +1630,7 @@ export default function App() {
           <div className="history-toolbar">
             <span>{historySection === 'history' ? `Page ${safeHistoryPage} of ${historyPageCount}` : `Page ${safeHistoryPage} of ${trashPageCount}`}</span>
             <div className="history-view-toggle">
+              {historySection === 'trash' && trash.length > 0 && <button type="button" className="history-delete-all-btn" onClick={deleteAllTrash}>Delete All</button>}
               <button type="button" className={historyView === 'grid' ? 'active' : ''} onClick={() => setHistoryView('grid')}>Grid</button>
               <button type="button" className={historyView === 'list' ? 'active' : ''} onClick={() => setHistoryView('list')}>List</button>
             </div>
@@ -1698,6 +1712,7 @@ export default function App() {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/><path d="m19.4 15 .1.06a1.8 1.8 0 0 1-2.47 2.47l-.06-.1a1.8 1.8 0 0 0-3.1 1.04l-.01.12a1.8 1.8 0 0 1-3.6 0l-.01-.12a1.8 1.8 0 0 0-3.1-1.04l-.06.1a1.8 1.8 0 0 1-2.47-2.47l.1-.06a1.8 1.8 0 0 0-1.04-3.1l-.12-.01a1.8 1.8 0 0 1 0-3.6l.12-.01a1.8 1.8 0 0 0 1.04-3.1l-.1-.06A1.8 1.8 0 0 1 7.09 2.65l.06.1a1.8 1.8 0 0 0 3.1-1.04l.01-.12a1.8 1.8 0 0 1 3.6 0l.01.12a1.8 1.8 0 0 0 3.1 1.04l.06-.1a1.8 1.8 0 0 1 2.47 2.47l-.1.06a1.8 1.8 0 0 0 1.04 3.1l.12.01a1.8 1.8 0 0 1 0 3.6l-.12.01A1.8 1.8 0 0 0 19.4 15Z"/></svg>
         </button>
         </div>
+        <div className="app-version">ComfyUI PWA {APP_VERSION}</div>
       </div>
     </footer>
   </div>
