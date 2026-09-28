@@ -9,7 +9,7 @@ import { DatasetPage } from './components/DatasetPage'
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 1
+const APP_VERSION = 2
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -167,7 +167,6 @@ export default function App() {
   const [standbyLogs, setStandbyLogs] = useState<string[]>([])
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [historyView, setHistoryView] = useState<'grid' | 'list'>('grid')
   const [historyPage, setHistoryPage] = useState(1)
   const [historySection, setHistorySection] = useState<'history' | 'trash'>('history')
   const [trash, setTrash] = useState<ResultImage[]>(savedTrash)
@@ -1620,22 +1619,24 @@ export default function App() {
       {historyOpen && <div className="history-backdrop" onClick={() => setHistoryOpen(false)}>
         <section className="history-panel" onClick={(e) => e.stopPropagation()}>
           <div className="history-header">
-            <div><h2>{historySection === 'history' ? 'History' : 'Recycle Bin'}</h2><span>{historySection === 'history' ? `${results.length} generation${results.length === 1 ? '' : 's'}` : `${trash.length} deleted generation${trash.length === 1 ? '' : 's'}`}</span></div>
-            <button className="close-btn" type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history">×</button>
-          </div>
-          <div className="history-section-tabs">
-            <button type="button" className={historySection === 'history' ? 'active' : ''} onClick={() => { setHistorySection('history'); setHistoryPage(1) }}>History</button>
-            <button type="button" className={historySection === 'trash' ? 'active' : ''} onClick={() => { setHistorySection('trash'); setHistoryPage(1) }}>Recycle Bin{trash.length ? ` (${trash.length})` : ''}</button>
-          </div>
-          <div className="history-toolbar">
-            <span>{historySection === 'history' ? `Page ${safeHistoryPage} of ${historyPageCount}` : `Page ${safeHistoryPage} of ${trashPageCount}`}</span>
-            <div className="history-view-toggle">
+            <div className="history-header-title">
+              <h2>{historySection === 'history' ? 'History' : 'Recycle Bin'}</h2>
+              <span>{historySection === 'history' ? `${results.length} generation${results.length === 1 ? '' : 's'}` : `${trash.length} deleted generation${trash.length === 1 ? '' : 's'}`}</span>
+            </div>
+            <div className="history-header-controls">
+              <button type="button" className={`history-mode-icon${historySection === 'history' ? ' active' : ''}`} onClick={() => { setHistorySection('history'); setHistoryPage(1) }} aria-label="History" title="History">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
+              </button>
+              <button type="button" className={`history-mode-icon${historySection === 'trash' ? ' active trash' : ''}`} onClick={() => { setHistorySection('trash'); setHistoryPage(1) }} aria-label={`Recycle Bin${trash.length ? ` (${trash.length})` : ''}`} title={`Recycle Bin${trash.length ? ` (${trash.length})` : ''}`}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
+                {trash.length > 0 && <span>{trash.length}</span>}
+              </button>
               {historySection === 'trash' && trash.length > 0 && <button type="button" className="history-delete-all-btn" onClick={deleteAllTrash}>Delete All</button>}
-              <button type="button" className={historyView === 'grid' ? 'active' : ''} onClick={() => setHistoryView('grid')}>Grid</button>
-              <button type="button" className={historyView === 'list' ? 'active' : ''} onClick={() => setHistoryView('list')}>List</button>
+              <span className="history-page-indicator">{historySection === 'history' ? `Page ${safeHistoryPage} of ${historyPageCount}` : `Page ${safeHistoryPage} of ${trashPageCount}`}</span>
+              <button className="history-close-btn" type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history">×</button>
             </div>
           </div>
-          {activeItems.length ? <div className={`history-list history-${historyView}`}>
+          {activeItems.length ? <div className="history-list history-grid">
             {activeItems.map((img, i) => <HistoryItem
               key={img.id}
               img={img}
