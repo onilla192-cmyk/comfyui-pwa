@@ -7462,3 +7462,186 @@ body:has(.hook-prompts-page) .hook-prompts-page-header {
     height: 26px !important;
   }
 }
+
+
+/* Hook Prompt editor — polished modal treatment */
+body:has(.hook-prompt-editor-backdrop) {
+  overflow: hidden !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2300 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 20px !important;
+  background: rgba(4,5,7,.82) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  overflow: auto !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor {
+  width: min(680px, 100%) !important;
+  max-height: min(760px, calc(100dvh - 40px)) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(215,169,30,.48) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, #222 0%, #181818 100%) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.58), 0 0 0 1px rgba(255,255,255,.035) inset !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-header {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 20px 22px 18px !important;
+  border-bottom: 1px solid #383838 !important;
+  background: rgba(255,255,255,.018) !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-header h2 {
+  margin: 0 !important;
+  color: #f4f1e9 !important;
+  font-size: 24px !important;
+  line-height: 1.1 !important;
+  letter-spacing: -.02em !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-header span {
+  display: block !important;
+  max-width: 470px !important;
+  margin-top: 6px !important;
+  color: #949494 !important;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-header .close-btn {
+  flex: 0 0 auto !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  border: 1px solid #4a4a4a !important;
+  border-radius: 12px !important;
+  background: #2b2b2b !important;
+  color: #f2eee4 !important;
+  font-size: 25px !important;
+  line-height: 1 !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label {
+  display: block !important;
+  margin: 18px 22px 0 !important;
+  color: #bdb8ac !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .07em !important;
+  text-transform: uppercase !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label input,
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label textarea {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 8px !important;
+  border: 1px solid #414141 !important;
+  border-radius: 13px !important;
+  background: #111 !important;
+  color: #f4f2ec !important;
+  outline: none !important;
+  font: inherit !important;
+  font-weight: 400 !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.4) !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label input {
+  height: 48px !important;
+  padding: 0 14px !important;
+  font-size: 16px !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label textarea {
+  min-height: 250px !important;
+  height: min(42vh, 390px) !important;
+  padding: 14px !important;
+  resize: vertical !important;
+  line-height: 1.55 !important;
+  font-size: 14px !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label input:focus,
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label textarea:focus {
+  border-color: #d6aa2b !important;
+  box-shadow: 0 0 0 3px rgba(214,170,43,.13), inset 0 1px 3px rgba(0,0,0,.4) !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-actions {
+  flex: 0 0 auto !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  padding: 18px 22px 22px !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-actions button {
+  min-height: 48px !important;
+  border: 1px solid #444 !important;
+  border-radius: 12px !important;
+  background: #292929 !important;
+  color: #eee !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-actions button.primary {
+  border-color: #a77b0a !important;
+  background: linear-gradient(180deg,#e1b638,#b9850c) !important;
+  color: #171717 !important;
+  box-shadow: 0 3px 0 #725304 !important;
+}
+
+@media (max-width: 600px) {
+  body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-backdrop {
+    align-items: flex-start !important;
+    padding: max(12px, env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor {
+    width: 100% !important;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(12px, env(safe-area-inset-bottom))) !important;
+    border-radius: 18px !important;
+  }
+
+  body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-header {
+    padding: 17px 16px 15px !important;
+  }
+
+  body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-header h2 {
+    font-size: 21px !important;
+  }
+
+  body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label {
+    margin: 15px 16px 0 !important;
+  }
+
+  body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor > label textarea {
+    height: 42vh !important;
+    min-height: 210px !important;
+    font-size: 14px !important;
+  }
+
+  body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-actions {
+    padding: 14px 16px 16px !important;
+  }
+}
