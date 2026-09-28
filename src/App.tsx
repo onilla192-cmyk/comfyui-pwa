@@ -1035,9 +1035,9 @@ export default function App() {
           <h3>Resolution</h3>
           <label className="setting"><span>Aspect ratio</span><select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)}>{ASPECT_RATIOS.map((x) => <option key={x}>{x}</option>)}</select></label>
           <SettingNumber label="Megapixels" value={megapixels} min={0.25} max={4} step={0.25} onChange={setMegapixels} />
-          <SettingNumber label="Max dimension" value={maxDimension} min={256} max={2048} step={32} onChange={setMaxDimension} suffix="px" />
+          <SettingNumber label="Max dimension (Scale to Max Dimension)" value={maxDimension} min={256} max={2048} step={32} onChange={setMaxDimension} suffix="px" />
         </section>
-        <p className="settings-note">These controls change the matching values in your Qwen Image 2.1 workflow.</p>
+        <p className="settings-note">Max dimension controls the longest side of the generated image and the Scale Image to Max Dimension nodes. Aspect ratio determines the other side.</p>
       </aside>
     </div>}
 
