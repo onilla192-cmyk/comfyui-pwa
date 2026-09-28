@@ -53,10 +53,24 @@ export function buildWorkflow(inputs: WorkflowInputs): WorkflowPrompt {
   if (inputs.steps !== undefined) workflow['459:458'].inputs.steps = inputs.steps
   if (inputs.scheduler !== undefined) workflow['459:458'].inputs.scheduler = inputs.scheduler
   if (inputs.aspectRatio !== undefined) workflow['13'].inputs.aspect_ratio = inputs.aspectRatio
-  if (inputs.megapixels !== undefined) workflow['13'].inputs.megapixels = inputs.megapixels
   if (inputs.maxDimension !== undefined) {
+    // Make Max Dimension authoritative for the generated output as well as the
+    // reference-image Scale Image to Max Dimension nodes. ResolutionSelector
+    // takes megapixels + aspect ratio, so derive the target area from the
+    // requested longest side instead of leaving output size controlled by the
+    // separate megapixels setting.
+    const ratioText = (inputs.aspectRatio || '1:1').split(' ')[0]
+    const [ratioWidth, ratioHeight] = ratioText.split(':').map(Number)
+    if (Number.isFinite(ratioWidth) && Number.isFinite(ratioHeight) && ratioWidth > 0 && ratioHeight > 0) {
+      const ratioScale = Math.min(ratioWidth, ratioHeight) / Math.max(ratioWidth, ratioHeight)
+      workflow['13'].inputs.megapixels = (inputs.maxDimension * inputs.maxDimension * ratioScale) / 1_000_000
+    } else if (inputs.megapixels !== undefined) {
+      workflow['13'].inputs.megapixels = inputs.megapixels
+    }
     workflow['481'].inputs.largest_size = inputs.maxDimension
     workflow['482'].inputs.largest_size = inputs.maxDimension
+  } else if (inputs.megapixels !== undefined) {
+    workflow['13'].inputs.megapixels = inputs.megapixels
   }
   return workflow
 }
