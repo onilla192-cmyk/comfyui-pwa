@@ -938,18 +938,6 @@ export default function App() {
     setHistoryOpen(true)
   }
 
-  function moveToTrash(id: string) {
-    const item = results.find((x) => x.id === id)
-    if (!item) return
-    setResults((prev) => prev.filter((x) => x.id !== id))
-    setTrash((prev) => [item, ...prev])
-    setHistoryPage((page) => {
-      const remaining = results.length - 1
-      const pageCount = Math.max(1, Math.ceil(remaining / HISTORY_PAGE_SIZE))
-      return Math.min(page, pageCount)
-    })
-  }
-
   function restoreFromTrash(id: string) {
     const item = trash.find((x) => x.id === id)
     if (!item) return
