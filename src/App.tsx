@@ -88,6 +88,15 @@ export default function App() {
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
     return isReload ? (saved.prompt ?? '') : ''
   })
+  useEffect(() => {
+    const handleHistorySendToMainPrompt = (event: Event) => {
+      const customEvent = event as CustomEvent<string>
+      if (typeof customEvent.detail === 'string') setPrompt(customEvent.detail)
+    }
+    window.addEventListener('history-send-to-main-prompt', handleHistorySendToMainPrompt)
+    return () => window.removeEventListener('history-send-to-main-prompt', handleHistorySendToMainPrompt)
+  }, [])
+
   const [promptLabelBlock, setPromptLabelBlock] = useState('')
   const [promptBuilderOpen, setPromptBuilderOpen] = useState(() => saved.promptBuilderOpen ?? false)
   const [promptBuilderValues, setPromptBuilderValues] = useState<Record<string, string>>(() => saved.promptBuilderValues && typeof saved.promptBuilderValues === 'object' ? saved.promptBuilderValues : {})
