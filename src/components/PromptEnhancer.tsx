@@ -47,18 +47,18 @@ function getPerchanceText(instruction: string): Promise<string> {
     if (!iframe) {
       iframe = document.createElement('iframe')
       iframe.id = PERCHANCE_IFRAME_ID
-      iframe.src = \`\${PERCHANCE_ORIGIN}/embed\`
+      iframe.src = `${PERCHANCE_ORIGIN}/embed`
       iframe.style.cssText = 'display:none;position:fixed;top:.5rem;right:.5rem;width:11rem;height:3rem;background:#333;border:0;border-radius:3px;z-index:10000;'
       document.body.appendChild(iframe)
 
       window.setTimeout(() => {
         if (iframe && !iframe.dataset.ready) {
-          iframe.src = \`\${PERCHANCE_ORIGIN}/embed?__cacheBust=\${Math.random()}\`
+          iframe.src = `${PERCHANCE_ORIGIN}/embed?__cacheBust=${Math.random()}`
         }
       }, 15000)
     }
 
-    const requestId = \`comfyPrompt_\${Date.now()}_\${Math.random().toString(36).slice(2)}\`
+    const requestId = `comfyPrompt_${Date.now()}_${Math.random().toString(36).slice(2)}`
     let output = ''
     let finished = false
     let ready = iframe.dataset.ready === 'true'
@@ -90,14 +90,14 @@ function getPerchanceText(instruction: string): Promise<string> {
         return
       }
 
-      let normalizedInstruction = instruction.replace(' ', '\\u00a0')
-      if (!normalizedInstruction.includes('\\u00a0')) {
-        normalizedInstruction = \`\${normalizedInstruction}\\u00a0\`
+      let normalizedInstruction = instruction.replace(' ', '\u00a0')
+      if (!normalizedInstruction.includes('\u00a0')) {
+        normalizedInstruction = `${normalizedInstruction}\u00a0`
       }
 
       iframe.contentWindow.postMessage({
         type: 'startStream',
-        url: \`\${PERCHANCE_ORIGIN}/api/generate\`,
+        url: `${PERCHANCE_ORIGIN}/api/generate`,
         postData: {
           instruction: normalizedInstruction,
           startWith: '',
@@ -140,7 +140,7 @@ function getPerchanceText(instruction: string): Promise<string> {
         finish(output)
       } else if (event.data?.type === 'streamError') {
         const status = String(event.data.status ?? 'unknown error').replace(/_/g, ' ')
-        fail(new Error(\`Prompt enhancer error: \${status}\`))
+        fail(new Error(`Prompt enhancer error: ${status}`))
       }
     }
 
