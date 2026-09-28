@@ -19,7 +19,7 @@ function Cached({keyId}:{keyId:string}){const[u,setU]=useState('');useEffect(()=
 export function DatasetPage({onClose,sourceItems}:{onClose:()=>void;sourceItems:DatasetSourceItem[]}){
  const[pages,setPages]=useState<Page[]>(read),[active,setActive]=useState<string|null>(()=>read()[0]?.id||null),[sel,setSel]=useState<Set<string>>(new Set()),[tab,setTab]=useState<'build'|'pages'>('build')
  const[step,setStep]=useState<'idle'|'upload'|'preview'|'importing'|'complete'>('idle'),[data,setData]=useState<Dataset|null>(null),[err,setErr]=useState(''),[progress,setProgress]=useState([0,0]),[summary,setSummary]=useState<number[]>([])
- const[opts,setOpts]=useState({images:true,prompts:true,dupes:'skip' as 'skip'|'all'}),input=useRef<HTMLInputElement>(null)
+ const[viewer,setViewer]=useState<PageItem|null>(null),[opts,setOpts]=useState({images:true,prompts:true,dupes:'skip' as 'skip'|'all'}),input=useRef<HTMLInputElement>(null)
  useEffect(()=>localStorage.setItem(KEY,JSON.stringify(pages)),[pages])
  const page=pages.find(x=>x.id===active)||null
  const reset=()=>{setStep('idle');setData(null);setErr('');setSummary([])}
@@ -56,11 +56,12 @@ export function DatasetPage({onClose,sourceItems}:{onClose:()=>void;sourceItems:
           </div>
         </div>
         <div className="dataset-record-grid">
-          {page.items.map(i=><article className="dataset-record" key={i.id}><div className="dataset-record-image">{i.imageRefs[0]?<Cached keyId={i.imageRefs[0].cacheKey}/>:<span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 2-2 5 5"/></svg></span>}</div><div className="dataset-record-body"><strong>{i.name}</strong><p>{i.prompt||'No prompt provided'}</p>{i.imageRefs.length>1&&<span>{i.imageRefs.length} images</span>}</div></article>)}
+          {page.items.map(i=><button type="button" className="dataset-record" key={i.id} onClick={()=>setViewer(i)}><div className="dataset-record-image">{i.imageRefs[0]?<Cached keyId={i.imageRefs[0].cacheKey}/>:<span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 2-2 5 5"/></svg></span>}</div><div className="dataset-record-body"><strong>{i.name}</strong><p>{i.prompt||'No prompt provided'}</p>{i.imageRefs.length>1&&<span>{i.imageRefs.length} images</span>}</div></button>)}
         </div>
       </> : <div className="dataset-empty">Import a compatible dataset JSON to create a page.</div>}
     </div>
   </div>}
+{viewer&&<div className="dataset-viewer-backdrop" onClick={()=>setViewer(null)}><section className="dataset-viewer" onClick={e=>e.stopPropagation()}><div className="dataset-viewer-header"><h3>{viewer.name}</h3><button className="close-btn" onClick={()=>setViewer(null)}>×</button></div><div className="dataset-viewer-image">{viewer.imageRefs[0]?<Cached keyId={viewer.imageRefs[0].cacheKey}/>:<div className="dataset-image-empty">No image</div>}</div><div className="dataset-viewer-prompt"><div><strong>Prompt</strong><button type="button" onClick={()=>void navigator.clipboard?.writeText(viewer.prompt)}>Copy</button></div><p>{viewer.prompt||'No prompt provided'}</p></div></section></div>}
   {step!=='idle' && <div className="dataset-modal-backdrop"><section className="dataset-modal">
     <div className="dataset-modal-header"><h3><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 19h4"/></svg></span> Import Dataset</h3><button className="close-btn" onClick={reset} disabled={step==='importing'}>×</button></div>
     {step==='upload' && <div className="dataset-modal-body dataset-upload-state"><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span><h3>Upload Dataset JSON</h3><p>Import images and prompts into a new page.</p><button className="dataset-primary large" onClick={()=>input.current?.click()}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span> Select dataset.json</button><input ref={input} type="file" accept=".json,application/json" hidden onChange={upload}/>{err&&<div className="dataset-error">{err}</div>}</div>}
