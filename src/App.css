@@ -7645,3 +7645,285 @@ body:has(.hook-prompt-editor-backdrop) .hook-prompt-editor-actions button.primar
     padding: 14px 16px 16px !important;
   }
 }
+
+
+/* Hook Prompts — Nintendo-inspired 3D mobile interface */
+body:has(.hook-prompts-page) .hook-prompts-page {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(230,0,18,.16), transparent 34%),
+    linear-gradient(180deg,#171717 0%,#0b0b0b 100%) !important;
+  padding: 18px 20px 32px !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-minimal-header {
+  min-height: 54px !important;
+  height: 54px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-minimal-header .close-btn {
+  width: 50px !important;
+  min-width: 50px !important;
+  height: 50px !important;
+  padding: 0 !important;
+  border: 2px solid #555 !important;
+  border-radius: 15px !important;
+  background: linear-gradient(180deg,#3b3b3b,#292929) !important;
+  color: #fff !important;
+  font-size: 30px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  box-shadow: 0 5px 0 #111, inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-minimal-header .close-btn:active {
+  transform: translateY(4px) !important;
+  box-shadow: 0 1px 0 #111 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-page-tools {
+  margin: 4px 0 18px !important;
+  padding: 0 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-page-tools .prompt-builder-tool-btn {
+  width: 100% !important;
+  min-height: 58px !important;
+  border: 2px solid #b4000e !important;
+  border-radius: 16px !important;
+  background: linear-gradient(180deg,#f21b2c 0%,#d00012 100%) !important;
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 6px 0 #850009, 0 10px 22px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.2) !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-page-tools .prompt-builder-tool-btn:active {
+  transform: translateY(5px) !important;
+  box-shadow: 0 1px 0 #850009 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompts-page-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  padding: 0 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-row {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-button {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 142px !important;
+  padding: 22px 18px 20px 74px !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  text-align: left !important;
+  overflow: hidden !important;
+  border: 2px solid #d6a914 !important;
+  border-radius: 18px 18px 0 0 !important;
+  background: linear-gradient(145deg,#292929 0%,#202020 65%,#1b1b1b 100%) !important;
+  color: #eee !important;
+  box-shadow: 0 5px 0 #8b6906, 0 12px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.09) !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-button:active {
+  transform: translateY(4px) !important;
+  box-shadow: 0 1px 0 #8b6906 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-index {
+  position: absolute !important;
+  left: 18px !important;
+  top: 20px !important;
+  width: 38px !important;
+  height: 38px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 2px solid #e2b629 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(180deg,#3a321b,#25210f) !important;
+  color: #f5c842 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 3px 0 #5f4705 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-card-copy {
+  display: block !important;
+  min-width: 0 !important;
+  padding-right: 70px !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-card-copy strong {
+  display: block !important;
+  margin: 0 0 8px !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+  font-weight: 900 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-card-copy span {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: #c9c9c9 !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  overflow-wrap: anywhere !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-status {
+  position: absolute !important;
+  right: 14px !important;
+  top: 14px !important;
+  color: #42d7ff !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .06em !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-controls {
+  display: grid !important;
+  grid-template-columns: 1fr auto auto auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 68px !important;
+  padding: 10px 12px !important;
+  border: 2px solid #3f3f3f !important;
+  border-top: 0 !important;
+  border-radius: 0 0 18px 18px !important;
+  background: #242424 !important;
+  box-shadow: 0 5px 0 #111 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-toggle {
+  justify-self: start !important;
+  min-width: 68px !important;
+  height: 44px !important;
+  padding: 0 16px !important;
+  border: 2px solid #078d9d !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg,#28c7c7,#10989e) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 4px 0 #075f69 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-toggle.disabled {
+  border-color: #777 !important;
+  background: linear-gradient(180deg,#555,#3b3b3b) !important;
+  color: #bbb !important;
+  box-shadow: 0 4px 0 #202020 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-toggle:active,
+body:has(.hook-prompts-page) .hook-prompt-order button:active,
+body:has(.hook-prompts-page) .hook-prompt-delete:active {
+  transform: translateY(3px) !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-order {
+  display: flex !important;
+  gap: 6px !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-order button {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  border: 2px solid #686868 !important;
+  border-radius: 13px !important;
+  background: linear-gradient(180deg,#414141,#2d2d2d) !important;
+  color: #fff !important;
+  font-size: 22px !important;
+  box-shadow: 0 4px 0 #151515 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-delete {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  border: 2px solid #b4000e !important;
+  border-radius: 13px !important;
+  background: linear-gradient(180deg,#ed3441,#bd0010) !important;
+  color: #fff !important;
+  font-size: 0 !important;
+  box-shadow: 0 4px 0 #760008 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-delete::after {
+  content: '×' !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-button {
+  border-color: #555 !important;
+  box-shadow: 0 5px 0 #292929 !important;
+  opacity: .65 !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-card-copy strong {
+  color: #aaa !important;
+}
+
+body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-status {
+  color: #999 !important;
+}
+
+@media (max-width: 600px) {
+  body:has(.hook-prompts-page) .hook-prompts-page {
+    padding: 12px 14px 28px !important;
+  }
+
+  body:has(.hook-prompts-page) .hook-prompts-minimal-header {
+    height: 52px !important;
+  }
+
+  body:has(.hook-prompts-page) .hook-prompts-minimal-header .close-btn {
+    width: 46px !important;
+    min-width: 46px !important;
+    height: 46px !important;
+  }
+
+  body:has(.hook-prompts-page) .hook-prompt-button {
+    min-height: 132px !important;
+    padding: 20px 16px 18px 66px !important;
+  }
+
+  body:has(.hook-prompts-page) .hook-prompt-index {
+    left: 16px !important;
+    top: 18px !important;
+  }
+
+  body:has(.hook-prompts-page) .hook-prompt-card-copy strong {
+    font-size: 17px !important;
+  }
+
+  body:has(.hook-prompts-page) .hook-prompt-controls {
+    grid-template-columns: 1fr auto auto auto !important;
+    min-height: 64px !important;
+    padding: 9px 10px !important;
+  }
+}
