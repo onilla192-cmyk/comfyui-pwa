@@ -21,11 +21,10 @@ export type LauncherStatus = {
 }
 
 export async function getLauncherLogs(): Promise<string[]> {
-  if (import.meta.env.PROD) return []
   const response = await fetch(`${LAUNCHER_BASE_URL}/logs`, { cache: 'no-store' })
   if (!response.ok) throw new Error(`Launcher logs returned ${response.status}`)
-  const data = await response.json() as { logs?: string[] }
-  return Array.isArray(data.logs) ? data.logs : []
+  const data = await response.json() as { logs?: unknown }
+  return Array.isArray(data.logs) ? data.logs.map((line) => String(line)) : []
 }
 
 export async function getLauncherStatus(): Promise<LauncherStatus> {
