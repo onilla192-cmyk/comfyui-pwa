@@ -4,6 +4,7 @@ import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, in
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
+import './arcadeShowcase.css'
 import { playArcadeSound } from './arcadeFx'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
