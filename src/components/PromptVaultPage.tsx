@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { cacheFile, deleteCachedFiles, getCachedFile } from '../imageCache'
 
 export interface PromptVaultImageRef {
@@ -30,71 +30,23 @@ function readList(key: string): PromptVaultItem[] {
   }
 }
 
-function useImagePalette(cacheKey?: string) {
-  const [palette, setPalette] = useState({ base: '#343a43', edge: '#59616c', glow: '#68717c' })
-  useEffect(() => {
-    let live = true
-    if (!cacheKey) return
-    void getCachedFile(cacheKey).then((blob) => {
-      if (!live || !blob) return
-      const url = URL.createObjectURL(blob)
-      const img = new Image()
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas')
-          const size = 24
-          canvas.width = size
-          canvas.height = size
-          const ctx = canvas.getContext('2d', { willReadFrequently: true })
-          if (!ctx) return
-          ctx.drawImage(img, 0, 0, size, size)
-          const data = ctx.getImageData(0, 0, size, size).data
-          let r = 0, g = 0, b = 0, count = 0
-          for (let i = 0; i < data.length; i += 4) {
-            const rr = data[i], gg = data[i + 1], bb = data[i + 2], a = data[i + 3]
-            if (a < 180) continue
-            const max = Math.max(rr, gg, bb), min = Math.min(rr, gg, bb)
-            if (max < 35 || max - min < 12) continue
-            r += rr; g += gg; b += bb; count++
-          }
-          if (!count) return
-          r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count)
-          const max = Math.max(r, g, b), min = Math.min(r, g, b)
-          const boost = max === min ? 1 : Math.min(1.35, 1.12 + (max - min) / 255 * .35)
-          const adjust = (v: number) => Math.max(0, Math.min(255, Math.round(128 + (v - 128) * boost)))
-          r = adjust(r); g = adjust(g); b = adjust(b)
-          const base = `rgb(${Math.round(r * .72)}, ${Math.round(g * .72)}, ${Math.round(b * .72)})`
-          const edge = `rgb(${Math.round(Math.min(255, r * .98 + 45))}, ${Math.round(Math.min(255, g * .98 + 45))}, ${Math.round(Math.min(255, b * .98 + 45))})`
-          const glow = `rgb(${Math.round(Math.min(255, r * 1.08 + 25))}, ${Math.round(Math.min(255, g * 1.08 + 25))}, ${Math.round(Math.min(255, b * 1.08 + 25))})`
-          if (live) setPalette({ base, edge, glow })
-        } finally {
-          URL.revokeObjectURL(url)
-        }
-      }
-      img.src = url
-    })
-    return () => { live = false }
-  }, [cacheKey])
-  return palette
-}
-
-function VaultImage({ cacheKey }: { cacheKey: string }) {
-  const [url, setUrl] = useState('')
-  useEffect(() => {
-    let objectUrl = ''
-    let live = true
-    void getCachedFile(cacheKey).then((blob) => {
-      if (live && blob) {
-        objectUrl = URL.createObjectURL(blob)
-        setUrl(objectUrl)
-      }
-    })
-    return () => {
-      live = false
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
-    }
-  }, [cacheKey])
-  return url ? <img src={url} alt="" loading="lazy" draggable={false} /> : <div className="prompt-vault-image-empty">No image</div>
+function PromptVaultCard({ item, selected, armed, onCardClick, onToggleSelected }: { item: PromptVaultItem; selected: boolean; armed: boolean; onCardClick: () => void; onToggleSelected: () => void }) {
+  const palette = useImagePalette(item.imageRefs[0]?.cacheKey)
+  const style = { '--cartridge-base': palette.base, '--cartridge-edge': palette.edge, '--cartridge-glow': palette.glow } as CSSProperties
+  return (
+    <article className={`prompt-vault-card${armed ? ' armed' : ''}${selected ? ' selected' : ''}`} onClick={onCardClick} onContextMenu={(event) => event.preventDefault()}>
+      <div className="prompt-vault-cartridge-shell" style={style}>
+        <div className="prompt-vault-cartridge-image">{item.imageRefs[0] ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} /> : <div className="prompt-vault-image-empty">No image</div>}</div>
+        <button type="button" className="prompt-vault-select" onClick={(event) => { event.stopPropagation(); onToggleSelected() }} aria-label={selected ? `Deselect ${item.name}` : `Select ${item.name}`} aria-pressed={selected}>{selected ? '✓' : ''}</button>
+        <button type="button" className="prompt-vault-more" onClick={(event) => { event.stopPropagation(); onCardClick() }} aria-label={`Open ${item.name}`}>•••</button>
+        <div className="prompt-vault-cartridge-label">
+          <strong title={item.name}>{item.name}</strong>
+          <div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>{item.prompt || 'No prompt provided.'}</div>
+        </div>
+        <div className="prompt-vault-cartridge-slot" aria-hidden="true"></div>
+      </div>
+    </article>
+  )
 }
 
 export function PromptVaultPage({ onClose }: { onClose: () => void }) {
@@ -278,23 +230,15 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
 
       <div className="prompt-vault-list">
         {visibleItems.map((item) => (
-          <article className={`prompt-vault-card${armedId === item.id ? ' armed' : ''}${selected.has(item.id) ? ' selected' : ''}`} key={item.id} onClick={() => armCard(item.id)} onContextMenu={(event) => event.preventDefault()}>
-            {(() => {
-              const palette = useImagePalette(item.imageRefs[0]?.cacheKey)
-              return <div className="prompt-vault-cartridge-shell" style={{ '--cartridge-base': palette.base, '--cartridge-edge': palette.edge, '--cartridge-glow': palette.glow } as React.CSSProperties}>
-              <div className="prompt-vault-cartridge-image">{item.imageRefs[0] ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} /> : <div className="prompt-vault-image-empty">No image</div>}</div>
-              <button type="button" className="prompt-vault-select" onClick={(event) => { event.stopPropagation(); toggleSelected(item.id) }} aria-label={selected.has(item.id) ? `Deselect ${item.name}` : `Select ${item.name}`} aria-pressed={selected.has(item.id)}>{selected.has(item.id) ? '✓' : ''}</button>
-              <button type="button" className="prompt-vault-more" onClick={(event) => { event.stopPropagation(); armCard(item.id) }} aria-label={`Open ${item.name}`}>•••</button>
-              <div className="prompt-vault-cartridge-label">
-                <strong title={item.name}>{item.name}</strong>
-                <div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>{item.prompt || 'No prompt provided.'}</div>
-              </div>
-              <div className="prompt-vault-cartridge-slot" aria-hidden="true"></div>
-              </div>
-            })()}
-          </article>
-        ))}
-        {!visibleItems.length && <div className="prompt-vault-empty"><strong>{showArchived ? 'No archived cards' : 'Prompt Vault is empty'}</strong><span>{showArchived ? 'Archived cards will appear here.' : 'Create a card or move imported cards from Datasets here.'}</span></div>}
+          <PromptVaultCard
+            key={item.id}
+            item={item}
+            selected={selected.has(item.id)}
+            armed={armedId === item.id}
+            onCardClick={() => armCard(item.id)}
+            onToggleSelected={() => toggleSelected(item.id)}
+          />
+        ))}ards' : 'Prompt Vault is empty'}</strong><span>{showArchived ? 'Archived cards will appear here.' : 'Create a card or move imported cards from Datasets here.'}</span></div>}
       </div>
 
       {creating && (
