@@ -4,6 +4,7 @@ import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, in
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
+import { playArcadeSound } from './arcadeFx'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 
@@ -183,6 +184,7 @@ export default function App() {
   const [sleepLocked, setSleepLocked] = useState(saved.sleepLocked ?? false)
   const [footerExpanded, setFooterExpanded] = useState(false)
   const [mainFooterVisible, setMainFooterVisible] = useState(true)
+  const [arcadePhase, setArcadePhase] = useState<'idle' | 'inserting' | 'running' | 'ejecting'>('idle')
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
@@ -196,6 +198,15 @@ export default function App() {
   const currentGenerationPrompt = useRef<{ prompt: string; negativePrompt: string; cfg: number; steps: number; megapixels: number } | null>(null)
   const cleanupProgress = useRef<null | (() => void)>(null)
   const currentPromptId = useRef<string | null>(saved.promptId ?? null)
+  useEffect(() => {
+    const handleArcadeClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('button,[role="button"]')) playArcadeSound('click')
+    }
+    window.addEventListener('click', handleArcadeClick)
+    return () => window.removeEventListener('click', handleArcadeClick)
+  }, [])
+
   function recordErrorLog(error: unknown) {
     const message = error instanceof Error ? error.message : typeof error === 'string' ? error : JSON.stringify(error)
     const entry: ErrorLogEntry = { id: `error-${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp: Date.now(), message }
@@ -688,11 +699,16 @@ export default function App() {
         setLatestResultId(images[0].id)
         setHistoryPage(1)
         setStatus('done'); setProgress({ value: 1, max: 1 }); currentPromptId.current = null
+        playArcadeSound('complete')
+        setArcadePhase('ejecting')
+        window.setTimeout(() => setArcadePhase('idle'), 1150)
         cleanupProgress.current?.(); cleanupProgress.current = null
         return true
       }
       return false
     } catch (err) {
+      setArcadePhase('idle')
+      playArcadeSound('error')
       setStatus('error'); setErrorMsg(recordErrorLog(err))
       cleanupProgress.current?.(); cleanupProgress.current = null
       return true
@@ -707,6 +723,8 @@ export default function App() {
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
     cleanupProgress.current?.(); cleanupProgress.current = null
+    setArcadePhase('idle')
+    playArcadeSound('error')
     setStatus('error'); setErrorMsg(recordErrorLog('Generation timed out. Check ComfyUI.'))
   }
 
@@ -752,6 +770,8 @@ export default function App() {
     setLatestResultId(null)
     standbyReleased.current = false
     setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
+    playArcadeSound('insert')
+    setArcadePhase('inserting')
     setErrorMsg(null); setStatus('queued'); setProgress({ value: 0, max: 1 })
     let startupTimer: number | null = null
     try {
@@ -799,12 +819,16 @@ export default function App() {
         aspectRatio, megapixels, maxDimension,
       })
       const { prompt_id } = await queuePrompt(workflow)
+      playArcadeSound('generate')
+      setArcadePhase('running')
       currentPromptId.current = prompt_id
       setProgress({ value: 0, max: 1 })
       void waitForResult(prompt_id)
     } catch (err) {
       if (startupTimer !== null) window.clearInterval(startupTimer)
       setStartingComfy(false)
+      setArcadePhase('idle')
+      playArcadeSound('error')
       setStatus('error'); setErrorMsg(recordErrorLog(err))
     }
   }
@@ -1093,7 +1117,7 @@ export default function App() {
     ? results.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
-  return <div className="app">
+  return <div className={`app arcade-app arcade-phase-${arcadePhase}`}>
     {logsOpen && <div className="logs-backdrop" onClick={() => setLogsOpen(false)}>
       <section className="logs-panel" onClick={(e) => e.stopPropagation()}>
         <div className="logs-header">
@@ -1199,9 +1223,10 @@ export default function App() {
         </div>
       )}
 
-      <section className={`image-pickers${showImageTwo ? '' : ' single'}`}>
-        <ImagePicker glow={isBusy || fadeImageGlow} slot="image_1" label="Figure A" image={imageOne} busy={uploading.one} disabled={isBusy} onChange={(file) => void handleImageChange('one', file)} onClear={() => clearImage('one')} />
-        {showImageTwo && <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />}
+      <section className={`image-pickers arcade-cartridge-bay${showImageTwo ? '' : ' single'}`}>
+        <div className="arcade-machine-slot" aria-hidden="true"><span>CARTRIDGE SLOT</span></div>
+        <ImagePicker glow={isBusy || fadeImageGlow} slot="image_1" label="Figure A" image={imageOne} busy={uploading.one} disabled={isBusy} phase={arcadePhase} onChange={(file) => void handleImageChange('one', file)} onClear={() => clearImage('one')} />
+        {showImageTwo && <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} phase={arcadePhase} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />}
       </section>
 
       <section className="generation-embed">
@@ -2039,13 +2064,16 @@ function SettingNumber({ label, value, min, max, step, onChange, suffix }: { lab
     onBlur={() => { if (text === '') setText(String(value)) }} /></label>
 }
 
-function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: { slot: string; label: string; image: CharacterImage | null; busy: boolean; disabled: boolean; glow: boolean; onChange: (file?: File) => void; onClear: () => void }) {
+function ImagePicker({ label, image, busy, disabled, glow, phase, onChange, onClear }: { slot: string; label: string; image: CharacterImage | null; busy: boolean; disabled: boolean; glow: boolean; phase: 'idle' | 'inserting' | 'running' | 'ejecting'; onChange: (file?: File) => void; onClear: () => void }) {
   return (
-    <div className={`image-picker ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''}`}>
-      <div className="image-picker-title"><span>{label}</span></div>
+    <div className={`image-picker arcade-cartridge ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''} arcade-cartridge-phase-${phase}`}>
+      <div className="image-picker-title"><span>{label}</span><small>GAME CARTRIDGE</small></div>
       <div className="image-picker-box-wrap">
         <label className="image-picker-box">
-          {image ? <img src={image.previewUrl} alt={`${label} preview`} /> : <span className="image-upload-plus" aria-hidden="true">+</span>}
+          <span className="cartridge-shell">
+            <span className="cartridge-label">{image ? <img src={image.previewUrl} alt={`${label} preview`} /> : <span className="image-upload-plus" aria-hidden="true">+</span>}</span>
+            <span className="cartridge-contacts" aria-hidden="true">▮ ▮ ▮ ▮ ▮ ▮</span>
+          </span>
           <input type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled || busy} onChange={(e) => { onChange(e.target.files?.[0]); e.currentTarget.value = '' }} />
         </label>
         {image && <button className="image-clear-btn" type="button" onClick={onClear} disabled={disabled || busy} aria-label={`Clear ${label}`}>×</button>}
