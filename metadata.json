@@ -1,0 +1,6 @@
+{
+  "name": "ComfyUI Console PWA",
+  "description": "A phone-installable PWA workflow runner and remote controller for ComfyUI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

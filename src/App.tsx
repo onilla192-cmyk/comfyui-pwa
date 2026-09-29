@@ -1234,11 +1234,71 @@ export default function App() {
       )}
 
       <section className={`image-pickers${showImageTwo ? '' : ' single'}`}>
-        <ImagePicker glow={isBusy || fadeImageGlow} slot="image_1" label="Figure A" image={imageOne} busy={uploading.one} disabled={isBusy} onChange={(file) => void handleImageChange('one', file)} onClear={() => clearImage('one')} />
-        {showImageTwo && <ImagePicker glow={isBusy || fadeImageGlow} slot="image_2" label="Figure B" image={imageTwo} busy={uploading.two} disabled={isBusy} onChange={(file) => void handleImageChange('two', file)} onClear={() => clearImage('two')} />}
+        <ImagePicker
+          key={imageOne ? imageOne.fileName + (imageOne.previewUrl || '') : 'picker-empty-a'}
+          glow={isBusy || fadeImageGlow}
+          slot="image_1"
+          label="Figure A"
+          image={imageOne}
+          busy={uploading.one}
+          disabled={isBusy}
+          onChange={(file) => void handleImageChange('one', file)}
+          onClear={() => clearImage('one')}
+        />
+        {showImageTwo && (
+          <ImagePicker
+            key={imageTwo ? imageTwo.fileName + (imageTwo.previewUrl || '') : 'picker-empty-b'}
+            glow={isBusy || fadeImageGlow}
+            slot="image_2"
+            label="Figure B"
+            image={imageTwo}
+            busy={uploading.two}
+            disabled={isBusy}
+            onChange={(file) => void handleImageChange('two', file)}
+            onClear={() => clearImage('two')}
+          />
+        )}
       </section>
 
       <section className="generation-embed">
+        {/* Notch attachments matching the yellow lines for cartridge insertion */}
+        <div className={`console-notch-attachments${showImageTwo ? '' : ' single'}`} aria-hidden="true">
+          <div
+            key={imageOne ? imageOne.fileName + (imageOne.previewUrl || '') : 'empty-a'}
+            className={`cartridge-dock-attachment dock-fig-a ${imageOne ? 'dock-loaded' : 'dock-empty'}`}
+          >
+            <div className="dock-ear left"><span className="dock-screw" /></div>
+            <div className="dock-socket">
+              <div className="dock-pins-receiver left">
+                <span /><span /><span /><span /><span /><span /><span /><span /><span />
+              </div>
+              <div className="dock-notch-key" />
+              <div className="dock-pins-receiver right">
+                <span /><span /><span /><span /><span /><span /><span /><span /><span />
+              </div>
+            </div>
+            <div className="dock-ear right"><span className="dock-screw" /></div>
+          </div>
+          {showImageTwo && (
+            <div
+              key={imageTwo ? imageTwo.fileName + (imageTwo.previewUrl || '') : 'empty-b'}
+              className={`cartridge-dock-attachment dock-fig-b ${imageTwo ? 'dock-loaded' : 'dock-empty'}`}
+            >
+              <div className="dock-ear left"><span className="dock-screw" /></div>
+              <div className="dock-socket">
+                <div className="dock-pins-receiver left">
+                  <span /><span /><span /><span /><span /><span /><span /><span /><span />
+                </div>
+                <div className="dock-notch-key" />
+                <div className="dock-pins-receiver right">
+                  <span /><span /><span /><span /><span /><span /><span /><span /><span />
+                </div>
+              </div>
+              <div className="dock-ear right"><span className="dock-screw" /></div>
+            </div>
+          )}
+        </div>
+
         <div className="field">
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
@@ -2074,26 +2134,105 @@ function SettingNumber({ label, value, min, max, step, onChange, suffix }: { lab
 }
 
 function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: { slot: string; label: string; image: CharacterImage | null; busy: boolean; disabled: boolean; glow: boolean; onChange: (file?: File) => void; onClear: () => void }) {
+  const isFigA = label === 'Figure A'
+  const slotText = isFigA ? 'SLOT 01 // FIG A' : 'SLOT 02 // FIG B'
+  const romText = isFigA ? 'ROM  A' : 'ROM  B'
+  const cartridgeTheme = isFigA ? 'cartridge-red' : 'cartridge-blue'
+
   return (
-    <div className={`image-picker ${image ? 'image-picker-loaded' : 'image-picker-empty'} ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''}`}>
+    <div className={`image-picker ${cartridgeTheme} ${image ? 'image-picker-loaded' : 'image-picker-empty'} ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''}`}>
+      {/* Top Header Bar */}
       <div className="image-picker-title">
-        <span className="image-picker-slot">SLOT {label === 'Figure A' ? '01' : '02'} // {label === 'Figure A' ? 'FIG A' : 'FIG B'}</span>
-        <span className="image-picker-empty-state">EMPTY</span>
+        <div className="image-picker-slot-wrap">
+          <span className="image-picker-led" aria-hidden="true" />
+          <span className="image-picker-slot">{slotText}</span>
+        </div>
+        <span className="image-picker-empty-state">{image ? 'LOADED' : 'EMPTY'}</span>
       </div>
-      <div className="image-picker-rom">ROM {label === 'Figure A' ? 'A' : 'B'}<span className="image-picker-rom-light" aria-hidden="true" /></div>
-      <div className="image-picker-box-wrap">
-        <label className="image-picker-box">
-          {image ? <>
-            <span className="image-picker-depth" aria-hidden="true" style={{ backgroundImage: `url("${image.previewUrl}")` }} />
-            <img src={image.previewUrl} alt={`${label} preview`} />
-          </> : <span className="image-upload-placeholder"><span className="image-upload-icon" aria-hidden="true">▣</span><strong>INSERT ROM</strong><small>TAP TO LOAD SOURCE</small></span>}
-          <input type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled || busy} onChange={(e) => { onChange(e.target.files?.[0]); e.currentTarget.value = '' }} />
-        </label>
-        {image && <button className="image-clear-btn" type="button" onClick={onClear} disabled={disabled || busy} aria-label={`Clear ${label}`}>×</button>}
+
+      {/* Recessed Inner Tray / Cartridge Body */}
+      <div className="image-picker-tray">
+        {/* ROM Header Bar */}
+        <div className="image-picker-rom">
+          <div className="image-picker-vents" aria-hidden="true">
+            <span /><span /><span />
+          </div>
+          <span className="image-picker-rom-label">{romText}</span>
+          <div className="image-picker-rom-meta" aria-hidden="true">
+            <span className="image-picker-port-hole" />
+            <span className="image-picker-bracket" />
+          </div>
+        </div>
+
+        {/* Screen / Insert Well */}
+        <div className="image-picker-box-wrap">
+          <label className="image-picker-box" title={image ? 'Click to replace image' : 'Click to load image'}>
+            {image ? (
+              <>
+                <img src={image.previewUrl} alt={`${label} preview`} />
+              </>
+            ) : (
+              <span className="image-upload-placeholder">
+                <span className="image-upload-icon" aria-hidden="true">
+                  <span className="image-upload-chip-glyph" />
+                </span>
+                <strong>INSERT ROM</strong>
+                <small>TAP TO LOAD SOURCE</small>
+              </span>
+            )}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={disabled || busy}
+              onChange={(e) => {
+                onChange(e.target.files?.[0])
+                e.currentTarget.value = ''
+              }}
+            />
+          </label>
+          {image && (
+            <button
+              className="image-clear-btn"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onClear()
+              }}
+              disabled={disabled || busy}
+              aria-label={`Clear ${label}`}
+              title="Remove image"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* Bottom Status Bay */}
+        <div className="image-picker-footer">
+          <span className="image-picker-status-text" title={image ? image.fileName : undefined}>
+            {image ? 'ROM LOADED' : 'AWAITING ROM'}
+          </span>
+          <div className="image-picker-bars" aria-hidden="true">
+            <span /><span /><span /><span /><span /><span /><span />
+          </div>
+        </div>
       </div>
-      <div className="image-picker-footer"><span>{image ? 'ROM LOADED' : 'AWAITING ROM'}</span><span className="image-picker-bars" aria-hidden="true" /></div>
-      <div className="image-picker-edge">▲ INSERTION EDGE ▲</div>
-      {image && <div className="image-picker-name">{image.fileName}</div>}
+
+      {/* Shell Lower Chamfers / Amber Slits */}
+      <div className="image-picker-corner-accent left" aria-hidden="true" />
+      <div className="image-picker-corner-accent right" aria-hidden="true" />
+
+      {/* Protruding PCB Gold Edge Connector */}
+      <div className="image-picker-pcb" aria-hidden="true">
+        <div className="image-picker-pcb-pins left">
+          <span /><span /><span /><span /><span /><span /><span /><span /><span />
+        </div>
+        <div className="image-picker-pcb-notch" />
+        <div className="image-picker-pcb-pins right">
+          <span /><span /><span /><span /><span /><span /><span /><span /><span />
+        </div>
+      </div>
     </div>
   )
 }
