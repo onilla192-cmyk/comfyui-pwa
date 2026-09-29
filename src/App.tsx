@@ -10,11 +10,12 @@ import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultP
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 22
+const APP_VERSION = 23
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
 interface HookPrompt { id: string; name: string; text: string; enabled: boolean }
+interface ErrorLogEntry { id: string; timestamp: number; message: string }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
@@ -75,6 +76,7 @@ export default function App() {
   const savedResults = withHistoryIds(Array.isArray(saved.results) ? saved.results : [])
   const savedTrash = withHistoryIds(Array.isArray(saved.trash) ? saved.trash : [])
   const savedPromptLabels = withLabelIds(Array.isArray(saved.promptLabels) ? saved.promptLabels : [])
+  const savedErrorLogs: ErrorLogEntry[] = Array.isArray(saved.errorLogs) ? saved.errorLogs.filter((item: unknown): item is ErrorLogEntry => !!item && typeof item === 'object' && typeof (item as ErrorLogEntry).message === 'string').slice(-100) : []
   const savedPromptLabelTrash = withLabelIds(Array.isArray(saved.promptLabelTrash) ? saved.promptLabelTrash : [])
   const savedHookPrompts: HookPrompt[] = Array.isArray(saved.hookPrompts)
     ? saved.hookPrompts.filter((item: unknown): item is HookPrompt => !!item && typeof item === 'object' && typeof (item as HookPrompt).id === 'string' && typeof (item as HookPrompt).name === 'string' && typeof (item as HookPrompt).text === 'string').map((item: HookPrompt) => ({ ...item, enabled: item.enabled !== false }))
@@ -146,6 +148,7 @@ export default function App() {
   const [results, setResults] = useState<ResultImage[]>(savedResults)
   const [latestResultId, setLatestResultId] = useState<string | null>(() => saved.promptId ? null : (savedResults[0]?.id ?? null))
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [errorLogs, setErrorLogs] = useState<ErrorLogEntry[]>(savedErrorLogs)
   const [uploading, setUploading] = useState({ one: false, two: false })
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ideasOpen, setIdeasOpen] = useState(false)
@@ -193,6 +196,13 @@ export default function App() {
   const currentGenerationPrompt = useRef<{ prompt: string; negativePrompt: string; cfg: number; steps: number; megapixels: number } | null>(null)
   const cleanupProgress = useRef<null | (() => void)>(null)
   const currentPromptId = useRef<string | null>(saved.promptId ?? null)
+  function recordErrorLog(error: unknown) {
+    const message = error instanceof Error ? error.message : typeof error === 'string' ? error : JSON.stringify(error)
+    const entry: ErrorLogEntry = { id: `error-${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp: Date.now(), message }
+    setErrorLogs((current) => [...current, entry].slice(-100))
+    return message
+  }
+
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
@@ -639,7 +649,7 @@ export default function App() {
       }
     } catch (err) {
       URL.revokeObjectURL(previewUrl)
-      setErrorMsg(err instanceof Error ? err.message : 'Could not upload image')
+      setErrorMsg(recordErrorLog(err))
     } finally {
       setUploading((p) => ({ ...p, [which]: false }))
     }
@@ -683,7 +693,7 @@ export default function App() {
       }
       return false
     } catch (err) {
-      setStatus('error'); setErrorMsg(err instanceof Error ? err.message : 'Failed to fetch result')
+      setStatus('error'); setErrorMsg(recordErrorLog(err))
       cleanupProgress.current?.(); cleanupProgress.current = null
       return true
     }
@@ -697,7 +707,7 @@ export default function App() {
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
     cleanupProgress.current?.(); cleanupProgress.current = null
-    setStatus('error'); setErrorMsg('Generation timed out. Check ComfyUI.')
+    setStatus('error'); setErrorMsg(recordErrorLog('Generation timed out. Check ComfyUI.'))
   }
 
   async function useGeneratedAsFigure(item: ResultImage, which: 'one' | 'two') {
@@ -726,7 +736,7 @@ export default function App() {
       setResultsOpen(false)
       return true
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Could not use generated image')
+      setErrorMsg(recordErrorLog(err))
       return false
     } finally {
       setUploading((p) => ({ ...p, [which]: false }))
@@ -795,7 +805,7 @@ export default function App() {
     } catch (err) {
       if (startupTimer !== null) window.clearInterval(startupTimer)
       setStartingComfy(false)
-      setStatus('error'); setErrorMsg(err instanceof Error ? err.message : 'Could not reach ComfyUI.')
+      setStatus('error'); setErrorMsg(recordErrorLog(err))
     }
   }
   async function handleCancel() {
@@ -813,7 +823,7 @@ export default function App() {
     } catch (err) {
       setCancelling(false)
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Could not stop generation.')
+      setErrorMsg(recordErrorLog(err))
       return
     }
     setCancelling(false)
@@ -821,6 +831,10 @@ export default function App() {
 
   const isUploading = uploading.one || uploading.two
   const percent = progress && progress.max > 0 ? Math.min(100, Math.round((progress.value / progress.max) * 100)) : 0
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loadSavedState(), errorLogs: errorLogs.slice(-100) })) } catch {}
+  }, [errorLogs])
 
   useEffect(() => () => cleanupProgress.current?.(), [])
   useEffect(() => () => {
@@ -1069,7 +1083,7 @@ export default function App() {
       // Stay on the current PWA screen after startup.
     } catch (err) {
       window.clearInterval(timer)
-      setErrorMsg(err instanceof Error ? err.message : 'Could not start ComfyUI from the phone.')
+      setErrorMsg(recordErrorLog(err))
     } finally {
       setRemoteStarting(false)
     }
@@ -1087,10 +1101,18 @@ export default function App() {
     {logsOpen && <div className="logs-backdrop" onClick={() => setLogsOpen(false)}>
       <section className="logs-panel" onClick={(e) => e.stopPropagation()}>
         <div className="logs-header">
-          <div><h2>Launcher Logs</h2><span>Live ComfyUI start/stop events</span></div>
+          <div><h2>Error &amp; Launcher Logs</h2><span>Generation errors and ComfyUI start/stop events</span></div>
           <button className="close-btn" type="button" onClick={() => setLogsOpen(false)} aria-label="Close logs">×</button>
         </div>
         <div className="logs-body">
+          <div className="logs-section-title">Generation Errors</div>
+          {errorLogs.length ? [...errorLogs].reverse().map((entry) => (
+            <div className="error-log-card" key={entry.id}>
+              <time>{new Date(entry.timestamp).toLocaleString()}</time>
+              <pre>{entry.message}</pre>
+            </div>
+          )) : <div className="logs-empty">No generation errors recorded.</div>}
+          <div className="logs-section-title launcher-title">Launcher Logs</div>
           {launcherLogs.length
             ? launcherLogs.map((line, index) => <div className="log-line" key={`${index}-${line}`}>{line}</div>)
             : <div className="logs-empty">No launcher logs yet.</div>}
