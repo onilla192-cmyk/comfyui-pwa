@@ -9310,3 +9310,68 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
     aspect-ratio:1/0.86 !important;
   }
 }
+
+
+
+/* ROM image nodes — lock the entire card geometry */
+.image-pickers{
+  align-items:stretch !important;
+}
+.image-picker{
+  aspect-ratio:362 / 420 !important;
+  height:auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+}
+.image-picker-title{
+  flex:0 0 26px !important;
+}
+.image-picker-rom{
+  flex:0 0 31px !important;
+}
+.image-picker-box-wrap{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+.image-picker-box{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  width:100% !important;
+  aspect-ratio:auto !important;
+  height:auto !important;
+}
+.image-picker-box img{
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+}
+.image-picker-footer{
+  flex:0 0 22px !important;
+}
+.image-picker-edge{
+  flex:0 0 auto !important;
+}
+.image-picker-name{
+  flex:0 0 auto !important;
+}
+@media(max-width:600px){
+  .image-picker{
+    aspect-ratio:362 / 420 !important;
+  }
+  .image-picker-title{
+    flex-basis:23px !important;
+  }
+  .image-picker-rom{
+    flex-basis:27px !important;
+  }
+  .image-picker-footer{
+    flex-basis:20px !important;
+  }
+}
