@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { cacheFile, deleteCachedFiles, getCachedFile } from '../imageCache'
 import type { PromptVaultItem } from './PromptVaultPage'
+import { createFullPwaBackup, restoreFullPwaBackup, validateFullPwaBackup } from '../fullPwaBackup'
 
 export interface DatasetSourceItem { id:string; prompt?:string; url?:string; createdAt?:number }
 type Img={filename:string;mimeType:string;data:string}
@@ -20,10 +21,13 @@ function Cached({keyId}:{keyId:string}){const[u,setU]=useState('');useEffect(()=
 export function DatasetPage({onClose,sourceItems,onMoveToVault}:{onClose:()=>void;sourceItems:DatasetSourceItem[];onMoveToVault?:(items:PageItem[])=>void}){
  const[pages,setPages]=useState<Page[]>(read),[active,setActive]=useState<string|null>(()=>read()[0]?.id||null),[sel,setSel]=useState<Set<string>>(new Set()),[tab,setTab]=useState<'build'|'pages'>('build')
  const[step,setStep]=useState<'idle'|'upload'|'preview'|'importing'|'complete'>('idle'),[data,setData]=useState<Dataset|null>(null),[err,setErr]=useState(''),[progress,setProgress]=useState([0,0]),[summary,setSummary]=useState<number[]>([])
- const[viewer,setViewer]=useState<PageItem|null>(null),[vaultSel,setVaultSel]=useState<Set<string>>(new Set()),[opts,setOpts]=useState({images:true,prompts:true,dupes:'skip' as 'skip'|'all'}),input=useRef<HTMLInputElement>(null)
+ const[viewer,setViewer]=useState<PageItem|null>(null),[vaultSel,setVaultSel]=useState<Set<string>>(new Set()),[fullBackupBusy,setFullBackupBusy]=useState(false),fullBackupInput=useRef<HTMLInputElement>(null),[opts,setOpts]=useState({images:true,prompts:true,dupes:'skip' as 'skip'|'all'}),input=useRef<HTMLInputElement>(null)
  useEffect(()=>localStorage.setItem(KEY,JSON.stringify(pages)),[pages])
  const page=pages.find(x=>x.id===active)||null
  const reset=()=>{setStep('idle');setData(null);setErr('');setSummary([])}
+ const downloadFullBackup=(json:string)=>{const blob=new Blob([json],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`comfyui-pwa-full-backup-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ const exportEverything=async()=>{if(fullBackupBusy)return;setFullBackupBusy(true);try{const backup=await createFullPwaBackup();downloadFullBackup(JSON.stringify(backup));}catch(error){window.alert(error instanceof Error?error.message:'Could not create the full backup.')}finally{setFullBackupBusy(false)}}
+ const importEverything=async(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];e.target.value='';if(!file||fullBackupBusy)return;if(!window.confirm('Restore this full backup? It will replace all current PWA data and cached images with the contents of this file. This cannot be undone.'))return;setFullBackupBusy(true);try{const raw=await file.text();const backup=validateFullPwaBackup(JSON.parse(raw));await restoreFullPwaBackup(backup);window.location.reload()}catch(error){window.alert(error instanceof Error?error.message:'Could not restore the full backup. Your current data was not intentionally changed.')}finally{setFullBackupBusy(false)}}
  const exportRecords=async(items:DatasetSourceItem[],name='dataset.json')=>{const out:Dataset={version:1,createdAt:new Date().toISOString(),items:[]};for(const x of items){const r:Item={prompt:x.prompt||'',images:[]},b=await getCachedFile(x.id);if(b)r.images.push({filename:x.id+'.png',mimeType:b.type||'image/png',data:await b64(b)});else if(x.url?.startsWith('data:'))r.images.push({filename:x.id+'.png',mimeType:'image/png',data:x.url});out.items.push(r)}download(name,JSON.stringify(out,null,2))}
  const upload=(e:ChangeEvent<HTMLInputElement>)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=z=>{try{setData(validate(JSON.parse(z.target?.result as string)));setErr('');setStep('preview')}catch(e){setErr(e instanceof Error?e.message:'Failed to parse JSON file.')}};r.readAsText(f);e.target.value=''}
  const doImport=async()=>{if(!data)return;setStep('importing');const count=pages.filter(p=>p.name.startsWith('Imported')).length,name=count?'Imported '+(count+1):'Imported',items:PageItem[]=[];let ip=0,ii=0,sd=0,ir=0;for(let n=0;n<data.items.length;n++){const src=data.items[n];if(opts.dupes==='skip'&&src.prompt&&items.some(x=>x.prompt===src.prompt)){sd++;setProgress([n+1,data.items.length]);continue}try{const refs:Ref[]=[];if(opts.images)for(const im of src.images){const blob=await fetch(im.data).then(r=>r.blob()),key=makeId('media_ds');await cacheFile(key,blob);refs.push({id:makeId('img'),filename:im.filename||key+'.png',mimeType:im.mimeType||blob.type||'image/png',cacheKey:key});ii++}if(opts.images||opts.prompts){const prompt=opts.prompts?src.prompt:'',ids=refs.map(x=>x.cacheKey);items.push({id:makeId('item_ds'),name:prompt.split(' ').slice(0,4).join(' ').trim()||'Imported Pose',prompt,image:ids[0]||'',images:ids,imageRefs:refs});if(opts.prompts&&src.prompt)ip++}}catch{ir++}setProgress([n+1,data.items.length])}const p={id:makeId('page_ds'),name,createdAt:new Date().toISOString(),items};setPages(x=>[...x,p]);setActive(p.id);setTab('pages');setSummary([ip,ii,sd,ir]);setStep('complete')}
@@ -38,6 +42,14 @@ export function DatasetPage({onClose,sourceItems,onMoveToVault}:{onClose:()=>voi
   <div className="dataset-page-tabs">
     <button className={tab==='build'?'active':''} onClick={()=>setTab('build')}>Build Dataset</button>
     <button className={tab==='pages'?'active':''} onClick={()=>setTab('pages')}>Imported Pages ({pages.length})</button>
+  </div>
+  <div className="dataset-full-backup">
+    <div><strong>Full PWA Backup</strong><span>History, images, prompts, datasets, Prompt Vault, settings, and all saved data.</span></div>
+    <div className="dataset-full-backup-actions">
+      <button type="button" className="dataset-full-export" onClick={()=>void exportEverything()} disabled={fullBackupBusy}>Export Everything</button>
+      <button type="button" className="dataset-full-import" onClick={()=>fullBackupInput.current?.click()} disabled={fullBackupBusy}>{fullBackupBusy?'Working…':'Import Everything'}</button>
+      <input ref={fullBackupInput} type="file" accept=".json,application/json" hidden onChange={importEverything}/>
+    </div>
   </div>
   {tab==='build' && <div className="dataset-build-page">
     <div className="dataset-toolbar"><div><strong>{sel.size} selected</strong><span>{sourceItems.length} completed generations</span></div><div><button onClick={()=>setSel(sel.size===sourceItems.length?new Set<string>():new Set(sourceItems.map(x=>x.id)))}>{sel.size===sourceItems.length?'Clear All':'Select All'}</button><button className="dataset-primary" disabled={!sel.size} onClick={()=>void exportRecords(sourceItems.filter(x=>sel.has(x.id)))}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span> Export JSON</button></div></div>
