@@ -8689,3 +8689,216 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
     font-size:15px !important;
   }
 }
+
+
+/* Prompt Vault — retro 3D cartridge cards */
+.prompt-vault-page{
+  background:
+    radial-gradient(circle at 50% -10%,rgba(54,72,110,.22),transparent 38%),
+    linear-gradient(180deg,#101318 0%,#171b20 100%) !important;
+  color:#f2f0eb !important;
+}
+.prompt-vault-header{
+  max-width:920px !important;
+  min-height:66px !important;
+  margin:0 auto 12px !important;
+}
+.prompt-vault-brand h2{color:#f5f2ed !important;font-size:25px !important;font-weight:900 !important}
+.prompt-vault-brand span{color:#9ea5b1 !important;font-size:13px !important}
+.prompt-vault-close{
+  background:#20262d !important;
+  color:#f5f5f5 !important;
+  border:1px solid #38414c !important;
+  box-shadow:0 4px 0 #0a0c0f !important;
+}
+.prompt-vault-toolbar{
+  max-width:920px !important;
+  margin:0 auto 14px !important;
+  padding:12px !important;
+  border:1px solid #323a45 !important;
+  border-radius:17px !important;
+  background:linear-gradient(145deg,#1b2027,#13171c) !important;
+  box-shadow:0 5px 0 #090b0e,0 10px 24px rgba(0,0,0,.25) !important;
+  backdrop-filter:none !important;
+}
+.prompt-vault-toolbar>strong{
+  color:#aeb5c0 !important;
+  font-size:13px !important;
+}
+.prompt-vault-toolbar button{
+  min-height:40px !important;
+  border:1px solid #424a56 !important;
+  border-radius:11px !important;
+  background:linear-gradient(180deg,#303741,#242a31) !important;
+  color:#f2f0eb !important;
+  box-shadow:0 3px 0 #0b0d10 !important;
+}
+.prompt-vault-toolbar .prompt-vault-new{
+  background:linear-gradient(180deg,#1b8df0,#1169c5) !important;
+  border-color:#37a8ff !important;
+}
+.prompt-vault-toolbar .prompt-vault-archive-view{
+  background:linear-gradient(180deg,#6650df,#4935ae) !important;
+  border-color:#927bff !important;
+}
+.prompt-vault-toolbar .prompt-vault-select-all{background:linear-gradient(180deg,#39434f,#29313a) !important}
+.prompt-vault-toolbar .prompt-vault-delete{
+  background:linear-gradient(180deg,#6e2a31,#4b1e24) !important;
+  border-color:#91343e !important;
+  color:#ffb3ba !important;
+}
+.prompt-vault-list{
+  max-width:920px !important;
+  gap:14px !important;
+  padding-bottom:30px !important;
+}
+.prompt-vault-card{
+  overflow:visible !important;
+  border:0 !important;
+  border-radius:18px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  cursor:pointer;
+  transform-style:preserve-3d;
+}
+.prompt-vault-card:active{transform:translateY(2px) !important}
+.prompt-vault-card.armed .prompt-vault-cartridge-shell,
+.prompt-vault-card.selected .prompt-vault-cartridge-shell{
+  border-color:#56b9ff !important;
+  box-shadow:0 7px 0 #0b0d10,0 0 0 2px rgba(86,185,255,.2),8px 12px 24px rgba(0,0,0,.32) !important;
+}
+.prompt-vault-cartridge-shell{
+  position:relative;
+  overflow:hidden;
+  min-width:0;
+  padding:10px 10px 14px;
+  border:2px solid #59616c;
+  border-radius:19px 19px 15px 15px;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.13),transparent 8%,transparent 92%,rgba(0,0,0,.18)),
+    linear-gradient(145deg,#59616b 0%,#343b44 42%,#252b32 100%);
+  box-shadow:0 7px 0 #0a0c0f,8px 12px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22);
+  transform:translateZ(0);
+}
+.prompt-vault-cartridge-shell::before,
+.prompt-vault-cartridge-shell::after{
+  content:'';
+  position:absolute;
+  top:38px;
+  bottom:28px;
+  width:7px;
+  border-radius:5px;
+  opacity:.7;
+  background:repeating-linear-gradient(to bottom,#171b20 0 7px,#7b838c 7px 9px,#171b20 9px 16px);
+  box-shadow:inset 1px 0 rgba(255,255,255,.12);
+  pointer-events:none;
+}
+.prompt-vault-cartridge-shell::before{left:3px}
+.prompt-vault-cartridge-shell::after{right:3px}
+.prompt-vault-cartridge-image{
+  position:relative;
+  z-index:1;
+  overflow:hidden;
+  width:100%;
+  aspect-ratio:1/1;
+  border:2px solid #15191e;
+  border-radius:11px 11px 8px 8px;
+  background:#0c0f13;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 3px 5px rgba(0,0,0,.45);
+}
+.prompt-vault-cartridge-image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.prompt-vault-cartridge-label{
+  position:relative;
+  z-index:1;
+  margin:7px 8px 0;
+  min-height:69px;
+  padding:9px 9px 7px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:9px;
+  background:linear-gradient(180deg,#20252b,#171b20);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
+}
+.prompt-vault-cartridge-label>strong{
+  display:block;
+  overflow:hidden;
+  margin:0 0 4px;
+  color:#f5f2ed !important;
+  font-size:15px !important;
+  line-height:1.1 !important;
+  font-weight:900 !important;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.prompt-vault-cartridge-label .prompt-vault-prompt{
+  color:#aeb5c0 !important;
+  font-size:11px !important;
+  line-height:1.3 !important;
+  -webkit-line-clamp:2;
+}
+.prompt-vault-cartridge-slot{
+  position:relative;
+  z-index:2;
+  width:38%;
+  height:6px;
+  margin:10px auto 0;
+  border-radius:0 0 5px 5px;
+  background:#12161b;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.08);
+}
+.prompt-vault-select{
+  position:absolute !important;
+  z-index:5 !important;
+  top:17px !important;
+  left:17px !important;
+  width:32px !important;
+  min-width:32px !important;
+  height:32px !important;
+  border:2px solid #f0f2f4 !important;
+  border-radius:8px !important;
+  background:rgba(16,19,23,.82) !important;
+  color:#fff !important;
+  font-size:17px !important;
+  box-shadow:0 2px 5px rgba(0,0,0,.45) !important;
+}
+.prompt-vault-card.selected .prompt-vault-select{background:#1988db !important;border-color:#73c8ff !important}
+.prompt-vault-more{
+  position:absolute !important;
+  z-index:5 !important;
+  top:16px !important;
+  right:16px !important;
+  width:40px !important;
+  height:40px !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:11px !important;
+  background:rgba(20,24,29,.78) !important;
+  color:#fff !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  letter-spacing:2px !important;
+  box-shadow:0 3px 6px rgba(0,0,0,.35) !important;
+}
+@media(max-width:600px){
+  .prompt-vault-page{padding:8px 9px 24px !important}
+  .prompt-vault-header{min-height:54px !important;margin-bottom:9px !important}
+  .prompt-vault-brand h2{font-size:22px !important}
+  .prompt-vault-brand span{font-size:12px !important}
+  .prompt-vault-toolbar{padding:9px !important;border-radius:15px !important;margin-bottom:11px !important}
+  .prompt-vault-toolbar>strong{padding-left:3px !important}
+  .prompt-vault-toolbar>div{gap:6px !important}
+  .prompt-vault-toolbar button{min-height:37px !important;font-size:11px !important}
+  .prompt-vault-list{gap:9px !important}
+  .prompt-vault-cartridge-shell{padding:7px 7px 10px;border-radius:15px 15px 12px 12px}
+  .prompt-vault-cartridge-shell::before,.prompt-vault-cartridge-shell::after{top:29px;bottom:21px;width:5px}
+  .prompt-vault-cartridge-image{border-radius:9px 9px 6px 6px}
+  .prompt-vault-cartridge-label{margin:5px 5px 0;padding:7px 7px 6px;min-height:58px}
+  .prompt-vault-cartridge-label>strong{font-size:12px !important}
+  .prompt-vault-cartridge-label .prompt-vault-prompt{font-size:9px !important}
+  .prompt-vault-cartridge-slot{height:4px;margin-top:7px}
+  .prompt-vault-select{top:12px !important;left:12px !important;width:28px !important;min-width:28px !important;height:28px !important;border-radius:7px !important}
+  .prompt-vault-more{top:11px !important;right:11px !important;width:34px !important;height:34px !important;border-radius:9px !important;font-size:12px !important}
+}
