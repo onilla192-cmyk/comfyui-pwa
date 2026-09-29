@@ -10,7 +10,7 @@ import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultP
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 21
+const APP_VERSION = 22
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -179,6 +179,7 @@ export default function App() {
   const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
   const [sleepLocked, setSleepLocked] = useState(saved.sleepLocked ?? false)
   const [footerExpanded, setFooterExpanded] = useState(false)
+  const [mainFooterVisible, setMainFooterVisible] = useState(true)
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
@@ -1195,6 +1196,18 @@ export default function App() {
               </button>}
               <button
                 type="button"
+                className={`prompt-footer-toggle ${mainFooterVisible ? 'visible' : 'hidden'}`}
+                onClick={() => { setMainFooterVisible((current) => !current); setFooterExpanded(false) }}
+                aria-pressed={mainFooterVisible}
+                aria-label={mainFooterVisible ? 'Hide main footer' : 'Show main footer'}
+                title={mainFooterVisible ? 'Hide main footer' : 'Show main footer'}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  {mainFooterVisible ? <path d="M5 9h14M5 15h14" /> : <path d="M5 12h14" />}
+                </svg>
+              </button>
+              <button
+                type="button"
                 className={`prompt-menu-btn${promptHeaderMenuOpen ? ' active' : ''}`}
                 onClick={() => setPromptHeaderMenuOpen((open) => !open)}
                 aria-label="Open prompt options"
@@ -1826,7 +1839,7 @@ export default function App() {
       </div>}
 
     </main>
-    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
+    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <button
           className={`footer-menu-toggle ${footerExpanded ? 'expanded' : 'collapsed'}`}
