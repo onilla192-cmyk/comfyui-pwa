@@ -231,9 +231,16 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
       <div className="prompt-vault-list">
         {visibleItems.map((item) => (
           <article className={`prompt-vault-card${armedId === item.id ? ' armed' : ''}${selected.has(item.id) ? ' selected' : ''}`} key={item.id} onClick={() => armCard(item.id)} onContextMenu={(event) => event.preventDefault()}>
-            <div className="prompt-vault-card-image">{item.imageRefs[0] ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} /> : <div className="prompt-vault-image-empty">No image</div>}</div>
-            <button type="button" className="prompt-vault-select" onClick={(event) => { event.stopPropagation(); toggleSelected(item.id) }} aria-label={selected.has(item.id) ? `Deselect ${item.name}` : `Select ${item.name}`} aria-pressed={selected.has(item.id)}>{selected.has(item.id) ? '✓' : ''}</button>
-            <div className="prompt-vault-card-body"><strong title={item.name}>{item.name}</strong><div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>{item.prompt || 'No prompt provided.'}</div></div>
+            <div className="prompt-vault-cartridge-shell">
+              <div className="prompt-vault-cartridge-image">{item.imageRefs[0] ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} /> : <div className="prompt-vault-image-empty">No image</div>}</div>
+              <button type="button" className="prompt-vault-select" onClick={(event) => { event.stopPropagation(); toggleSelected(item.id) }} aria-label={selected.has(item.id) ? `Deselect ${item.name}` : `Select ${item.name}`} aria-pressed={selected.has(item.id)}>{selected.has(item.id) ? '✓' : ''}</button>
+              <button type="button" className="prompt-vault-more" onClick={(event) => { event.stopPropagation(); armCard(item.id) }} aria-label={`Open ${item.name}`}>•••</button>
+              <div className="prompt-vault-cartridge-label">
+                <strong title={item.name}>{item.name}</strong>
+                <div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>{item.prompt || 'No prompt provided.'}</div>
+              </div>
+              <div className="prompt-vault-cartridge-slot" aria-hidden="true"></div>
+            </div>
           </article>
         ))}
         {!visibleItems.length && <div className="prompt-vault-empty"><strong>{showArchived ? 'No archived cards' : 'Prompt Vault is empty'}</strong><span>{showArchived ? 'Archived cards will appear here.' : 'Create a card or move imported cards from Datasets here.'}</span></div>}
