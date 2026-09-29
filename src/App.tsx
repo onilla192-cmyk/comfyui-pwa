@@ -206,7 +206,7 @@ export default function App() {
     }
     window.addEventListener('click', handleArcadeClick)
     return () => window.removeEventListener('click', handleArcadeClick)
-  }, [])
+  }, [arcadeSoundOn])
 
   function recordErrorLog(error: unknown) {
     const message = error instanceof Error ? error.message : typeof error === 'string' ? error : JSON.stringify(error)
