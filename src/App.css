@@ -8772,11 +8772,11 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   overflow:hidden;
   min-width:0;
   padding:10px 10px 14px;
-  border:2px solid #59616c;
+  border:2px solid var(--cartridge-edge,#59616c);
   border-radius:19px 19px 15px 15px;
   background:
-    linear-gradient(90deg,rgba(255,255,255,.13),transparent 8%,transparent 92%,rgba(0,0,0,.18)),
-    linear-gradient(145deg,#59616b 0%,#343b44 42%,#252b32 100%);
+    linear-gradient(90deg,rgba(255,255,255,.16),transparent 8%,transparent 92%,rgba(0,0,0,.2)),
+    linear-gradient(145deg,var(--cartridge-glow,#59616b) 0%,var(--cartridge-base,#343b44) 48%,#20252b 100%);
   box-shadow:0 7px 0 #0a0c0f,8px 12px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22);
   transform:translateZ(0);
 }
@@ -8801,10 +8801,10 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   overflow:hidden;
   width:100%;
   aspect-ratio:1/1;
-  border:2px solid #15191e;
+  border:2px solid color-mix(in srgb, var(--cartridge-edge,#15191e) 55%, #15191e);
   border-radius:11px 11px 8px 8px;
   background:#0c0f13;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 3px 5px rgba(0,0,0,.45);
+  box-shadow:inset 0 1px 0 color-mix(in srgb, var(--cartridge-glow,#fff) 22%, transparent),0 3px 5px rgba(0,0,0,.45);
 }
 .prompt-vault-cartridge-image img{
   display:block;
