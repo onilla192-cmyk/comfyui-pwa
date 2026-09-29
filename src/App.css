@@ -9430,17 +9430,21 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
 }
 
 
-/* Loaded ROM nodes: compact the cartridge once a source image is inserted. */
-.image-pickers .image-picker.image-picker-loaded{
+/* Image nodes: keep the same compact size whether empty or loaded. */
+.image-pickers .image-picker,
+.image-pickers .image-picker.image-picker-loaded,
+.image-pickers .image-picker.image-picker-empty{
   height:300px !important;
   min-height:300px !important;
   max-height:300px !important;
 }
-.image-pickers .image-picker.image-picker-loaded .image-picker-box-wrap{
+.image-pickers .image-picker .image-picker-box-wrap{
   min-height:0 !important;
 }
 @media(max-width:600px){
-  .image-pickers .image-picker.image-picker-loaded{
+  .image-pickers .image-picker,
+  .image-pickers .image-picker.image-picker-loaded,
+  .image-pickers .image-picker.image-picker-empty{
     height:300px !important;
     min-height:300px !important;
     max-height:300px !important;
