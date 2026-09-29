@@ -9375,3 +9375,30 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
     flex-basis:20px !important;
   }
 }
+
+
+
+/* Image picker layout — fixed card height, single card only stretches horizontally */
+.image-pickers{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  align-items:stretch !important;
+}
+.image-pickers.single{
+  grid-template-columns:minmax(0,1fr) !important;
+}
+.image-pickers.single .image-picker{
+  width:100% !important;
+  max-width:none !important;
+  aspect-ratio:auto !important;
+  height:420px !important;
+}
+.image-pickers:not(.single) .image-picker{
+  width:100% !important;
+  aspect-ratio:362 / 420 !important;
+  height:auto !important;
+}
+@media(max-width:600px){
+  .image-pickers.single .image-picker{
+    height:420px !important;
+  }
+}
