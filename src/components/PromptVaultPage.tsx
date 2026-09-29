@@ -47,7 +47,7 @@ function VaultImage({ cacheKey }: { cacheKey: string }) {
   }, [cacheKey])
 
   return url
-    ? <img src={url} alt="" loading="lazy" />
+    ? <img src={url} alt="" loading="lazy" draggable={false} />
     : <div className="prompt-vault-image-empty">No image</div>
 }
 
@@ -56,7 +56,10 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    const save = () => setItems(readVault())
+    const save = () => {
+      setItems(readVault())
+      setSelected(new Set())
+    }
     window.addEventListener('prompt-vault-updated', save)
     return () => window.removeEventListener('prompt-vault-updated', save)
   }, [])
@@ -86,22 +89,26 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
   }
 
   const selectAll = () => setSelected(new Set(items.map((item) => item.id)))
+  const allSelected = items.length > 0 && selected.size === items.length
 
   return (
     <section className="prompt-vault-page" aria-label="Prompt Vault">
-      <div className="prompt-vault-header">
-        <div>
-          <h2>Prompt Vault</h2>
-          <span>{items.length} saved prompt{items.length === 1 ? '' : 's'}</span>
+      <header className="prompt-vault-header">
+        <div className="prompt-vault-brand">
+          <span className="prompt-vault-brand-badge" aria-hidden="true">★</span>
+          <div>
+            <h2>Prompt Vault</h2>
+            <span>{items.length} saved prompt{items.length === 1 ? '' : 's'}</span>
+          </div>
         </div>
-        <button className="close-btn" type="button" onClick={onClose} aria-label="Close Prompt Vault">×</button>
-      </div>
+        <button className="prompt-vault-close" type="button" onClick={onClose} aria-label="Close Prompt Vault">×</button>
+      </header>
 
       <div className="prompt-vault-toolbar">
-        <span>{selected.size} selected</span>
+        <strong>{selected.size} selected</strong>
         <div>
-          <button type="button" onClick={() => selected.size === items.length ? setSelected(new Set()) : selectAll()} disabled={!items.length}>
-            {selected.size === items.length ? 'Clear All' : 'Select All'}
+          <button type="button" className="prompt-vault-select-all" onClick={() => allSelected ? setSelected(new Set()) : selectAll()} disabled={!items.length}>
+            {allSelected ? 'Clear All' : 'Select All'}
           </button>
           <button type="button" className="prompt-vault-delete" onClick={() => void deleteSelected()} disabled={!selected.size}>
             Delete Selected
@@ -110,8 +117,9 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="prompt-vault-list">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <article className={`prompt-vault-card${selected.has(item.id) ? ' selected' : ''}`} key={item.id}>
+            <div className="prompt-vault-card-ribbon" aria-hidden="true" />
             <button
               type="button"
               className="prompt-vault-select"
@@ -122,11 +130,16 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
               {selected.has(item.id) ? '✓' : ''}
             </button>
             <div className="prompt-vault-card-image">
-              {item.imageRefs[0] ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} /> : <div className="prompt-vault-image-empty">No image</div>}
+              {item.imageRefs[0]
+                ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} />
+                : <div className="prompt-vault-image-empty">No image</div>}
+              <span className="prompt-vault-number">{index + 1}</span>
             </div>
             <div className="prompt-vault-card-body">
-              <strong>{item.name}</strong>
-              <div className="prompt-vault-prompt">{item.prompt || 'No prompt provided.'}</div>
+              <strong title={item.name}>{item.name}</strong>
+              <div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>
+                {item.prompt || 'No prompt provided.'}
+              </div>
               {item.imageRefs.length > 1 && <span className="prompt-vault-image-count">{item.imageRefs.length} images</span>}
             </div>
           </article>
