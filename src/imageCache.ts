@@ -2,6 +2,12 @@ const DB_NAME = 'comfyui-console-images'
 const STORE_NAME = 'images'
 const DB_VERSION = 1
 
+export interface BackupImage {
+  key: string
+  type: string
+  data: string
+}
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
@@ -74,6 +80,60 @@ export async function deleteCachedImage(key: string): Promise<void> {
     db.close()
   } catch {}
 }
+const blobToDataUrl = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
+  const reader = new FileReader()
+  reader.onloadend = () => resolve(reader.result as string)
+  reader.onerror = () => reject(reader.error)
+  reader.readAsDataURL(blob)
+})
+
+const dataUrlToBlob = async (data: string): Promise<Blob> => {
+  if (!data.startsWith('data:')) throw new Error('Backup contains an invalid image entry.')
+  const response = await fetch(data)
+  if (!response.ok) throw new Error('Backup contains an unreadable image entry.')
+  return response.blob()
+}
+
+export async function exportCachedFiles(): Promise<BackupImage[]> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).openCursor()
+    const entries: Array<{ key: string; value: Blob }> = []
+    request.onsuccess = () => {
+      const cursor = request.result
+      if (!cursor) {
+        void Promise.all(entries.map(async ({ key, value }) => ({
+          key,
+          type: value.type || 'application/octet-stream',
+          data: await blobToDataUrl(value),
+        }))).then((result) => { db.close(); resolve(result) }).catch((error) => { db.close(); reject(error) })
+        return
+      }
+      entries.push({ key: String(cursor.key), value: cursor.value as Blob })
+      cursor.continue()
+    }
+    request.onerror = () => { db.close(); reject(request.error) }
+  })
+}
+
+export async function clearCachedFiles(): Promise<void> {
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    tx.objectStore(STORE_NAME).clear()
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error) }
+  })
+}
+
+export async function importCachedFiles(entries: BackupImage[]): Promise<void> {
+  for (const entry of entries) {
+    if (!entry || typeof entry.key !== 'string' || typeof entry.data !== 'string') throw new Error('Backup contains an invalid cached image.')
+    const blob = await dataUrlToBlob(entry.data)
+    await putBlob(entry.key, blob)
+  }
+}
+
 export async function deleteCachedFiles(keys: string[]): Promise<void> {
   if (!keys.length) return
   try {
