@@ -69,6 +69,20 @@ while ($listener.IsListening) {
       }
       continue
     }
+    if ($path -eq '/logs' -and $context.Request.HttpMethod -eq 'GET') {
+      EnsureLauncher
+      try {
+        $response = Invoke-WebRequest -Uri "$LauncherUrl/logs" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        $raw = $response.Content | ConvertFrom-Json
+        $logs = @()
+        if ($raw.logs -is [System.Array]) { $logs = @($raw.logs) }
+        elseif ($null -ne $raw.logs) { $logs = @([string]$raw.logs) }
+        Json $context 200 @{ ok=$true; logs=$logs }
+      } catch {
+        Json $context 502 @{ ok=$false; error=$_.Exception.Message; logs=@() }
+      }
+      continue
+    }
     if ($path -eq '/start' -and $context.Request.HttpMethod -eq 'POST') {
       StartComfy
       Json $context 200 @{ ok=$true; launcher='running'; comfyui='running' }; continue
