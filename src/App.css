@@ -7919,81 +7919,71 @@ body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-status {
 }
 
 
-/* Prompt Vault — iOS two-column cards with armed/double-tap prompt editor */
-.prompt-vault-page,.prompt-vault-editor-page {
-  position: fixed; inset: 0; z-index: 1200; overflow-y: auto;
-  padding: 10px 12px 32px; background:#f2f2f7; color:#1c1c1e;
-  -webkit-overflow-scrolling:touch;
-}
-.prompt-vault-header,.prompt-vault-editor-header {
-  width:min(900px,100%); margin:0 auto 10px; min-height:50px;
-  display:flex; align-items:center; justify-content:space-between;
-}
-.prompt-vault-brand h2,.prompt-vault-editor-header h2 { margin:0; font-size:22px; line-height:1.1; letter-spacing:-.03em; font-weight:750; color:#1c1c1e; }
-.prompt-vault-brand span,.prompt-vault-editor-header span { display:block; margin-top:3px; color:#8e8e93; font-size:12px; }
-.prompt-vault-close { width:40px; min-width:40px; height:40px; border:0; border-radius:50%; background:rgba(118,118,128,.12); color:#1c1c1e; font-size:27px; line-height:1; cursor:pointer; }
-.prompt-vault-close:active { background:rgba(118,118,128,.22); transform:scale(.96); }
-.prompt-vault-toolbar {
-  width:min(900px,100%); margin:0 auto 10px; padding:7px; display:flex; align-items:center; justify-content:space-between; gap:8px;
-  border:1px solid rgba(60,60,67,.16); border-radius:14px; background:rgba(255,255,255,.78); box-shadow:0 2px 12px rgba(0,0,0,.06); backdrop-filter:blur(16px);
-}
-.prompt-vault-toolbar>strong { padding-left:6px; color:#636366; font-size:12px; font-weight:650; }
-.prompt-vault-toolbar>div { display:flex; gap:6px; }
-.prompt-vault-toolbar button { min-height:36px; padding:0 11px; border:0; border-radius:10px; background:#e5e5ea; color:#1c1c1e; font-size:12px; font-weight:650; cursor:pointer; }
-.prompt-vault-toolbar .prompt-vault-new,.prompt-vault-toolbar .prompt-vault-select-all { background:#007aff; color:#fff; }
-.prompt-vault-toolbar .prompt-vault-delete { background:#ff3b30; color:#fff; }
-.prompt-vault-toolbar button:disabled { opacity:.38; cursor:default; }
-.prompt-vault-list { width:min(900px,100%); margin:0 auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:10px; }
-.prompt-vault-card { position:relative; min-width:0; overflow:hidden; border:1px solid rgba(60,60,67,.16); border-radius:14px; background:rgba(255,255,255,.96); box-shadow:0 2px 10px rgba(0,0,0,.07); transition:border-color .18s ease,box-shadow .18s ease,transform .12s ease; cursor:pointer; }
-.prompt-vault-card:active { transform:scale(.985); }
-.prompt-vault-card.armed { border:2px solid #007aff; box-shadow:0 0 0 2px rgba(0,122,255,.12),0 4px 14px rgba(0,122,255,.12); }
-.prompt-vault-card.selected { border-color:#007aff; box-shadow:0 0 0 2px rgba(0,122,255,.14),0 4px 14px rgba(0,122,255,.12); }
-.prompt-vault-card-image { position:relative; width:100%; aspect-ratio:1/1; overflow:hidden; background:#e5e5ea; }
-.prompt-vault-card-image img { display:block; width:100%; height:100%; object-fit:cover; }
-.prompt-vault-card-image::after { content:''; position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 0 1px rgba(0,0,0,.05); }
-.prompt-vault-select { position:absolute; top:8px; right:8px; z-index:4; width:32px; min-width:32px; height:32px; border:0; border-radius:50%; background:rgba(28,28,30,.72); color:#fff; font-size:17px; font-weight:700; cursor:pointer; backdrop-filter:blur(8px); }
-.prompt-vault-card.selected .prompt-vault-select { background:#007aff; }
-.prompt-vault-card-body { min-width:0; padding:10px 11px 11px; }
-.prompt-vault-card-body>strong { display:block; overflow:hidden; margin-bottom:5px; color:#1c1c1e; font-size:13px; line-height:1.25; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
-.prompt-vault-prompt { display:-webkit-box; overflow:hidden; color:#636366; font-size:11px; line-height:1.45; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
-.prompt-vault-image-count { display:inline-block; margin-top:7px; color:#007aff; font-size:9px; font-weight:650; }
-.prompt-vault-empty { grid-column:1/-1; min-height:220px; display:grid; place-items:center; gap:7px; padding:30px; border:1px solid rgba(60,60,67,.16); border-radius:14px; background:rgba(255,255,255,.75); text-align:center; color:#8e8e93; }
-.prompt-vault-empty strong { color:#1c1c1e; font-size:17px; }
-
-/* Full-screen prompt editor */
-.prompt-vault-editor-body { width:min(900px,100%); min-height:calc(100% - 70px); margin:0 auto; display:flex; flex-direction:column; gap:10px; }
-.prompt-vault-editor-thumbnail { width:100%; max-height:30vh; overflow:hidden; border-radius:14px; background:#e5e5ea; }
-.prompt-vault-editor-thumbnail img { display:block; width:100%; height:100%; max-height:30vh; object-fit:contain; }
-.prompt-vault-editor-body>label { color:#636366; font-size:12px; font-weight:650; }
-.prompt-vault-editor-body>textarea { flex:1; min-height:48vh; width:100%; box-sizing:border-box; resize:none; overflow-y:auto; padding:14px; border:1px solid rgba(60,60,67,.18); border-radius:14px; outline:none; background:#fff; color:#1c1c1e; font:inherit; font-size:14px; line-height:1.55; box-shadow:0 2px 12px rgba(0,0,0,.05); -webkit-appearance:none; }
-.prompt-vault-editor-body>textarea:focus { border-color:#007aff; box-shadow:0 0 0 3px rgba(0,122,255,.14); }
-.prompt-vault-editor-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-bottom:8px; }
-.prompt-vault-editor-actions button { min-height:46px; border:0; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; }
-.prompt-vault-send-main { background:#007aff; color:#fff; }
-.prompt-vault-send-main:disabled { opacity:.4; }
-.prompt-vault-editor-delete { background:#ff3b30; color:#fff; }
-
-/* New card modal */
-.prompt-vault-modal-backdrop { position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.34); backdrop-filter:blur(10px); }
-.prompt-vault-create-modal { width:min(560px,100%); max-height:92vh; overflow-y:auto; padding:16px; border-radius:18px; background:#fff; box-shadow:0 20px 60px rgba(0,0,0,.22); }
-.prompt-vault-create-modal>header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-.prompt-vault-create-modal h2 { margin:0; color:#1c1c1e; font-size:20px; }
-.prompt-vault-create-modal header span { color:#8e8e93; font-size:11px; }
-.prompt-vault-create-field { display:block; margin:10px 0; color:#636366; font-size:11px; font-weight:650; }
-.prompt-vault-create-field input,.prompt-vault-create-field textarea { display:block; width:100%; box-sizing:border-box; margin-top:6px; padding:11px; border:1px solid rgba(60,60,67,.18); border-radius:11px; outline:none; background:#f2f2f7; color:#1c1c1e; font:inherit; font-size:13px; }
-.prompt-vault-create-field textarea { resize:vertical; min-height:150px; }
-.prompt-vault-create-field input:focus,.prompt-vault-create-field textarea:focus { border-color:#007aff; box-shadow:0 0 0 3px rgba(0,122,255,.12); }
-.prompt-vault-create-preview { display:block; width:100%; max-height:220px; object-fit:contain; margin:8px 0; border-radius:12px; background:#f2f2f7; }
-.prompt-vault-create-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
-.prompt-vault-create-actions button { min-height:44px; border:0; border-radius:11px; background:#e5e5ea; color:#1c1c1e; font-weight:700; }
-@media (max-width:600px) {
-  .prompt-vault-page,.prompt-vault-editor-page { padding:8px 8px 24px; }
-  .prompt-vault-toolbar>div { flex:1; display:grid; grid-template-columns:repeat(3,1fr); }
-  .prompt-vault-toolbar button { width:100%; padding:0 6px; }
-  .prompt-vault-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-  .prompt-vault-editor-actions { grid-template-columns:1fr; }
-  .prompt-vault-editor-body>textarea { min-height:58vh; }
-  .prompt-vault-create-modal { padding:14px; }
+/* Prompt Vault — iOS two-column cards with archive section */
+.prompt-vault-page,.prompt-vault-editor-page{position:fixed;inset:0;z-index:1200;overflow-y:auto;padding:10px 12px 32px;background:#f2f2f7;color:#1c1c1e;-webkit-overflow-scrolling:touch}
+.prompt-vault-header,.prompt-vault-editor-header{width:min(900px,100%);margin:0 auto 10px;min-height:50px;display:flex;align-items:center;justify-content:space-between}
+.prompt-vault-brand h2,.prompt-vault-editor-header h2{margin:0;font-size:22px;line-height:1.1;letter-spacing:-.03em;font-weight:750;color:#1c1c1e}
+.prompt-vault-brand span,.prompt-vault-editor-header span{display:block;margin-top:3px;color:#8e8e93;font-size:12px}
+.prompt-vault-close{width:40px;min-width:40px;height:40px;border:0;border-radius:50%;background:rgba(118,118,128,.12);color:#1c1c1e;font-size:27px;line-height:1;cursor:pointer}
+.prompt-vault-close:active{background:rgba(118,118,128,.22);transform:scale(.96)}
+.prompt-vault-toolbar{width:min(900px,100%);margin:0 auto 10px;padding:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid rgba(60,60,67,.16);border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 2px 12px rgba(0,0,0,.06);backdrop-filter:blur(16px)}
+.prompt-vault-toolbar>strong{padding-left:6px;color:#636366;font-size:12px;font-weight:650}
+.prompt-vault-toolbar>div{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.prompt-vault-toolbar button{min-height:36px;padding:0 11px;border:0;border-radius:10px;background:#e5e5ea;color:#1c1c1e;font-size:12px;font-weight:650;cursor:pointer}
+.prompt-vault-toolbar .prompt-vault-new,.prompt-vault-toolbar .prompt-vault-select-all{background:#007aff;color:#fff}
+.prompt-vault-toolbar .prompt-vault-archive-view{background:#5856d6;color:#fff}
+.prompt-vault-toolbar .prompt-vault-archive{background:#ff9500;color:#fff}
+.prompt-vault-toolbar .prompt-vault-restore{background:#34c759;color:#fff}
+.prompt-vault-toolbar .prompt-vault-delete{background:#ff3b30;color:#fff}
+.prompt-vault-toolbar button:disabled{opacity:.38;cursor:default}
+.prompt-vault-list{width:min(900px,100%);margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:10px}
+.prompt-vault-card{position:relative;min-width:0;overflow:hidden;border:1px solid rgba(60,60,67,.16);border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 2px 10px rgba(0,0,0,.07);transition:border-color .18s ease,box-shadow .18s ease,transform .12s ease;cursor:pointer}
+.prompt-vault-card:active{transform:scale(.985)}
+.prompt-vault-card.armed{border:2px solid #007aff;box-shadow:0 0 0 2px rgba(0,122,255,.12),0 4px 14px rgba(0,122,255,.12)}
+.prompt-vault-card.selected{border-color:#007aff;box-shadow:0 0 0 2px rgba(0,122,255,.14),0 4px 14px rgba(0,122,255,.12)}
+.prompt-vault-card-image{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#e5e5ea}
+.prompt-vault-card-image img{display:block;width:100%;height:100%;object-fit:cover}
+.prompt-vault-card-image::after{content:'';position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
+.prompt-vault-select{position:absolute;top:8px;right:8px;z-index:4;width:32px;min-width:32px;height:32px;border:0;border-radius:50%;background:rgba(28,28,30,.72);color:#fff;font-size:17px;font-weight:700;cursor:pointer;backdrop-filter:blur(8px)}
+.prompt-vault-card.selected .prompt-vault-select{background:#007aff}
+.prompt-vault-card-body{min-width:0;padding:10px 11px 11px}
+.prompt-vault-card-body>strong{display:block;overflow:hidden;margin-bottom:5px;color:#1c1c1e;font-size:13px;line-height:1.25;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.prompt-vault-prompt{display:-webkit-box;overflow:hidden;color:#636366;font-size:11px;line-height:1.45;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.prompt-vault-empty{grid-column:1/-1;min-height:220px;display:grid;place-items:center;gap:7px;padding:30px;border:1px solid rgba(60,60,67,.16);border-radius:14px;background:rgba(255,255,255,.75);text-align:center;color:#8e8e93}
+.prompt-vault-empty strong{color:#1c1c1e;font-size:17px}
+.prompt-vault-editor-body{width:min(900px,100%);min-height:calc(100% - 70px);margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.prompt-vault-editor-thumbnail{width:100%;max-height:30vh;overflow:hidden;border-radius:14px;background:#e5e5ea}
+.prompt-vault-editor-thumbnail img{display:block;width:100%;height:100%;max-height:30vh;object-fit:contain}
+.prompt-vault-editor-body>label{color:#636366;font-size:12px;font-weight:650}
+.prompt-vault-editor-body>textarea{flex:1;min-height:48vh;width:100%;box-sizing:border-box;resize:none;overflow-y:auto;padding:14px;border:1px solid rgba(60,60,67,.18);border-radius:14px;outline:none;background:#fff;color:#1c1c1e;font:inherit;font-size:14px;line-height:1.55;box-shadow:0 2px 12px rgba(0,0,0,.05);-webkit-appearance:none}
+.prompt-vault-editor-body>textarea:focus{border-color:#007aff;box-shadow:0 0 0 3px rgba(0,122,255,.14)}
+.prompt-vault-editor-actions{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;padding-bottom:8px}
+.prompt-vault-editor-actions button{min-height:46px;border:0;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer}
+.prompt-vault-send-main{background:#007aff;color:#fff}
+.prompt-vault-send-main:disabled{opacity:.4}
+.prompt-vault-editor-archive{background:#ff9500;color:#fff}
+.prompt-vault-editor-restore{background:#34c759;color:#fff}
+.prompt-vault-editor-delete{background:#ff3b30;color:#fff}
+.prompt-vault-modal-backdrop{position:fixed;inset:0;z-index:1300;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.34);backdrop-filter:blur(10px)}
+.prompt-vault-create-modal{width:min(560px,100%);max-height:92vh;overflow-y:auto;padding:16px;border-radius:18px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.22)}
+.prompt-vault-create-modal>header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.prompt-vault-create-modal h2{margin:0;color:#1c1c1e;font-size:20px}
+.prompt-vault-create-modal header span{color:#8e8e93;font-size:11px}
+.prompt-vault-create-field{display:block;margin:10px 0;color:#636366;font-size:11px;font-weight:650}
+.prompt-vault-create-field input,.prompt-vault-create-field textarea{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:11px;border:1px solid rgba(60,60,67,.18);border-radius:11px;outline:none;background:#f2f2f7;color:#1c1c1e;font:inherit;font-size:13px}
+.prompt-vault-create-field textarea{resize:vertical;min-height:150px}
+.prompt-vault-create-field input:focus,.prompt-vault-create-field textarea:focus{border-color:#007aff;box-shadow:0 0 0 3px rgba(0,122,255,.12)}
+.prompt-vault-create-preview{display:block;width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:12px;background:#f2f2f7}
+.prompt-vault-create-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.prompt-vault-create-actions button{min-height:44px;border:0;border-radius:11px;background:#e5e5ea;color:#1c1c1e;font-weight:700}
+@media(max-width:600px){
+ .prompt-vault-page,.prompt-vault-editor-page{padding:8px 8px 24px}
+ .prompt-vault-toolbar>div{flex:1;display:grid;grid-template-columns:repeat(3,1fr)}
+ .prompt-vault-toolbar button{width:100%;padding:0 6px}
+ .prompt-vault-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .prompt-vault-editor-actions{grid-template-columns:1fr}
+ .prompt-vault-editor-body>textarea{min-height:58vh}
+ .prompt-vault-create-modal{padding:14px}
 }
 
 /* Dataset -> Prompt Vault selection and transfer controls */
