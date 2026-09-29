@@ -43,25 +43,73 @@ function useImagePalette(cacheKey?: string) {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas')
-          canvas.width = 24
-          canvas.height = 24
+          canvas.width = 32
+          canvas.height = 32
           const ctx = canvas.getContext('2d', { willReadFrequently: true })
           if (!ctx) return
-          ctx.drawImage(img, 0, 0, 24, 24)
-          const px = ctx.getImageData(0, 0, 24, 24).data
-          let r = 0, g = 0, b = 0, n = 0
+          ctx.drawImage(img, 0, 0, 32, 32)
+          const px = ctx.getImageData(0, 0, 32, 32).data
+          let bestR = 70, bestG = 76, bestB = 84, bestScore = -1
+          let sumR = 0, sumG = 0, sumB = 0, count = 0
+
           for (let i = 0; i < px.length; i += 4) {
-            const rr = px[i], gg = px[i + 1], bb = px[i + 2], aa = px[i + 3]
-            const max = Math.max(rr, gg, bb), min = Math.min(rr, gg, bb)
-            if (aa < 180 || max < 35 || max - min < 10) continue
-            r += rr; g += gg; b += bb; n++
+            const r = px[i], g = px[i + 1], b = px[i + 2], a = px[i + 3]
+            if (a < 170) continue
+            const max = Math.max(r, g, b)
+            const min = Math.min(r, g, b)
+            const delta = max - min
+            if (max < 28) continue
+            sumR += r; sumG += g; sumB += b; count++
+
+            // Prefer colorful midtone/highlight pixels, but avoid pure white/black.
+            const brightness = (r + g + b) / 3
+            const saturation = delta / Math.max(1, max)
+            const skinPenalty = r > g * 1.16 && g > b * 1.18 ? 0.62 : 1
+            const score =
+              saturation * 1.8 +
+              Math.max(0, 1 - Math.abs(brightness - 150) / 150) * 0.7 +
+              skinPenalty * 0.25
+
+            if (score > bestScore) {
+              bestScore = score
+              bestR = r
+              bestG = g
+              bestB = b
+            }
           }
-          if (!n) return
-          r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n)
+
+          if (!count) return
+
+          // Blend dominant accent with overall image average for a natural cartridge color.
+          let r = Math.round(bestR * 0.7 + (sumR / count) * 0.3)
+          let g = Math.round(bestG * 0.7 + (sumG / count) * 0.3)
+          let b = Math.round(bestB * 0.7 + (sumB / count) * 0.3)
+
+          const max = Math.max(r, g, b)
+          const min = Math.min(r, g, b)
+          const spread = max - min
+
+          // Neutral images stay graphite/silver instead of turning muddy.
+          if (spread < 22) {
+            const neutral = Math.round((r + g + b) / 3)
+            r = neutral; g = neutral; b = neutral
+          }
+
+          // Slightly deepen the shell while retaining thumbnail hue.
+          const baseR = Math.round(r * 0.62)
+          const baseG = Math.round(g * 0.62)
+          const baseB = Math.round(b * 0.62)
+          const edgeR = Math.min(255, Math.round(r * 0.82 + 35))
+          const edgeG = Math.min(255, Math.round(g * 0.82 + 35))
+          const edgeB = Math.min(255, Math.round(b * 0.82 + 35))
+          const glowR = Math.min(255, Math.round(r * 0.9 + 48))
+          const glowG = Math.min(255, Math.round(g * 0.9 + 48))
+          const glowB = Math.min(255, Math.round(b * 0.9 + 48))
+
           if (live) setPalette({
-            base: `rgb(${Math.round(r*.72)} ${Math.round(g*.72)} ${Math.round(b*.72)})`,
-            edge: `rgb(${Math.min(255,r+40)} ${Math.min(255,g+40)} ${Math.min(255,b+40)})`,
-            glow: `rgb(${Math.min(255,r+62)} ${Math.min(255,g+62)} ${Math.min(255,b+62)})`,
+            base: `rgb(${baseR} ${baseG} ${baseB})`,
+            edge: `rgb(${edgeR} ${edgeG} ${edgeB})`,
+            glow: `rgb(${glowR} ${glowG} ${glowB})`,
           })
         } catch {}
         if (objectUrl) URL.revokeObjectURL(objectUrl)
