@@ -8025,3 +8025,182 @@ body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-status {
   .prompt-vault-prompt { font-size: 13px; line-height: 1.45; }
   .dataset-content-actions .dataset-vault { flex: 1 1 100%; }
 }
+
+
+/* Figure A / Figure B — floating 3D card treatment */
+.image-pickers {
+  perspective: 1500px;
+  perspective-origin: 50% 45%;
+  transform-style: preserve-3d;
+  overflow: visible;
+}
+
+.image-picker {
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: 50% 55%;
+  will-change: transform;
+  animation: figure-float-a 5.8s ease-in-out infinite;
+  filter: drop-shadow(0 18px 18px rgba(0,0,0,.30));
+}
+
+.image-picker + .image-picker {
+  animation-name: figure-float-b;
+  animation-delay: -2.8s;
+}
+
+.image-picker::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 7%;
+  right: 7%;
+  bottom: -13px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.42);
+  filter: blur(10px);
+  transform: translateZ(-35px) scale(.88);
+  opacity: .65;
+  pointer-events: none;
+}
+
+.image-picker-title {
+  position: relative;
+  z-index: 3;
+  transform: translateZ(24px);
+  transform-style: preserve-3d;
+  box-shadow:
+    0 7px 12px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.18);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.image-picker-box-wrap {
+  position: relative;
+  z-index: 2;
+  transform: translateZ(14px);
+  transform-style: preserve-3d;
+}
+
+.image-picker-box {
+  box-shadow:
+    0 14px 24px rgba(0,0,0,.32),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.30);
+  transform-style: preserve-3d;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.image-picker-box::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(125deg,
+      rgba(255,255,255,.20) 0%,
+      rgba(255,255,255,.06) 20%,
+      transparent 43%,
+      transparent 76%,
+      rgba(255,255,255,.08) 100%);
+  mix-blend-mode: screen;
+}
+
+.image-picker-box img {
+  transform: translateZ(2px) scale(1.01);
+  transition: transform .45s cubic-bezier(.2,.75,.25,1), filter .45s ease;
+}
+
+.image-picker:hover {
+  animation-play-state: paused;
+  transform: translateY(-14px) rotateX(5deg) rotateY(-3.5deg) scale(1.015);
+  filter: drop-shadow(0 28px 24px rgba(0,0,0,.38));
+}
+
+.image-picker + .image-picker:hover {
+  transform: translateY(-14px) rotateX(5deg) rotateY(3.5deg) scale(1.015);
+}
+
+.image-picker:hover .image-picker-title {
+  transform: translateZ(34px);
+  box-shadow:
+    0 11px 20px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+.image-picker:hover .image-picker-box {
+  transform: translateZ(22px);
+  box-shadow:
+    0 21px 34px rgba(0,0,0,.40),
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(0,0,0,.36);
+}
+
+.image-picker:hover .image-picker-box img {
+  transform: translateZ(3px) scale(1.035);
+  filter: saturate(1.05) contrast(1.02);
+}
+
+.image-picker:active {
+  transform: translateY(-5px) scale(.99);
+}
+
+@keyframes figure-float-a {
+  0%, 100% {
+    transform: translateY(0) rotateX(0deg) rotateY(-1deg);
+  }
+  20% {
+    transform: translateY(-7px) rotateX(1deg) rotateY(1deg);
+  }
+  50% {
+    transform: translateY(-13px) rotateX(-1deg) rotateY(1.8deg);
+  }
+  80% {
+    transform: translateY(-5px) rotateX(.8deg) rotateY(-1.2deg);
+  }
+}
+
+@keyframes figure-float-b {
+  0%, 100% {
+    transform: translateY(-4px) rotateX(0deg) rotateY(1deg);
+  }
+  20% {
+    transform: translateY(-13px) rotateX(-1deg) rotateY(-1.8deg);
+  }
+  50% {
+    transform: translateY(-6px) rotateX(1deg) rotateY(-1deg);
+  }
+  80% {
+    transform: translateY(-15px) rotateX(-.8deg) rotateY(1.5deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .image-pickers {
+    perspective: 1100px;
+  }
+
+  .image-picker:hover {
+    transform: translateY(-9px) rotateX(3deg) rotateY(-2deg) scale(1.01);
+  }
+
+  .image-picker + .image-picker:hover {
+    transform: translateY(-9px) rotateX(3deg) rotateY(2deg) scale(1.01);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-picker,
+  .image-picker + .image-picker {
+    animation: none;
+    transform: none;
+  }
+
+  .image-picker:hover,
+  .image-picker + .image-picker:hover {
+    transform: translateY(-5px);
+  }
+}
