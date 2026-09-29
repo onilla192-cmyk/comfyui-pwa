@@ -1,0 +1,708 @@
+/* Comfy Arcade cabinet showcase layer
+   Visual-only presentation layer plus responsive arcade controls.
+   Existing generation/API components remain untouched.
+*/
+.arcade-app {
+  --cabinet-black: #090a0f;
+  --cabinet-deep: #11131a;
+  --cabinet-panel: #1b1e27;
+  --cabinet-edge: #3d4250;
+  --cabinet-hi: #666d7b;
+  --crt-green: #79ff4f;
+  --crt-cyan: #39dcff;
+  --crt-yellow: #ffd84d;
+  --crt-pink: #ff4f88;
+  --pixel-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 50% 9%, rgba(255,66,112,.13), transparent 25rem),
+    radial-gradient(circle at 50% 35%, rgba(49,220,255,.08), transparent 30rem),
+    linear-gradient(180deg,#07080d 0%,#11131a 48%,#08090e 100%);
+}
+
+.arcade-app::before {
+  opacity: .15;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at 50% 30%, rgba(255,255,255,.05), transparent 45%);
+  mix-blend-mode: screen;
+}
+
+.arcade-app .app-main {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 900px);
+  margin: 0 auto;
+  padding: 16px 12px 180px;
+  box-sizing: border-box;
+}
+
+/* Marquee */
+.arcade-marquee {
+  position: relative;
+  z-index: 6;
+  min-height: 72px;
+  margin: 0 auto 16px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 54px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  border: 4px solid #3c4050;
+  border-radius: 17px;
+  background:
+    linear-gradient(180deg, rgba(51,35,49,.92), rgba(16,18,26,.98) 42%, #101219),
+    #171922;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.09),
+    inset 0 -9px 18px rgba(0,0,0,.45),
+    0 12px 30px rgba(0,0,0,.35),
+    0 0 0 2px rgba(255,67,116,.08);
+}
+
+.arcade-marquee::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,.035);
+}
+
+.arcade-marquee-lights {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+}
+
+.arcade-marquee-lights i {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #2c303a;
+  border: 2px solid #11131a;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,.12);
+}
+
+.arcade-marquee-lights i:first-child {
+  background: #d61e3d;
+  box-shadow: 0 0 11px rgba(255,45,83,.42), inset 0 1px 2px rgba(255,255,255,.3);
+}
+
+.arcade-marquee-lights i:nth-child(2) {
+  background: #36404a;
+}
+
+.arcade-marquee-lights i:nth-child(3) {
+  background: #39424b;
+}
+
+.arcade-logo {
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--pixel-font);
+  font-size: clamp(19px, 5vw, 33px);
+  font-weight: 1000;
+  letter-spacing: .03em;
+  line-height: 1;
+  text-shadow:
+    2px 2px 0 #8b1538,
+    4px 4px 0 rgba(0,0,0,.6),
+    0 0 13px rgba(255,64,121,.28);
+}
+
+.arcade-logo span {
+  color: #fff;
+  -webkit-text-stroke: 1px #ff5b91;
+}
+
+.arcade-logo b {
+  color: var(--crt-yellow);
+  font-weight: 1000;
+  -webkit-text-stroke: 1px #ffe980;
+}
+
+.arcade-sound-toggle {
+  position: relative;
+  z-index: 2;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 3px solid #278ea8;
+  border-radius: 9px;
+  background: linear-gradient(#151c25,#090d13);
+  color: var(--crt-cyan);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.1),
+    0 0 12px rgba(57,220,255,.08);
+  font: 900 11px/1 var(--pixel-font);
+  letter-spacing: .05em;
+  cursor: pointer;
+}
+
+.arcade-sound-toggle.on {
+  text-shadow: 0 0 8px rgba(57,220,255,.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 0 16px rgba(57,220,255,.18);
+}
+
+.arcade-sound-toggle:active {
+  transform: translateY(2px);
+}
+
+/* CRT monitor generated above the existing functional UI */
+.arcade-app .app-main::after {
+  content: "1UP  SYSTEM ONLINE   CR 00\A\A COMFY\A ARCADE\A\A INSERT CARTRIDGE\A\A © 2026  IMAGE ENGINE";
+  position: absolute;
+  z-index: 1;
+  top: 103px;
+  left: 50%;
+  width: min(72%, 540px);
+  height: 265px;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 28px 20px;
+  border: 7px solid #292d38;
+  border-radius: 31px;
+  outline: 2px solid #4a4f5d;
+  outline-offset: -9px;
+  background:
+    repeating-linear-gradient(0deg, rgba(75,255,120,.05) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at 50% 48%, rgba(47,255,96,.15), transparent 61%),
+    #020604;
+  color: var(--crt-green);
+  white-space: pre;
+  text-align: center;
+  font: 900 clamp(13px, 3vw, 22px)/1.18 var(--pixel-font);
+  letter-spacing: .08em;
+  text-shadow:
+    0 0 3px #79ff4f,
+    0 0 12px rgba(121,255,79,.65);
+  box-shadow:
+    inset 0 0 0 8px #0d1017,
+    inset 0 0 55px rgba(0,0,0,.9),
+    0 0 0 7px #151821,
+    0 12px 35px rgba(0,0,0,.5),
+    0 0 28px rgba(57,220,255,.07);
+  pointer-events: none;
+}
+
+.arcade-app .app-main::after::selection {
+  background: transparent;
+}
+
+.arcade-app.arcade-phase-inserting .app-main::after {
+  content: "1UP  SYSTEM ONLINE   CR 01\A\A LOADING\A CARTRIDGE...\A\A READING IMAGE DATA\A\A PLEASE WAIT";
+  color: var(--crt-cyan);
+  text-shadow: 0 0 4px var(--crt-cyan), 0 0 13px rgba(57,220,255,.65);
+}
+
+.arcade-app.arcade-phase-running .app-main::after {
+  content: "1UP  GENERATION ACTIVE\A\A COMFY\A ARCADE\A\A GENERATING...\A\A DO NOT REMOVE CARTRIDGE";
+  color: var(--crt-yellow);
+  text-shadow: 0 0 4px var(--crt-yellow), 0 0 13px rgba(255,216,77,.6);
+  animation: crt-flicker .9s steps(2,end) infinite;
+}
+
+.arcade-app.arcade-phase-ejecting .app-main::after {
+  content: "1UP  SYSTEM ONLINE   CR 02\A\A GENERATION\A COMPLETE\A\A RESULT READY\A\A EJECTING CARTRIDGE";
+  color: var(--crt-pink);
+  text-shadow: 0 0 4px var(--crt-pink), 0 0 13px rgba(255,79,136,.6);
+}
+
+@keyframes crt-flicker {
+  0%,100% { opacity: 1; }
+  45% { opacity: .92; }
+  50% { opacity: .76; }
+  55% { opacity: 1; }
+}
+
+/* Reserve the physical monitor area before the existing generation controls. */
+.arcade-app .progress-wrap {
+  position: relative;
+  z-index: 8;
+  margin-top: 285px;
+}
+
+.arcade-app .progress-wrap + .arcade-cartridge-bay {
+  margin-top: 12px;
+}
+
+.arcade-app .progress-wrap:not(:has(+ .arcade-cartridge-bay)) {
+  margin-top: 285px;
+}
+
+/* Cartridge deck */
+.arcade-app .arcade-cartridge-bay {
+  position: relative;
+  z-index: 5;
+  width: min(100%, 760px);
+  margin: 285px auto 18px;
+  padding: 26px 18px 34px;
+  border: 4px solid #333744;
+  border-radius: 27px 27px 17px 17px;
+  background:
+    linear-gradient(180deg,#252a34 0,#171a23 13%,#0f1118 100%),
+    #141720;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.08),
+    inset 0 -14px 25px rgba(0,0,0,.4),
+    0 17px 40px rgba(0,0,0,.38);
+}
+
+.arcade-app .arcade-cartridge-bay::before {
+  content: "●  CARTRIDGE BAY  ●";
+  margin: 0 auto 16px;
+  padding: 4px 13px;
+  border: 0;
+  color: #a2a8b5;
+  background: transparent;
+  font: 900 10px/1 var(--pixel-font);
+  letter-spacing: .2em;
+  text-align: center;
+  text-shadow: 0 2px 0 #080910;
+}
+
+.arcade-app .arcade-machine-slot {
+  bottom: 8px;
+  width: min(300px, 55%);
+  height: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 0 3px #090a0f, 0 0 0 5px #3b4050, inset 0 3px 7px #000;
+}
+
+.arcade-app .arcade-machine-slot::after {
+  opacity: .55;
+  animation: slot-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes slot-pulse {
+  from { opacity: .22; }
+  to { opacity: .58; }
+}
+
+.arcade-app .arcade-cartridge-bay.single {
+  max-width: 560px;
+}
+
+/* Make the cartridges read like physical game media. */
+.arcade-app .arcade-cartridge {
+  padding: 4px 6px 0;
+}
+
+.arcade-app .arcade-cartridge .image-picker-title {
+  min-height: 34px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+  color: #f7f8fb;
+  font: 900 13px/1 var(--pixel-font);
+}
+
+.arcade-app .arcade-cartridge .image-picker-title > span {
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.arcade-app .arcade-cartridge .image-picker-title small {
+  color: #7d8492;
+}
+
+.arcade-app .arcade-cartridge .cartridge-shell {
+  min-height: 214px;
+  padding: 13px 13px 30px;
+  border: 4px solid #505666;
+  border-radius: 12px 12px 5px 5px;
+  background:
+    linear-gradient(135deg,#3a3e4a 0,#242832 48%,#13151c 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.12),
+    inset 0 -11px 18px rgba(0,0,0,.35),
+    0 8px 0 #07080c,
+    0 16px 24px rgba(0,0,0,.32);
+}
+
+.arcade-app .arcade-cartridge .cartridge-label {
+  min-height: 170px;
+  border: 3px solid #6a7180;
+  border-radius: 6px;
+  background: #09110d;
+}
+
+.arcade-app .arcade-cartridge .cartridge-label img {
+  min-height: 170px;
+  object-fit: cover;
+}
+
+.arcade-app .arcade-cartridge .image-upload-plus {
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #596172;
+  border-radius: 50%;
+  color: #f1f4f7;
+  background: rgba(255,255,255,.04);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.05), inset 0 0 20px rgba(57,220,255,.08);
+  font-size: 44px;
+}
+
+.arcade-app .arcade-cartridge .cartridge-contacts {
+  bottom: 5px;
+  color: #d9b54f;
+  font-size: 11px;
+  letter-spacing: 6px;
+}
+
+.arcade-app .arcade-cartridge .image-picker-name {
+  max-width: 100%;
+  margin-top: 9px;
+  overflow: hidden;
+  color: #737a88;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 9px/1.2 var(--pixel-font);
+  letter-spacing: .06em;
+}
+
+.arcade-app .arcade-cartridge-bay:has(.image-picker + .image-picker) {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.arcade-app .arcade-cartridge-bay:has(.image-picker + .image-picker) .image-picker {
+  min-width: 0;
+}
+
+/* The existing prompt/generation module becomes the lower cabinet control deck. */
+.arcade-app .generation-embed {
+  position: relative;
+  z-index: 5;
+  width: min(100%, 820px);
+  margin: 0 auto 18px;
+  padding: 0;
+  border: 5px solid #353946;
+  border-radius: 18px;
+  background: linear-gradient(180deg,#242832,#101219 65%,#0a0b10);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.08),
+    inset 0 -16px 25px rgba(0,0,0,.35),
+    0 13px 35px rgba(0,0,0,.38);
+}
+
+.arcade-app .generation-embed::before {
+  padding: 9px 14px;
+  color: #7d8492;
+  border-bottom: 3px solid #303440;
+  background: #11131a;
+  font: 900 9px/1 var(--pixel-font);
+  letter-spacing: .18em;
+}
+
+.arcade-app .generation-embed .field {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.arcade-app .generation-embed textarea {
+  border: 3px solid #383e4b;
+  border-radius: 8px;
+  background: #07090e;
+  box-shadow: inset 0 5px 15px rgba(0,0,0,.45);
+  color: #eef1f5;
+}
+
+.arcade-app .generation-actions {
+  padding: 14px 15px 15px;
+  border-top: 2px solid #2d313c;
+  background: linear-gradient(180deg,#181b23,#101219);
+}
+
+.arcade-app .generate-btn {
+  min-height: 60px;
+  border: 4px solid #182019;
+  border-radius: 10px;
+  background: linear-gradient(180deg,#a8ff83,#4ed438);
+  box-shadow:
+    inset 0 3px 0 rgba(255,255,255,.55),
+    0 5px 0 #182119,
+    0 0 22px rgba(121,255,79,.2);
+  font: 1000 14px/1 var(--pixel-font);
+  letter-spacing: .12em;
+}
+
+.arcade-app .cancel-btn {
+  min-height: 60px;
+  border: 4px solid #24151b;
+  border-radius: 10px;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,.2), 0 5px 0 #24151b;
+  font: 1000 14px/1 var(--pixel-font);
+  letter-spacing: .08em;
+}
+
+/* Footer becomes the machine's lower control panel. */
+.arcade-app .app-footer {
+  z-index: 30;
+  border-top: 4px solid #3d4250;
+  background: linear-gradient(180deg,#303440 0,#1b1e27 35%,#0f1118 100%);
+  box-shadow: 0 -14px 32px rgba(0,0,0,.45);
+}
+
+.arcade-app .footer-dock {
+  max-width: 900px;
+  padding: 10px 12px 12px;
+}
+
+.arcade-app .footer-dock::before {
+  content: "ARCADE CONTROL PANEL";
+  top: -10px;
+  padding: 4px 9px;
+  border-color: #3d4250;
+  color: #777f8d;
+  background: #151821;
+  font: 900 7px/1 var(--pixel-font);
+  letter-spacing: .2em;
+}
+
+.arcade-app .footer-actions {
+  gap: 9px;
+}
+
+.arcade-app .footer-dock button {
+  border: 3px solid #484e5c;
+  border-radius: 9px;
+  background: linear-gradient(180deg,#343945,#181b23);
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.1),
+    0 4px 0 #08090d;
+}
+
+.arcade-app .footer-dock button:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 0 #08090d;
+}
+
+.arcade-app .footer-power-btn.active {
+  box-shadow: 0 4px 0 #08090d, 0 0 20px rgba(121,255,79,.3);
+}
+
+.arcade-app .footer-power-btn.off {
+  box-shadow: 0 4px 0 #08090d, 0 0 20px rgba(255,59,103,.18);
+}
+
+.arcade-app .app-version {
+  font: 700 9px/1 var(--pixel-font);
+  letter-spacing: .08em;
+  color: #606775;
+}
+
+/* Completed result view gets a physical display-card treatment. */
+.arcade-app .results-page {
+  background:
+    radial-gradient(circle at 50% 10%, rgba(57,220,255,.08), transparent 28rem),
+    #0a0b10;
+  color: #eef1f5;
+}
+
+.arcade-app .results-page-header,
+.arcade-app .results-page-body {
+  width: min(900px,100%);
+}
+
+.arcade-app .latest-result {
+  border: 4px solid #3d4250;
+  border-radius: 18px;
+  background: linear-gradient(180deg,#242832,#0e1017);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.08), 0 16px 35px rgba(0,0,0,.4);
+}
+
+.arcade-app .completed-image-tap-area {
+  margin: 14px;
+  border: 4px solid #565d6b;
+  border-radius: 9px;
+  background: #05070a;
+  box-shadow: inset 0 0 35px rgba(0,0,0,.65);
+}
+
+/* Mobile cabinet proportions */
+@media (max-width: 700px) {
+  .arcade-app .app-main {
+    padding: 10px 8px 155px;
+  }
+
+  .arcade-marquee {
+    min-height: 64px;
+    margin-bottom: 10px;
+    padding: 8px 8px;
+    grid-template-columns: 34px minmax(0,1fr) auto;
+    border-width: 3px;
+    border-radius: 14px;
+  }
+
+  .arcade-marquee-lights {
+    gap: 5px;
+  }
+
+  .arcade-marquee-lights i {
+    width: 9px;
+    height: 9px;
+  }
+
+  .arcade-logo {
+    font-size: clamp(16px, 5.8vw, 25px);
+  }
+
+  .arcade-sound-toggle {
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  .arcade-app .app-main::after {
+    top: 82px;
+    width: calc(100% - 48px);
+    height: 224px;
+    border-width: 6px;
+    border-radius: 27px;
+    font-size: clamp(10px, 3vw, 16px);
+  }
+
+  .arcade-app .progress-wrap {
+    margin-top: 238px;
+  }
+
+  .arcade-app .progress-wrap:not(:has(+ .arcade-cartridge-bay)) {
+    margin-top: 238px;
+  }
+
+  .arcade-app .arcade-cartridge-bay {
+    margin-top: 238px;
+    margin-bottom: 12px;
+    padding: 18px 10px 28px;
+    border-width: 3px;
+    border-radius: 20px 20px 13px 13px;
+  }
+
+  .arcade-app .arcade-cartridge-bay::before {
+    margin-bottom: 11px;
+    font-size: 8px;
+  }
+
+  .arcade-app .arcade-cartridge .image-picker-title {
+    padding-inline: 4px;
+    font-size: 11px;
+  }
+
+  .arcade-app .arcade-cartridge .image-picker-title small {
+    font-size: 7px;
+  }
+
+  .arcade-app .arcade-cartridge .cartridge-shell {
+    min-height: 158px;
+    padding: 9px 9px 24px;
+    border-width: 3px;
+  }
+
+  .arcade-app .arcade-cartridge .cartridge-label,
+  .arcade-app .arcade-cartridge .cartridge-label img {
+    min-height: 124px;
+  }
+
+  .arcade-app .arcade-cartridge .cartridge-contacts {
+    letter-spacing: 3px;
+    font-size: 8px;
+  }
+
+  .arcade-app .generation-embed {
+    border-width: 3px;
+    border-radius: 14px;
+  }
+
+  .arcade-app .generation-embed::before {
+    font-size: 7px;
+  }
+
+  .arcade-app .generation-embed .field {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .arcade-app .generation-actions {
+    padding: 10px;
+  }
+
+  .arcade-app .generate-btn,
+  .arcade-app .cancel-btn {
+    min-height: 54px;
+    font-size: 12px;
+  }
+
+  .arcade-app .footer-dock {
+    padding-inline: 8px;
+  }
+
+  .arcade-app .footer-actions {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 430px) {
+  .arcade-marquee {
+    grid-template-columns: 22px minmax(0,1fr) auto;
+  }
+
+  .arcade-marquee-lights {
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .arcade-marquee-lights i {
+    width: 7px;
+    height: 7px;
+  }
+
+  .arcade-sound-toggle {
+    min-width: 73px;
+    padding: 0 6px;
+    font-size: 8px;
+  }
+
+  .arcade-app .app-main::after {
+    width: calc(100% - 32px);
+    height: 204px;
+  }
+
+  .arcade-app .progress-wrap,
+  .arcade-app .progress-wrap:not(:has(+ .arcade-cartridge-bay)) {
+    margin-top: 218px;
+  }
+
+  .arcade-app .arcade-cartridge-bay {
+    margin-top: 218px;
+  }
+
+  .arcade-app .arcade-cartridge-bay:has(.image-picker + .image-picker) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .arcade-app .arcade-cartridge-bay:has(.image-picker + .image-picker) .arcade-machine-slot {
+    width: 45%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcade-app.arcade-phase-running .app-main::after,
+  .arcade-app .arcade-machine-slot::after {
+    animation: none;
+  }
+}
