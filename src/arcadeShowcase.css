@@ -868,3 +868,13 @@
   .arcade-screen-blink { animation: none; }
   .arcade-output-cartridge { transition: none; }
 }
+
+
+/* V2 layout correction: the real CRT is now in document flow, so no spacer is needed. */
+.arcade-app .progress-wrap,
+.arcade-app .progress-wrap:not(:has(+ .arcade-cartridge-bay)) { margin-top: 10px; }
+.arcade-app .progress-wrap + .arcade-cartridge-bay { margin-top: 12px; }
+@media (max-width: 700px) {
+  .arcade-app .progress-wrap,
+  .arcade-app .progress-wrap:not(:has(+ .arcade-cartridge-bay)) { margin-top: 8px; }
+}
