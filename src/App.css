@@ -9233,3 +9233,41 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
     margin-right:8px !important;
   }
 }
+
+
+
+/* Image node images — preserve the source aspect ratio */
+.image-picker-box{
+  aspect-ratio:auto !important;
+  height:auto !important;
+  min-height:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:#20242a !important;
+}
+.image-picker-box img{
+  position:relative !important;
+  z-index:1 !important;
+  display:block !important;
+  width:100% !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:none !important;
+  object-fit:contain !important;
+}
+.image-picker-box:has(img){
+  aspect-ratio:auto !important;
+}
+.image-picker-box:has(img)::before{
+  display:none !important;
+}
+.image-picker-box:has(.image-upload-placeholder){
+  aspect-ratio:1/0.86 !important;
+  min-height:180px !important;
+}
+@media(max-width:600px){
+  .image-picker-box:has(.image-upload-placeholder){
+    min-height:120px !important;
+  }
+}
