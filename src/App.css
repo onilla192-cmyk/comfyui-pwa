@@ -7917,3 +7917,160 @@ body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-status {
     padding: 9px 10px !important;
   }
 }
+
+
+/* Prompt Vault */
+.prompt-vault-page {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  overflow-y: auto;
+  padding: 18px 20px 42px;
+  background: linear-gradient(180deg, #17191d 0%, #101216 100%);
+  color: #f2f2f2;
+}
+.prompt-vault-header {
+  width: min(920px, 100%);
+  margin: 0 auto 14px;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 2px solid #45464a;
+}
+.prompt-vault-header h2 { margin: 0; font-size: 26px; }
+.prompt-vault-header span { display: block; margin-top: 4px; color: #a7a8ad; font-size: 13px; }
+.prompt-vault-header .close-btn {
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  border: 2px solid #555;
+  background: #292b30;
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+.prompt-vault-toolbar {
+  width: min(920px, 100%);
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px solid #44464b;
+  border-radius: 15px;
+  background: #202228;
+}
+.prompt-vault-toolbar > span { color: #b7b8bd; font-size: 13px; font-weight: 800; }
+.prompt-vault-toolbar > div { display: flex; gap: 8px; }
+.prompt-vault-toolbar button,
+.dataset-content-actions .dataset-vault {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 2px solid #087f91;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #25bfc7, #078c9c);
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #075d68;
+}
+.prompt-vault-toolbar button:disabled,
+.dataset-content-actions .dataset-vault:disabled { opacity: .45; cursor: default; box-shadow: none; }
+.prompt-vault-toolbar .prompt-vault-delete,
+.dataset-content-actions .dataset-vault + .dataset-vault { border-color: #a86c00; background: linear-gradient(180deg,#e2a923,#b87800); box-shadow: 0 4px 0 #704600; }
+.prompt-vault-toolbar button:active,
+.dataset-content-actions .dataset-vault:active { transform: translateY(3px); box-shadow: 0 1px 0 #075d68; }
+.prompt-vault-list {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prompt-vault-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  min-height: 190px;
+  overflow: hidden;
+  border: 2px solid #47494f;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #25272c, #1b1d21);
+  box-shadow: 0 7px 0 #0c0d0f;
+}
+.prompt-vault-card.selected { border-color: #20c4d0; box-shadow: 0 7px 0 #075d68, 0 0 0 2px rgba(32,196,208,.18); }
+.prompt-vault-select,
+.dataset-record-select {
+  position: absolute;
+  z-index: 4;
+  top: 10px;
+  right: 10px;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  border: 2px solid #777;
+  border-radius: 11px;
+  background: rgba(22,23,26,.9);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.prompt-vault-card.selected .prompt-vault-select,
+.dataset-record.selected .dataset-record-select { border-color: #14c2ce; background: #0797a4; box-shadow: 0 3px 0 #075d68; }
+.prompt-vault-card-image {
+  min-height: 190px;
+  background: #111318;
+  border-right: 2px solid #3f4146;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.prompt-vault-card-image img { width: 100%; height: 100%; min-height: 190px; object-fit: cover; display: block; }
+.prompt-vault-image-empty { color: #777b83; font-size: 13px; }
+.prompt-vault-card-body { min-width: 0; padding: 22px 52px 20px 20px; }
+.prompt-vault-card-body > strong { display: block; margin-bottom: 10px; color: #f5f5f5; font-size: 18px; }
+.prompt-vault-prompt { white-space: pre-wrap; overflow-wrap: anywhere; color: #d1d2d6; font-size: 14px; line-height: 1.55; }
+.prompt-vault-image-count { display: inline-block; margin-top: 12px; color: #55cbd4; font-size: 12px; font-weight: 800; }
+.prompt-vault-empty {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px;
+  border: 2px dashed #4b4d52;
+  border-radius: 18px;
+  text-align: center;
+  color: #97999f;
+}
+.prompt-vault-empty strong { color: #e4e4e5; font-size: 18px; }
+
+/* Dataset -> Prompt Vault selection and transfer controls */
+.dataset-content-actions { flex-wrap: wrap; }
+.dataset-content-actions .dataset-vault { border-color: #087f91; background: linear-gradient(180deg,#25bfc7,#078c9c); box-shadow: 0 4px 0 #075d68; }
+.dataset-content-actions .dataset-vault + .dataset-vault { border-color: #a86c00; background: linear-gradient(180deg,#e2a923,#b87800); box-shadow: 0 4px 0 #704600; }
+.dataset-record { position: relative; }
+.dataset-record.selected { border-color: #18b9c7 !important; box-shadow: 0 0 0 2px rgba(24,185,199,.16); }
+.dataset-record-select { top: 8px; right: 8px; }
+
+@media (max-width: 700px) {
+  .prompt-vault-page { padding: 10px 12px 28px; }
+  .prompt-vault-header { min-height: 56px; }
+  .prompt-vault-header h2 { font-size: 22px; }
+  .prompt-vault-toolbar { align-items: stretch; flex-direction: column; }
+  .prompt-vault-toolbar > div { display: grid; grid-template-columns: 1fr 1fr; }
+  .prompt-vault-toolbar button { width: 100%; }
+  .prompt-vault-card { grid-template-columns: 118px minmax(0, 1fr); min-height: 150px; border-radius: 15px; }
+  .prompt-vault-card-image, .prompt-vault-card-image img { min-height: 150px; }
+  .prompt-vault-card-body { padding: 17px 44px 15px 14px; }
+  .prompt-vault-card-body > strong { font-size: 15px; }
+  .prompt-vault-prompt { font-size: 13px; line-height: 1.45; }
+  .dataset-content-actions .dataset-vault { flex: 1 1 100%; }
+}
