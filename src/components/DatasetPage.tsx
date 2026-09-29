@@ -92,7 +92,25 @@ export function DatasetPage({onClose,onMoveToVault}:{onClose:()=>void;sourceItem
             </article>
           })}
         </div>
-      </> : <div className="dataset-empty">Import a compatible dataset JSON to create a page.</div>}
+      </> : <div className="dataset-content-header dataset-empty-state">
+        <div className="dataset-content-title">
+          <h3>Imported</h3>
+          <span>0 records</span>
+        </div>
+        <div className="dataset-content-actions">
+          <button className="dataset-action dataset-import" onClick={()=>setStep('upload')}>
+            <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span>
+            Import JSON
+          </button>
+          <button className="dataset-action dataset-export" disabled>
+            <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span>
+            Export JSON
+          </button>
+          <button className="dataset-action dataset-vault" disabled>Move Selected</button>
+          <button className="dataset-action dataset-vault" disabled>Move All to Prompt Vault</button>
+          <button className="dataset-action dataset-danger" disabled>Delete All Imported Data</button>
+        </div>
+      </div>}
     </div>
   </div>
 {viewer&&<div className="dataset-viewer-backdrop" onClick={()=>setViewer(null)}><section className="dataset-viewer" onClick={e=>e.stopPropagation()}><div className="dataset-viewer-header"><h3>{viewer.name}</h3><button className="close-btn" onClick={()=>setViewer(null)}>×</button></div><div className="dataset-viewer-image">{viewer.imageRefs[0]?<Cached keyId={viewer.imageRefs[0].cacheKey}/>:<div className="dataset-image-empty">No image</div>}</div><div className="dataset-viewer-prompt"><div><strong>Prompt</strong><button type="button" onClick={()=>void navigator.clipboard?.writeText(viewer.prompt)}>Copy</button></div><textarea className="dataset-viewer-prompt-editor" value={viewer.prompt} onChange={e=>{const next=e.target.value;setViewer(v=>v&&v.id===viewer.id?{...v,prompt:next}:v);setPages(ps=>ps.map(p=>p.id===active?{...p,items:p.items.map(x=>x.id===viewer.id?{...x,prompt:next}:x)}:p))}} onClick={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} placeholder="No prompt provided" aria-label="Edit prompt"/></div></section></div>}
