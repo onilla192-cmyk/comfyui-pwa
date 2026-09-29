@@ -5,6 +5,7 @@ import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
+import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -180,6 +181,7 @@ export default function App() {
   const [footerExpanded, setFooterExpanded] = useState(false)
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
+  const [promptVaultOpen, setPromptVaultOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
   const [standbyLogs, setStandbyLogs] = useState<string[]>([])
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
@@ -262,6 +264,22 @@ export default function App() {
       copy.splice(next, 0, item)
       return copy
     })
+  }
+
+  function moveItemsToPromptVault(items: PromptVaultItem[]) {
+    if (!items.length) return
+    const key = 'comfyui-console-prompt-vault-v1'
+    let current: PromptVaultItem[] = []
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || '[]')
+      current = Array.isArray(parsed) ? parsed : []
+    } catch {
+      current = []
+    }
+    const existing = new Set(current.map((item) => item.id))
+    const next = [...current, ...items.filter((item) => !existing.has(item.id))]
+    localStorage.setItem(key, JSON.stringify(next))
+    window.dispatchEvent(new Event('prompt-vault-updated'))
   }
 
   function createMasterPrompt() {
@@ -1135,9 +1153,14 @@ export default function App() {
       </div>
     </div>}
 
+    {promptVaultOpen && (
+      <PromptVaultPage onClose={() => setPromptVaultOpen(false)} />
+    )}
+
     {datasetOpen && (
       <DatasetPage
         onClose={() => setDatasetOpen(false)}
+        onMoveToVault={moveItemsToPromptVault}
         sourceItems={results.map((item) => ({ id: item.id, prompt: item.prompt, url: item.url, createdAt: item.createdAt }))}
       />
     )}
@@ -1234,6 +1257,26 @@ export default function App() {
                         </svg>
                       </span>
                       <span>{promptBuilderOpen ? 'Disable Prompt Builder' : 'Prompt Builder'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`prompt-header-menu-item${promptVaultOpen ? ' active' : ''}`}
+                      onClick={() => {
+                        setPromptVaultOpen(true)
+                        setPromptHeaderMenuOpen(false)
+                        setFooterExpanded(false)
+                      }}
+                      role="menuitem"
+                    >
+                      <span className="prompt-menu-item-icon vault" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M4 8h16v12H4z" />
+                          <path d="M7 8V5h10v3" />
+                          <path d="M9 12h6" />
+                          <path d="M9 16h6" />
+                        </svg>
+                      </span>
+                      <span>Prompt Vault</span>
                     </button>
                     <button
                       type="button"
@@ -1783,7 +1826,7 @@ export default function App() {
       </div>}
 
     </main>
-    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
+    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <button
           className={`footer-menu-toggle ${footerExpanded ? 'expanded' : 'collapsed'}`}
