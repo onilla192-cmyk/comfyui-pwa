@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { cacheFile, deleteCachedFiles, getCachedFile } from '../imageCache'
+import type { PromptVaultItem } from './PromptVaultPage'
 
-export interface DatasetSourceItem { id:string; prompt?:string; url?:string }
+export interface DatasetSourceItem { id:string; prompt?:string; url?:string; createdAt?:number }
 type Img={filename:string;mimeType:string;data:string}
 type Item={prompt:string;images:Img[]}
 type Dataset={version:number;createdAt?:string;items:Item[]}
 type Ref={id:string;filename:string;mimeType:string;cacheKey:string}
-type PageItem={id:string;name:string;prompt:string;image:string;images:string[];imageRefs:Ref[]}
+export type PageItem=PromptVaultItem
 type Page={id:string;name:string;createdAt:string;items:PageItem[]}
 const KEY='comfyui-console-datasets-v1'
 const makeId=(p:string)=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,9)
@@ -16,16 +17,17 @@ const download=(name:string,json:string)=>{const u=URL.createObjectURL(new Blob(
 const validate=(x:any):Dataset=>{if(!x||typeof x!=='object'||!Array.isArray(x.items))throw new Error(!x||typeof x!=='object'?'Invalid JSON object':'Missing or invalid items array');for(const i of x.items){i.prompt=i.prompt==null?'':typeof i.prompt==='string'?i.prompt:String(i.prompt);if(!Array.isArray(i.images))i.images=[];i.images=i.images.filter((v:any)=>v&&typeof v.data==='string'&&v.data.startsWith('data:'))}return x as Dataset}
 function Cached({keyId}:{keyId:string}){const[u,setU]=useState('');useEffect(()=>{let o='';let live=true;void getCachedFile(keyId).then(b=>{if(live&&b){o=URL.createObjectURL(b);setU(o)}});return()=>{live=false;if(o)URL.revokeObjectURL(o)}},[keyId]);return u?<img src={u} alt="" loading="lazy"/>:<div className="dataset-image-empty"><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 2-2 5 5"/></svg></span></div>}
 
-export function DatasetPage({onClose,sourceItems}:{onClose:()=>void;sourceItems:DatasetSourceItem[]}){
+export function DatasetPage({onClose,sourceItems,onMoveToVault}:{onClose:()=>void;sourceItems:DatasetSourceItem[];onMoveToVault?:(items:PageItem[])=>void}){
  const[pages,setPages]=useState<Page[]>(read),[active,setActive]=useState<string|null>(()=>read()[0]?.id||null),[sel,setSel]=useState<Set<string>>(new Set()),[tab,setTab]=useState<'build'|'pages'>('build')
  const[step,setStep]=useState<'idle'|'upload'|'preview'|'importing'|'complete'>('idle'),[data,setData]=useState<Dataset|null>(null),[err,setErr]=useState(''),[progress,setProgress]=useState([0,0]),[summary,setSummary]=useState<number[]>([])
- const[viewer,setViewer]=useState<PageItem|null>(null),[opts,setOpts]=useState({images:true,prompts:true,dupes:'skip' as 'skip'|'all'}),input=useRef<HTMLInputElement>(null)
+ const[viewer,setViewer]=useState<PageItem|null>(null),[vaultSel,setVaultSel]=useState<Set<string>>(new Set()),[opts,setOpts]=useState({images:true,prompts:true,dupes:'skip' as 'skip'|'all'}),input=useRef<HTMLInputElement>(null)
  useEffect(()=>localStorage.setItem(KEY,JSON.stringify(pages)),[pages])
  const page=pages.find(x=>x.id===active)||null
  const reset=()=>{setStep('idle');setData(null);setErr('');setSummary([])}
  const exportRecords=async(items:DatasetSourceItem[],name='dataset.json')=>{const out:Dataset={version:1,createdAt:new Date().toISOString(),items:[]};for(const x of items){const r:Item={prompt:x.prompt||'',images:[]},b=await getCachedFile(x.id);if(b)r.images.push({filename:x.id+'.png',mimeType:b.type||'image/png',data:await b64(b)});else if(x.url?.startsWith('data:'))r.images.push({filename:x.id+'.png',mimeType:'image/png',data:x.url});out.items.push(r)}download(name,JSON.stringify(out,null,2))}
  const upload=(e:ChangeEvent<HTMLInputElement>)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=z=>{try{setData(validate(JSON.parse(z.target?.result as string)));setErr('');setStep('preview')}catch(e){setErr(e instanceof Error?e.message:'Failed to parse JSON file.')}};r.readAsText(f);e.target.value=''}
  const doImport=async()=>{if(!data)return;setStep('importing');const count=pages.filter(p=>p.name.startsWith('Imported')).length,name=count?'Imported '+(count+1):'Imported',items:PageItem[]=[];let ip=0,ii=0,sd=0,ir=0;for(let n=0;n<data.items.length;n++){const src=data.items[n];if(opts.dupes==='skip'&&src.prompt&&items.some(x=>x.prompt===src.prompt)){sd++;setProgress([n+1,data.items.length]);continue}try{const refs:Ref[]=[];if(opts.images)for(const im of src.images){const blob=await fetch(im.data).then(r=>r.blob()),key=makeId('media_ds');await cacheFile(key,blob);refs.push({id:makeId('img'),filename:im.filename||key+'.png',mimeType:im.mimeType||blob.type||'image/png',cacheKey:key});ii++}if(opts.images||opts.prompts){const prompt=opts.prompts?src.prompt:'',ids=refs.map(x=>x.cacheKey);items.push({id:makeId('item_ds'),name:prompt.split(' ').slice(0,4).join(' ').trim()||'Imported Pose',prompt,image:ids[0]||'',images:ids,imageRefs:refs});if(opts.prompts&&src.prompt)ip++}}catch{ir++}setProgress([n+1,data.items.length])}const p={id:makeId('page_ds'),name,createdAt:new Date().toISOString(),items};setPages(x=>[...x,p]);setActive(p.id);setTab('pages');setSummary([ip,ii,sd,ir]);setStep('complete')}
+ const moveToVault=async(all:boolean)=>{if(!page||!onMoveToVault)return;const items=all?page.items:page.items.filter((item)=>vaultSel.has(item.id));if(!items.length)return;const message=all?`Move all ${items.length} imported card${items.length===1?'':'s'} from “${page.name}” to Prompt Vault?`:`Move ${items.length} selected card${items.length===1?'':'s'} from “${page.name}” to Prompt Vault?`;if(!window.confirm(message))return;onMoveToVault(items);const movedIds=new Set(items.map((item)=>item.id));setPages((current)=>current.map((p)=>({...p,items:p.items.filter((item)=>!movedIds.has(item.id))})).filter((p)=>p.items.length>0));setVaultSel(new Set());setActive((current)=>{const currentPage=pages.find((p)=>p.id===current);if(currentPage&&currentPage.items.some((item)=>movedIds.has(item.id)))return pages.find((p)=>p.id!==current&&p.items.length>0)?.id||null;return current});}
  const deleteAllImportedData=async()=>{if(!pages.length)return;if(!window.confirm('Delete all imported dataset data? This will permanently remove every imported page, prompt, and imported image. Your completed generations and source images will not be deleted.'))return;const keys=pages.flatMap(p=>p.items.flatMap(i=>i.imageRefs.map(r=>r.cacheKey)));await deleteCachedFiles(keys);setPages([]);setActive(null);setSel(new Set());setTab('pages')}; const exportPage=async(p:Page)=>{const out:Dataset={version:1,createdAt:new Date().toISOString(),items:[]};for(const i of p.items){const r:Item={prompt:i.prompt,images:[]};for(const im of i.imageRefs){const b=await getCachedFile(im.cacheKey);if(b)r.images.push({filename:im.filename,mimeType:im.mimeType||b.type||'image/png',data:await b64(b)})}out.items.push(r)}download(p.name.replace(/[^a-z0-9]+/gi,'-')+'.json',JSON.stringify(out,null,2))}
 
  return <section className="dataset-page">
@@ -44,19 +46,23 @@ export function DatasetPage({onClose,sourceItems}:{onClose:()=>void;sourceItems:
   {tab==='pages' && <div className="dataset-imported-layout">
     <aside className="dataset-page-list">
       <button className="dataset-import-button" onClick={()=>setStep('upload')}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span> Import JSON</button>
-      {pages.map(p=><button className={p.id===active?'dataset-page-list-item active':'dataset-page-list-item'} key={p.id} onClick={()=>setActive(p.id)}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 19h4"/></svg></span><span><strong>{p.name}</strong><small>{p.items.length} records</small></span></button>)}
+      {pages.map(p=><button className={p.id===active?'dataset-page-list-item active':'dataset-page-list-item'} key={p.id} onClick={()=>{setActive(p.id);setVaultSel(new Set())}}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 19h4"/></svg></span><span><strong>{p.name}</strong><small>{p.items.length} records</small></span></button>)}
     </aside>
     <div className="dataset-page-content">
       {page ? <>
         <div className="dataset-content-header">
           <div><h3>{page.name}</h3><span>{page.items.length} records</span></div>
           <div className="dataset-content-actions">
+            <button className="dataset-vault" onClick={()=>void moveToVault(false)} disabled={!vaultSel.size}>Move Selected to Prompt Vault{vaultSel.size ? ` (${vaultSel.size})` : ''}</button>
+            <button className="dataset-vault" onClick={()=>void moveToVault(true)} disabled={!page.items.length}>Move All to Prompt Vault</button>
             <button className="dataset-danger" onClick={()=>void deleteAllImportedData()} disabled={!pages.length}>Delete All Imported Data</button>
             <button className="dataset-primary" onClick={()=>void exportPage(page)}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span> Export JSON</button>
           </div>
         </div>
         <div className="dataset-record-grid">
-          {page.items.map(i=><article className="dataset-record" key={i.id}><button type="button" className="dataset-record-image-button" onClick={()=>setViewer(i)} aria-label={`Open ${i.name}`}><div className="dataset-record-image">{i.imageRefs[0]?<Cached keyId={i.imageRefs[0].cacheKey}/>:<span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 2-2 5 5"/></svg></span>}</div></button><div className="dataset-record-body"><strong>{i.name}</strong><div className="dataset-record-prompt-preview">{i.prompt||'No prompt provided'}</div>{i.imageRefs.length>1&&<span>{i.imageRefs.length} images</span>}</div></article>)}
+          {page.items.map(i=><article className={`dataset-record${vaultSel.has(i.id)?' selected':''}`} key={i.id}>
+            <button type="button" className="dataset-record-select" onClick={()=>setVaultSel((current)=>{const next=new Set(current);next.has(i.id)?next.delete(i.id):next.add(i.id);return next})} aria-label={vaultSel.has(i.id)?`Deselect ${i.name}`:`Select ${i.name}`} aria-pressed={vaultSel.has(i.id)}>{vaultSel.has(i.id)?'✓':''}</button>
+            <button type="button" className="dataset-record-image-button" onClick={()=>setViewer(i)} aria-label={`Open ${i.name}`}><div className="dataset-record-image">{i.imageRefs[0]?<Cached keyId={i.imageRefs[0].cacheKey}/>:<span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 2-2 5 5"/></svg></span>}</div></button><div className="dataset-record-body"><strong>{i.name}</strong><div className="dataset-record-prompt-preview">{i.prompt||'No prompt provided'}</div>{i.imageRefs.length>1&&<span>{i.imageRefs.length} images</span>}</div></article>)}
         </div>
       </> : <div className="dataset-empty">Import a compatible dataset JSON to create a page.</div>}
     </div>
