@@ -9336,3 +9336,43 @@ body:has(.dataset-page) .dataset-content-actions .dataset-danger .dataset-inline
     min-height:38px !important;
   }
 }
+
+
+/* Imported dataset buttons — force compact dimensions over all earlier dataset rules */
+body:has(.dataset-page) .dataset-content-actions{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:6px !important;
+  align-items:stretch !important;
+}
+body:has(.dataset-page) .dataset-content-actions > .dataset-action{
+  box-sizing:border-box !important;
+  width:100% !important;
+  height:44px !important;
+  min-height:44px !important;
+  max-height:44px !important;
+  padding:4px 8px !important;
+  margin:0 !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+  line-height:1 !important;
+}
+body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
+  height:42px !important;
+  min-height:42px !important;
+  max-height:42px !important;
+}
+@media(max-width:700px){
+  body:has(.dataset-page) .dataset-content-actions > .dataset-action{
+    height:40px !important;
+    min-height:40px !important;
+    max-height:40px !important;
+    padding:4px 6px !important;
+    font-size:11px !important;
+  }
+  body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
+    height:38px !important;
+    min-height:38px !important;
+    max-height:38px !important;
+  }
+}
