@@ -2076,17 +2076,23 @@ function SettingNumber({ label, value, min, max, step, onChange, suffix }: { lab
 function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: { slot: string; label: string; image: CharacterImage | null; busy: boolean; disabled: boolean; glow: boolean; onChange: (file?: File) => void; onClear: () => void }) {
   return (
     <div className={`image-picker ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''}`}>
-      <div className="image-picker-title"><span>{label}</span></div>
+      <div className="image-picker-title">
+        <span className="image-picker-slot">SLOT {label === 'Figure A' ? '01' : '02'} // {label === 'Figure A' ? 'FIG A' : 'FIG B'}</span>
+        <span className="image-picker-empty-state">EMPTY</span>
+      </div>
+      <div className="image-picker-rom">ROM {label === 'Figure A' ? 'A' : 'B'}<span className="image-picker-rom-light" aria-hidden="true" /></div>
       <div className="image-picker-box-wrap">
         <label className="image-picker-box">
           {image ? <>
             <span className="image-picker-depth" aria-hidden="true" style={{ backgroundImage: `url("${image.previewUrl}")` }} />
             <img src={image.previewUrl} alt={`${label} preview`} />
-          </> : <span className="image-upload-plus" aria-hidden="true">+</span>}
+          </> : <span className="image-upload-placeholder"><span className="image-upload-icon" aria-hidden="true">▣</span><strong>INSERT ROM</strong><small>TAP TO LOAD SOURCE</small></span>}
           <input type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled || busy} onChange={(e) => { onChange(e.target.files?.[0]); e.currentTarget.value = '' }} />
         </label>
         {image && <button className="image-clear-btn" type="button" onClick={onClear} disabled={disabled || busy} aria-label={`Clear ${label}`}>×</button>}
       </div>
+      <div className="image-picker-footer"><span>{image ? 'ROM LOADED' : 'AWAITING ROM'}</span><span className="image-picker-bars" aria-hidden="true" /></div>
+      <div className="image-picker-edge">▲ INSERTION EDGE ▲</div>
       {image && <div className="image-picker-name">{image.fileName}</div>}
     </div>
   )
