@@ -8025,3 +8025,20 @@ body:has(.hook-prompts-page) .hook-prompt-row.disabled .hook-prompt-status {
   .prompt-vault-prompt { font-size: 13px; line-height: 1.45; }
   .dataset-content-actions .dataset-vault { flex: 1 1 100%; }
 }
+
+/* Full PWA backup */
+.dataset-full-backup{margin:0;border-bottom:1px solid rgba(151,143,123,.55);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:14px;background:rgba(255,255,255,.018)}
+.dataset-full-backup>div:first-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.dataset-full-backup strong{font-size:14px;color:#f1eee5}
+.dataset-full-backup span{font-size:11px;color:#aaa59a;line-height:1.35}
+.dataset-full-backup-actions{display:flex;gap:8px;flex-shrink:0}
+.dataset-full-export,.dataset-full-import{min-height:42px;padding:0 16px;border-radius:12px;border:1px solid;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.dataset-full-export{background:rgba(0,122,255,.14);border-color:rgba(0,122,255,.45);color:#5ab0ff}
+.dataset-full-import{background:rgba(52,199,89,.14);border-color:rgba(52,199,89,.45);color:#63df83}
+.dataset-full-export:active,.dataset-full-import:active{transform:scale(.97)}
+.dataset-full-export:disabled,.dataset-full-import:disabled{opacity:.45;cursor:default}
+@media(max-width:700px){
+  .dataset-full-backup{padding:12px 18px;align-items:stretch;flex-direction:column}
+  .dataset-full-backup-actions{width:100%}
+  .dataset-full-export,.dataset-full-import{flex:1;min-width:0}
+}
