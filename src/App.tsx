@@ -10,7 +10,7 @@ import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultP
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 29
+const APP_VERSION = 30
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -702,12 +702,13 @@ export default function App() {
   async function waitForResult(promptId: string) {
     setStatus('running')
     cleanupProgress.current = connectProgress(promptId, (value, max) => setProgress({ value, max }))
-    for (let i = 0; i < 180; i++) {
+    // ComfyUI is running on the user's own laptop, so generation time is not
+    // bounded by the phone/browser. Keep polling until ComfyUI reports the
+    // completed output instead of imposing an arbitrary 3-minute timeout.
+    while (currentPromptId.current === promptId) {
       if (await fetchResult(promptId)) return
       await new Promise((resolve) => setTimeout(resolve, 1000))
     }
-    cleanupProgress.current?.(); cleanupProgress.current = null
-    setStatus('error'); setErrorMsg(recordErrorLog('Generation timed out. Check ComfyUI.'))
   }
 
   async function useGeneratedAsFigure(item: ResultImage, which: 'one' | 'two') {
