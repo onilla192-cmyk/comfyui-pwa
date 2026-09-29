@@ -706,3 +706,165 @@
     animation: none;
   }
 }
+
+
+/* ARCADE CABINET V2 — functional screen, output ejection, and physical cabinet details */
+.arcade-app .app-main {
+  width: min(100%, 980px);
+  padding: 14px 14px 190px;
+}
+
+.arcade-app .app-main::after { display: none; }
+
+.arcade-screen {
+  position: relative;
+  z-index: 8;
+  width: min(100%, 860px);
+  margin: 8px auto 18px;
+  padding: 12px 12px 28px;
+  border: 5px solid #343945;
+  border-radius: 28px 28px 18px 18px;
+  background: linear-gradient(180deg,#252a34 0%,#151821 28%,#0c0e14 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.1), inset 0 -20px 30px rgba(0,0,0,.45), 0 20px 42px rgba(0,0,0,.42);
+}
+
+.arcade-screen-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px 9px;
+  color: #8b93a2;
+  font: 900 9px/1 var(--pixel-font);
+  letter-spacing: .14em;
+}
+
+.arcade-screen-topline span:last-child { color: var(--crt-green); text-shadow: 0 0 8px rgba(121,255,79,.45); }
+
+.arcade-screen-bezel {
+  position: relative;
+  padding: 13px;
+  border: 6px solid #090a0f;
+  border-radius: 22px;
+  background: #11141b;
+  box-shadow: inset 0 0 0 3px #484e5b, inset 0 0 35px #000, 0 8px 0 #08090d;
+}
+
+.arcade-screen-glass {
+  position: relative;
+  min-height: clamp(270px, 52vw, 500px);
+  overflow: hidden;
+  border: 3px solid #202733;
+  border-radius: 14px;
+  background: #020604;
+  box-shadow: inset 0 0 70px rgba(0,0,0,.85), inset 0 0 15px rgba(57,220,255,.08);
+}
+
+.arcade-screen-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 4px);
+  opacity: .5;
+  mix-blend-mode: screen;
+}
+
+.arcade-screen-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.48) 100%);
+}
+
+.arcade-screen-result { position: absolute; inset: 0; display: grid; place-items: center; }
+.arcade-screen-result img { width: 100%; height: 100%; object-fit: contain; image-rendering: auto; filter: saturate(1.04) contrast(1.03); }
+.arcade-screen-result-tag {
+  position: absolute;
+  z-index: 5;
+  left: 14px;
+  bottom: 14px;
+  padding: 7px 10px;
+  border: 2px solid rgba(121,255,79,.55);
+  border-radius: 5px;
+  color: #baffaa;
+  background: rgba(2,8,3,.82);
+  box-shadow: 0 0 14px rgba(121,255,79,.14);
+  font: 900 9px/1 var(--pixel-font);
+  letter-spacing: .08em;
+}
+
+.arcade-screen-status { height: 100%; min-height: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 28px; box-sizing: border-box; color: var(--crt-green); text-align: center; text-shadow: 0 0 5px currentColor, 0 0 18px rgba(121,255,79,.45); }
+.arcade-screen-pixel-logo { font: 1000 clamp(18px,4vw,32px)/1 var(--pixel-font); letter-spacing: .08em; }
+.arcade-screen-pixel-logo span { color: var(--crt-pink); }
+.arcade-screen-big { font: 1000 clamp(25px,7vw,58px)/1 var(--pixel-font); letter-spacing: .12em; }
+.arcade-screen-small { color: #91a28d; font: 900 10px/1.4 var(--pixel-font); letter-spacing: .14em; text-shadow: none; }
+.arcade-screen-blink { color: var(--crt-yellow); font: 900 11px/1 var(--pixel-font); animation: arcade-blink .85s steps(2,end) infinite; }
+.arcade-screen-loader { width: min(480px,85%); height: 12px; overflow: hidden; border: 3px solid #3b473d; border-radius: 4px; background: #070a08; box-shadow: inset 0 0 10px #000; }
+.arcade-screen-loader span { display: block; height: 100%; background: repeating-linear-gradient(90deg,#79ff4f 0 10px,#39dcff 10px 20px); box-shadow: 0 0 16px rgba(121,255,79,.65); transition: width .18s linear; }
+
+@keyframes arcade-blink { 50% { opacity: .25; } }
+
+.arcade-screen-reflection { position: absolute; z-index: 6; top: 42px; left: 40px; width: 28%; height: 35%; pointer-events: none; transform: rotate(-17deg); border-radius: 50%; background: linear-gradient(135deg,rgba(255,255,255,.13),transparent 55%); filter: blur(2px); opacity: .35; }
+
+.arcade-screen-speakers { position: absolute; right: 18px; bottom: 8px; display: flex; gap: 5px; }
+.arcade-screen-speakers i { width: 7px; height: 7px; border-radius: 50%; background: #08090d; box-shadow: inset 0 1px 1px #59606d; }
+
+/* Finished result physically rises from the output slot after generation. */
+.arcade-output-cartridge { position: absolute; right: clamp(16px,4vw,42px); bottom: -42px; z-index: 12; width: 128px; transform: translateY(125%); transition: transform .55s cubic-bezier(.2,.9,.25,1.2); }
+.arcade-output-cartridge.arcade-output-ejecting, .arcade-output-cartridge.arcade-output-idle { transform: translateY(0); }
+.arcade-output-label { margin-bottom: 5px; color: #ffd84d; font: 900 8px/1 var(--pixel-font); letter-spacing: .12em; text-align: center; text-shadow: 0 0 8px rgba(255,216,77,.35); }
+.arcade-output-shell { position: relative; height: 148px; padding: 8px 8px 23px; box-sizing: border-box; border: 3px solid #687080; border-radius: 9px 9px 4px 4px; background: linear-gradient(135deg,#454b58,#1a1d25); box-shadow: 0 7px 0 #07080c, 0 14px 22px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.18); }
+.arcade-output-art { height: 108px; overflow: hidden; border: 2px solid #777e8b; border-radius: 4px; background: #030405; }
+.arcade-output-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.arcade-output-meta { position: absolute; left: 10px; bottom: 7px; right: 10px; display: flex; justify-content: space-between; gap: 4px; color: #eef1f5; font: 900 6px/1 var(--pixel-font); }
+.arcade-output-meta span { color: #79ff4f; }
+.arcade-output-contacts { position: absolute; left: 23px; bottom: -1px; color: #d5b84e; font-size: 7px; letter-spacing: 3px; }
+
+/* The source bay now follows the screen instead of leaving a giant empty monitor gap. */
+.arcade-app .arcade-cartridge-bay { margin: 12px auto 18px; }
+.arcade-app .arcade-machine-slot { bottom: 9px; }
+
+.arcade-app .generation-embed { margin-top: 14px; }
+
+/* Add physical control-deck details without stealing existing controls. */
+.arcade-app .generation-embed::after {
+  content: "●   ●   ●     1UP   SELECT     POWER ●";
+  display: block;
+  margin-top: 12px;
+  padding: 10px 12px 12px;
+  border-top: 2px solid #303440;
+  color: #686f7c;
+  text-align: center;
+  font: 900 8px/1 var(--pixel-font);
+  letter-spacing: .16em;
+  text-shadow: 0 2px 0 #08090d;
+}
+
+@media (max-width: 700px) {
+  .arcade-app .app-main { padding: 8px 8px 165px; }
+  .arcade-screen { margin-top: 5px; padding: 8px 8px 24px; border-width: 4px; border-radius: 21px 21px 14px 14px; }
+  .arcade-screen-topline { font-size: 7px; padding-inline: 4px; }
+  .arcade-screen-bezel { padding: 8px; border-width: 4px; border-radius: 16px; }
+  .arcade-screen-glass { min-height: 255px; border-radius: 10px; }
+  .arcade-screen-status { gap: 12px; padding: 18px; }
+  .arcade-output-cartridge { right: 14px; bottom: -42px; width: 102px; }
+  .arcade-output-shell { height: 120px; padding: 6px 6px 20px; }
+  .arcade-output-art { height: 88px; }
+  .arcade-output-label { font-size: 7px; }
+  .arcade-output-meta { font-size: 5px; }
+  .arcade-app .arcade-cartridge-bay { margin-top: 18px; }
+}
+
+@media (max-width: 430px) {
+  .arcade-screen-glass { min-height: 225px; }
+  .arcade-screen-big { font-size: 25px; }
+  .arcade-output-cartridge { width: 92px; right: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcade-screen-blink { animation: none; }
+  .arcade-output-cartridge { transition: none; }
+}
