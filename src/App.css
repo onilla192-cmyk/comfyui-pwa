@@ -1552,6 +1552,18 @@ html, body, #root {
   align-items: center;
   gap: 7px;
 }
+
+/* Main footer visibility toggle in the prompt embed */
+.prompt-footer-toggle {
+  width:34px; height:34px; min-width:34px; padding:0; border:1px solid rgba(118,118,128,.28);
+  border-radius:10px; display:inline-flex; align-items:center; justify-content:center;
+  background:rgba(118,118,128,.10); color:#8e8e93; cursor:pointer; transition:all .16s ease;
+}
+.prompt-footer-toggle svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+.prompt-footer-toggle.visible { color:#007aff; background:rgba(0,122,255,.10); border-color:rgba(0,122,255,.24); }
+.prompt-footer-toggle.hidden { color:#ff9500; background:rgba(255,149,0,.11); border-color:rgba(255,149,0,.25); }
+.prompt-footer-toggle:active { transform:scale(.94); }
+
 .prompt-menu-btn {
   position: relative;
   z-index: 1;
