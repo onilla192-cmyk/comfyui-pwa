@@ -901,6 +901,11 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 .logs-body{flex:1;overflow:auto;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.55;-webkit-overflow-scrolling:touch}
 .log-line{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.035);white-space:pre-wrap;overflow-wrap:anywhere;color:#cfd3da}
 .logs-empty{display:grid;place-items:center;height:100%;color:#7f8795}
+.logs-section-title{margin:4px 2px 8px;color:#f2c94c;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.launcher-title{margin-top:18px;color:#79d7ff}
+.error-log-card{margin:0 0 9px;padding:10px;border:1px solid rgba(255,90,90,.22);border-left:3px solid #ff5c5c;border-radius:10px;background:rgba(255,60,60,.06)}
+.error-log-card time{display:block;margin-bottom:6px;color:#8d95a3;font-size:9px}
+.error-log-card pre{margin:0;color:#ff8585;font:inherit;font-size:11px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
 .logs-icon svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .logs-panel .close-btn{flex:0 0 auto}
 
