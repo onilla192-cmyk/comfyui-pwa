@@ -2075,7 +2075,7 @@ function SettingNumber({ label, value, min, max, step, onChange, suffix }: { lab
 
 function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: { slot: string; label: string; image: CharacterImage | null; busy: boolean; disabled: boolean; glow: boolean; onChange: (file?: File) => void; onClear: () => void }) {
   return (
-    <div className={`image-picker ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''}`}>
+    <div className={`image-picker ${image ? 'image-picker-loaded' : 'image-picker-empty'} ${glow ? 'rgb-glow-active' : ''} ${busy ? 'rgb-glow-running' : ''}`}>
       <div className="image-picker-title">
         <span className="image-picker-slot">SLOT {label === 'Figure A' ? '01' : '02'} // {label === 'Figure A' ? 'FIG A' : 'FIG B'}</span>
         <span className="image-picker-empty-state">EMPTY</span>
