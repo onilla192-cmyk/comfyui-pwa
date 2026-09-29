@@ -8481,3 +8481,211 @@ body:has(.dataset-page) .dataset-page-content{
 body:has(.dataset-page) .dataset-record-grid{
   padding-bottom:24px !important;
 }
+
+
+/* Dataset records — polished gallery cards */
+body:has(.dataset-page) .dataset-record{
+  position:relative !important;
+  overflow:hidden !important;
+  border:2px solid #4a4e55 !important;
+  border-radius:18px !important;
+  background:linear-gradient(145deg,#20252b,#171b20) !important;
+  box-shadow:0 5px 0 #0b0d10,0 10px 18px rgba(0,0,0,.2) !important;
+}
+body:has(.dataset-page) .dataset-record.selected{
+  border-color:#36a5ff !important;
+  box-shadow:0 5px 0 #0b0d10,0 0 0 2px rgba(54,165,255,.18) !important;
+}
+body:has(.dataset-page) .dataset-record-image-wrap{
+  position:relative !important;
+  width:100% !important;
+  aspect-ratio:1/1 !important;
+  overflow:hidden !important;
+  background:#0c0f13 !important;
+}
+body:has(.dataset-page) .dataset-record-image-button{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+}
+body:has(.dataset-page) .dataset-record-image{
+  width:100% !important;
+  height:100% !important;
+  background:#0c0f13 !important;
+}
+body:has(.dataset-page) .dataset-record-image img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  display:block !important;
+}
+body:has(.dataset-page) .dataset-record-select{
+  position:absolute !important;
+  z-index:3 !important;
+  top:9px !important;
+  left:9px !important;
+  width:34px !important;
+  height:34px !important;
+  padding:0 !important;
+  border:2px solid #e9edf2 !important;
+  border-radius:9px !important;
+  background:rgba(20,24,29,.72) !important;
+  backdrop-filter:blur(6px) !important;
+  color:#fff !important;
+  font-size:20px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+}
+body:has(.dataset-page) .dataset-record.selected .dataset-record-select{
+  background:#1889df !important;
+  border-color:#69c2ff !important;
+}
+body:has(.dataset-page) .dataset-record-more{
+  position:absolute !important;
+  z-index:3 !important;
+  top:9px !important;
+  right:9px !important;
+  width:42px !important;
+  height:42px !important;
+  padding:0 !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:11px !important;
+  background:rgba(27,31,36,.78) !important;
+  backdrop-filter:blur(7px) !important;
+  color:#fff !important;
+  font-size:17px !important;
+  font-weight:900 !important;
+  letter-spacing:2px !important;
+}
+body:has(.dataset-page) .dataset-record-body{
+  padding:12px 12px 13px !important;
+}
+body:has(.dataset-page) .dataset-record-body strong{
+  display:block !important;
+  margin:0 !important;
+  color:#f5f2ed !important;
+  font-size:16px !important;
+  font-weight:900 !important;
+  line-height:1.15 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+body:has(.dataset-page) .dataset-record-prompt-preview{
+  margin-top:7px !important;
+  color:#b7bec8 !important;
+  font-size:13px !important;
+  line-height:1.35 !important;
+  min-height:35px !important;
+  max-height:36px !important;
+  overflow:hidden !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+}
+body:has(.dataset-page) .dataset-record-meta{
+  display:flex !important;
+  gap:7px !important;
+  margin-top:9px !important;
+  overflow:hidden !important;
+}
+body:has(.dataset-page) .dataset-record-meta span{
+  display:inline-flex !important;
+  align-items:center !important;
+  min-width:0 !important;
+  padding:5px 9px !important;
+  border:1px solid #414750 !important;
+  border-radius:999px !important;
+  background:#252b32 !important;
+  color:#d4d9df !important;
+  font-size:10px !important;
+  font-weight:750 !important;
+  white-space:nowrap !important;
+}
+body:has(.dataset-page) .dataset-record-actions{
+  display:grid !important;
+  grid-template-columns:repeat(4,1fr) !important;
+  gap:7px !important;
+  margin-top:10px !important;
+}
+body:has(.dataset-page) .dataset-record-actions button{
+  min-width:0 !important;
+  height:40px !important;
+  padding:0 !important;
+  border:1px solid #343a43 !important;
+  border-radius:11px !important;
+  background:linear-gradient(145deg,#292f36,#20252b) !important;
+  color:#eef1f4 !important;
+  font-size:18px !important;
+  box-shadow:0 3px 0 #0c0e11 !important;
+}
+body:has(.dataset-page) .dataset-record-actions button:active{
+  transform:translateY(2px) !important;
+  box-shadow:0 1px 0 #0c0e11 !important;
+}
+body:has(.dataset-page) .dataset-record-actions button.active{
+  border-color:#36a5ff !important;
+  background:#155c91 !important;
+}
+body:has(.dataset-page) .dataset-record-actions button:disabled{
+  opacity:.32 !important;
+}
+body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
+  border-color:#752431 !important;
+  background:#351b21 !important;
+  color:#ff6473 !important;
+}
+@media(max-width:700px){
+  body:has(.dataset-page) .dataset-record{
+    border-radius:15px !important;
+  }
+  body:has(.dataset-page) .dataset-record-select{
+    top:7px !important;
+    left:7px !important;
+    width:30px !important;
+    height:30px !important;
+    border-radius:8px !important;
+    font-size:17px !important;
+  }
+  body:has(.dataset-page) .dataset-record-more{
+    top:7px !important;
+    right:7px !important;
+    width:36px !important;
+    height:36px !important;
+    border-radius:10px !important;
+    font-size:14px !important;
+  }
+  body:has(.dataset-page) .dataset-record-body{
+    padding:9px 9px 10px !important;
+  }
+  body:has(.dataset-page) .dataset-record-body strong{
+    font-size:13px !important;
+  }
+  body:has(.dataset-page) .dataset-record-prompt-preview{
+    margin-top:5px !important;
+    font-size:11px !important;
+    min-height:30px !important;
+    max-height:30px !important;
+  }
+  body:has(.dataset-page) .dataset-record-meta{
+    margin-top:7px !important;
+    gap:5px !important;
+  }
+  body:has(.dataset-page) .dataset-record-meta span{
+    padding:4px 7px !important;
+    font-size:9px !important;
+  }
+  body:has(.dataset-page) .dataset-record-actions{
+    gap:5px !important;
+    margin-top:7px !important;
+  }
+  body:has(.dataset-page) .dataset-record-actions button{
+    height:34px !important;
+    border-radius:9px !important;
+    font-size:15px !important;
+  }
+}
