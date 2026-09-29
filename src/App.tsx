@@ -10,7 +10,7 @@ import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultP
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 30
+const APP_VERSION = 31
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -987,6 +987,38 @@ export default function App() {
     }, 700)
   }
 
+  async function restoreHistoryFromDataset(items: Array<{ prompt: string; images: Array<{ data: string; mimeType?: string; filename?: string }> }>) {
+    const restored: ResultImage[] = []
+    for (let index = 0; index < items.length; index++) {
+      const source = items[index]
+      for (let imageIndex = 0; imageIndex < source.images.length; imageIndex++) {
+        const image = source.images[imageIndex]
+        try {
+          const response = await fetch(image.data)
+          if (!response.ok) throw new Error('Could not read imported history image.')
+          const blob = await response.blob()
+          const id = `imported-history-${Date.now()}-${index}-${imageIndex}-${Math.random().toString(36).slice(2)}`
+          await cacheFile(id, blob)
+          restored.push({
+            id,
+            url: URL.createObjectURL(blob),
+            promptId: `imported-${Date.now()}-${index}`,
+            prompt: source.prompt || '',
+            negativePrompt: '',
+            createdAt: Date.now() - (index * 1000 + imageIndex),
+          })
+        } catch (error) {
+          console.warn('Skipping imported history image', error)
+        }
+      }
+    }
+    if (!restored.length) throw new Error('No valid images were found in this JSON.')
+    setResults((current) => [...restored, ...current])
+    setLatestResultId(restored[0].id)
+    setHistoryPage(1)
+    setStatus('done')
+  }
+
   function updateHistoryPrompt(id: string, nextPrompt: string) {
     setResults((prev) => prev.map((item) => item.id === id ? { ...item, prompt: nextPrompt } : item))
     setTrash((prev) => prev.map((item) => item.id === id ? { ...item, prompt: nextPrompt } : item))
@@ -1182,6 +1214,7 @@ export default function App() {
         onClose={() => setDatasetOpen(false)}
         onMoveToVault={moveItemsToPromptVault}
         sourceItems={results.map((item) => ({ id: item.id, prompt: item.prompt, url: item.url, createdAt: item.createdAt }))}
+        onRestoreHistory={restoreHistoryFromDataset}
       />
     )}
 
