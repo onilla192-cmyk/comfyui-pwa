@@ -8301,3 +8301,19 @@ body:has(.dataset-page) .dataset-error{border:2px solid #a60d1e !important;backg
   .image-picker-box::after{filter:blur(13px)}
   .image-picker-depth{filter:blur(18px) saturate(1.18)}
 }
+
+
+.dataset-history-import{
+  min-height:42px;
+  border:2px solid #3f7aa8;
+  border-radius:13px;
+  background:linear-gradient(180deg,#2f9eea,#176db0);
+  color:#fff;
+  font-weight:800;
+  box-shadow:0 4px 0 #0d3f68;
+}
+.dataset-history-import:active{transform:translateY(3px);box-shadow:0 1px 0 #0d3f68}
+.dataset-history-import:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:700px){
+  .dataset-history-import{width:100%}
+}
