@@ -1,0 +1,19 @@
+name: Export Repository ZIP
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create repository archive
+        run: git archive --format=zip --output=comfyui-pwa-main.zip HEAD
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: comfyui-pwa-main
+          path: comfyui-pwa-main.zip
+          if-no-files-found: error
