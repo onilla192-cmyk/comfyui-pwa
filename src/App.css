@@ -9158,3 +9158,78 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   .image-picker-edge{margin-left:9px !important;margin-right:9px !important;font-size:6px !important}
   .image-picker .image-clear-btn{right:10px !important}
 }
+
+
+
+/* Image nodes — complete cartridge frame, not just a styled upload box */
+.image-picker{
+  padding:4px 4px 8px !important;
+  border:2px solid #74121b !important;
+  border-radius:15px !important;
+  background:#b90f20 !important;
+  box-shadow:0 4px 0 #5b0910,0 10px 22px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+.image-picker:nth-child(2){
+  border-color:#05638e !important;
+  background:#087faf !important;
+  box-shadow:0 4px 0 #034966,0 10px 22px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.18) !important;
+}
+.image-picker-title{
+  margin:-1px -1px 2px !important;
+  padding:3px 7px 5px !important;
+  border-radius:10px 10px 0 0 !important;
+  background:#101419 !important;
+}
+.image-picker-rom{
+  margin:0 10px !important;
+  border-radius:8px 8px 0 0 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16) !important;
+}
+.image-picker-box-wrap{
+  margin:0 10px !important;
+}
+.image-picker-box{
+  aspect-ratio:1/0.86 !important;
+  border-color:#080b0e !important;
+  border-radius:0 0 7px 7px !important;
+  background:#20242a !important;
+  box-shadow:inset 0 0 0 1px #3a414a !important;
+}
+.image-picker-footer{
+  margin:0 10px !important;
+}
+.image-picker-edge{
+  margin:5px 13px 1px !important;
+}
+.image-picker:nth-child(1) .image-picker-rom::before,
+.image-picker:nth-child(1) .image-picker-rom::after{
+  display:block !important;
+}
+.image-picker:nth-child(2) .image-picker-rom::before,
+.image-picker:nth-child(2) .image-picker-rom::after{
+  display:block !important;
+}
+.image-picker-name{
+  color:rgba(255,255,255,.72) !important;
+}
+@media(max-width:600px){
+  .image-picker{
+    padding:3px 3px 6px !important;
+  }
+  .image-picker-title{
+    margin:-1px -1px 1px !important;
+  }
+  .image-picker-rom{
+    margin:0 6px !important;
+  }
+  .image-picker-box-wrap{
+    margin:0 6px !important;
+  }
+  .image-picker-footer{
+    margin:0 6px !important;
+  }
+  .image-picker-edge{
+    margin-left:8px !important;
+    margin-right:8px !important;
+  }
+}
