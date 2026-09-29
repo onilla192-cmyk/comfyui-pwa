@@ -30,6 +30,68 @@ function readList(key: string): PromptVaultItem[] {
   }
 }
 
+function useImagePalette(cacheKey?: string) {
+  const [palette, setPalette] = useState({ base: '#343a43', edge: '#59616c', glow: '#68717c' })
+  useEffect(() => {
+    let live = true
+    let objectUrl = ''
+    if (!cacheKey) return
+    void getCachedFile(cacheKey).then((blob) => {
+      if (!live || !blob) return
+      objectUrl = URL.createObjectURL(blob)
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = 24
+          canvas.height = 24
+          const ctx = canvas.getContext('2d', { willReadFrequently: true })
+          if (!ctx) return
+          ctx.drawImage(img, 0, 0, 24, 24)
+          const px = ctx.getImageData(0, 0, 24, 24).data
+          let r = 0, g = 0, b = 0, n = 0
+          for (let i = 0; i < px.length; i += 4) {
+            const rr = px[i], gg = px[i + 1], bb = px[i + 2], aa = px[i + 3]
+            const max = Math.max(rr, gg, bb), min = Math.min(rr, gg, bb)
+            if (aa < 180 || max < 35 || max - min < 10) continue
+            r += rr; g += gg; b += bb; n++
+          }
+          if (!n) return
+          r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n)
+          if (live) setPalette({
+            base: `rgb(${Math.round(r*.72)} ${Math.round(g*.72)} ${Math.round(b*.72)})`,
+            edge: `rgb(${Math.min(255,r+40)} ${Math.min(255,g+40)} ${Math.min(255,b+40)})`,
+            glow: `rgb(${Math.min(255,r+62)} ${Math.min(255,g+62)} ${Math.min(255,b+62)})`,
+          })
+        } catch {}
+        if (objectUrl) URL.revokeObjectURL(objectUrl)
+      }
+      img.src = objectUrl
+    })
+    return () => { live = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
+  }, [cacheKey])
+  return palette
+}
+
+function VaultImage({ cacheKey }: { cacheKey: string }) {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    let objectUrl = ''
+    let live = true
+    void getCachedFile(cacheKey).then((blob) => {
+      if (live && blob) {
+        objectUrl = URL.createObjectURL(blob)
+        setUrl(objectUrl)
+      }
+    })
+    return () => {
+      live = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [cacheKey])
+  return url ? <img src={url} alt="" loading="lazy" draggable={false} /> : <div className="prompt-vault-image-empty">No image</div>
+}
+
 function PromptVaultCard({ item, selected, armed, onCardClick, onToggleSelected }: { item: PromptVaultItem; selected: boolean; armed: boolean; onCardClick: () => void; onToggleSelected: () => void }) {
   const palette = useImagePalette(item.imageRefs[0]?.cacheKey)
   const style = { '--cartridge-base': palette.base, '--cartridge-edge': palette.edge, '--cartridge-glow': palette.glow } as CSSProperties
