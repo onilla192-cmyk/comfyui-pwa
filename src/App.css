@@ -8693,9 +8693,7 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
 
 /* Prompt Vault — retro 3D cartridge cards */
 .prompt-vault-page{
-  background:
-    radial-gradient(circle at 50% -10%,rgba(54,72,110,.22),transparent 38%),
-    linear-gradient(180deg,#101318 0%,#171b20 100%) !important;
+  background:#15191e !important;
   color:#f2f0eb !important;
 }
 .prompt-vault-header{
@@ -8717,7 +8715,7 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   padding:12px !important;
   border:1px solid #323a45 !important;
   border-radius:17px !important;
-  background:linear-gradient(145deg,#1b2027,#13171c) !important;
+  background:#1b2027 !important;
   box-shadow:0 5px 0 #090b0e,0 10px 24px rgba(0,0,0,.25) !important;
   backdrop-filter:none !important;
 }
@@ -8729,21 +8727,21 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   min-height:40px !important;
   border:1px solid #424a56 !important;
   border-radius:11px !important;
-  background:linear-gradient(180deg,#303741,#242a31) !important;
+  background:#303741 !important;
   color:#f2f0eb !important;
   box-shadow:0 3px 0 #0b0d10 !important;
 }
 .prompt-vault-toolbar .prompt-vault-new{
-  background:linear-gradient(180deg,#1b8df0,#1169c5) !important;
+  background:#1b8df0 !important;
   border-color:#37a8ff !important;
 }
 .prompt-vault-toolbar .prompt-vault-archive-view{
-  background:linear-gradient(180deg,#6650df,#4935ae) !important;
+  background:#6650df !important;
   border-color:#927bff !important;
 }
-.prompt-vault-toolbar .prompt-vault-select-all{background:linear-gradient(180deg,#39434f,#29313a) !important}
+.prompt-vault-toolbar .prompt-vault-select-all{background:#39434f !important}
 .prompt-vault-toolbar .prompt-vault-delete{
-  background:linear-gradient(180deg,#6e2a31,#4b1e24) !important;
+  background:#6e2a31 !important;
   border-color:#91343e !important;
   color:#ffb3ba !important;
 }
@@ -8774,9 +8772,7 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   padding:10px 10px 14px;
   border:2px solid var(--cartridge-edge,#59616c);
   border-radius:19px 19px 15px 15px;
-  background:
-    linear-gradient(90deg,rgba(255,255,255,.16),transparent 8%,transparent 92%,rgba(0,0,0,.2)),
-    linear-gradient(145deg,var(--cartridge-glow,#59616b) 0%,var(--cartridge-base,#343b44) 48%,#20252b 100%);
+  background:var(--cartridge-base,#343b44);
   box-shadow:0 7px 0 #0a0c0f,8px 12px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22);
   transform:translateZ(0);
 }
@@ -8789,7 +8785,7 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   width:7px;
   border-radius:5px;
   opacity:.7;
-  background:repeating-linear-gradient(to bottom,#171b20 0 7px,#7b838c 7px 9px,#171b20 9px 16px);
+  background:#252b32;
   box-shadow:inset 1px 0 rgba(255,255,255,.12);
   pointer-events:none;
 }
@@ -8820,7 +8816,7 @@ body:has(.dataset-page) .dataset-record-actions .dataset-record-delete{
   padding:9px 9px 7px;
   border:1px solid rgba(255,255,255,.1);
   border-radius:9px;
-  background:linear-gradient(180deg,#20252b,#171b20);
+  background:#20252b;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
 }
 .prompt-vault-cartridge-label>strong{
