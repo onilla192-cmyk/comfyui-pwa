@@ -4,6 +4,7 @@ import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, in
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
 import './App.css'
+import './arcadeShowcase.css'
 import { playArcadeSound } from './arcadeFx'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
@@ -185,6 +186,7 @@ export default function App() {
   const [footerExpanded, setFooterExpanded] = useState(false)
   const [mainFooterVisible, setMainFooterVisible] = useState(true)
   const [arcadePhase, setArcadePhase] = useState<'idle' | 'inserting' | 'running' | 'ejecting'>('idle')
+  const [arcadeSoundOn, setArcadeSoundOn] = useState(true)
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
@@ -201,11 +203,11 @@ export default function App() {
   useEffect(() => {
     const handleArcadeClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.closest('button,[role="button"]')) playArcadeSound('click')
+      if (target?.closest('button,[role="button"]')) if (arcadeSoundOn) playArcadeSound('click')
     }
     window.addEventListener('click', handleArcadeClick)
     return () => window.removeEventListener('click', handleArcadeClick)
-  }, [])
+  }, [arcadeSoundOn])
 
   function recordErrorLog(error: unknown) {
     const message = error instanceof Error ? error.message : typeof error === 'string' ? error : JSON.stringify(error)
@@ -699,7 +701,7 @@ export default function App() {
         setLatestResultId(images[0].id)
         setHistoryPage(1)
         setStatus('done'); setProgress({ value: 1, max: 1 }); currentPromptId.current = null
-        playArcadeSound('complete')
+        if (arcadeSoundOn) playArcadeSound('complete')
         setArcadePhase('ejecting')
         window.setTimeout(() => setArcadePhase('idle'), 1150)
         cleanupProgress.current?.(); cleanupProgress.current = null
@@ -708,7 +710,7 @@ export default function App() {
       return false
     } catch (err) {
       setArcadePhase('idle')
-      playArcadeSound('error')
+      if (arcadeSoundOn) playArcadeSound('error')
       setStatus('error'); setErrorMsg(recordErrorLog(err))
       cleanupProgress.current?.(); cleanupProgress.current = null
       return true
@@ -724,7 +726,7 @@ export default function App() {
     }
     cleanupProgress.current?.(); cleanupProgress.current = null
     setArcadePhase('idle')
-    playArcadeSound('error')
+    if (arcadeSoundOn) playArcadeSound('error')
     setStatus('error'); setErrorMsg(recordErrorLog('Generation timed out. Check ComfyUI.'))
   }
 
@@ -770,7 +772,7 @@ export default function App() {
     setLatestResultId(null)
     standbyReleased.current = false
     setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
-    playArcadeSound('insert')
+    if (arcadeSoundOn) playArcadeSound('insert')
     setArcadePhase('inserting')
     setErrorMsg(null); setStatus('queued'); setProgress({ value: 0, max: 1 })
     let startupTimer: number | null = null
@@ -819,7 +821,7 @@ export default function App() {
         aspectRatio, megapixels, maxDimension,
       })
       const { prompt_id } = await queuePrompt(workflow)
-      playArcadeSound('generate')
+      if (arcadeSoundOn) playArcadeSound('generate')
       setArcadePhase('running')
       currentPromptId.current = prompt_id
       setProgress({ value: 0, max: 1 })
@@ -828,7 +830,7 @@ export default function App() {
       if (startupTimer !== null) window.clearInterval(startupTimer)
       setStartingComfy(false)
       setArcadePhase('idle')
-      playArcadeSound('error')
+      if (arcadeSoundOn) playArcadeSound('error')
       setStatus('error'); setErrorMsg(recordErrorLog(err))
     }
   }
@@ -1209,6 +1211,13 @@ export default function App() {
     )}
 
     <main className="app-main">
+      <div className="arcade-marquee" aria-label="Comfy Arcade">
+        <div className="arcade-marquee-lights" aria-hidden="true"><i /><i /><i /></div>
+        <div className="arcade-logo" aria-label="Comfy Arcade"><span>COMFY</span> <b>ARCADE</b></div>
+        <button className={`arcade-sound-toggle${arcadeSoundOn ? ' on' : ''}`} type="button" onClick={() => setArcadeSoundOn((current) => !current)} aria-pressed={arcadeSoundOn} aria-label={arcadeSoundOn ? 'Turn arcade sounds off' : 'Turn arcade sounds on'}>
+          <span aria-hidden="true">◖))</span> SND {arcadeSoundOn ? 'ON' : 'OFF'}
+        </button>
+      </div>
       {isBusy && progress && (
         <div className="progress-wrap" aria-label="Generation progress">
           <div className="progress-bar">
