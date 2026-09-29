@@ -35,19 +35,36 @@ export function DatasetPage({onClose,onMoveToVault}:{onClose:()=>void;sourceItem
     <button className="close-btn" onClick={onClose}>×</button>
   </div>
   <div className="dataset-imported-layout">
-    <aside className="dataset-page-list">
-      <button className="dataset-import-button" onClick={()=>setStep('upload')}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span> Import JSON</button>
-      {pages.map(p=><button className={p.id===active?'dataset-page-list-item active':'dataset-page-list-item'} key={p.id} onClick={()=>{setActive(p.id);setVaultSel(new Set())}}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 19h4"/></svg></span><span><strong>{p.name}</strong><small>{p.items.length} records</small></span></button>)}
-    </aside>
     <div className="dataset-page-content">
       {page ? <>
+        {pages.length > 1 && <div className="dataset-page-switcher">
+          {pages.map(p=><button className={p.id===active?'active':''} key={p.id} onClick={()=>{setActive(p.id);setVaultSel(new Set())}}>
+            <span>{p.name}</span><small>{p.items.length} records</small>
+          </button>)}
+        </div>}
         <div className="dataset-content-header">
-          <div><h3>{page.name}</h3><span>{page.items.length} records</span></div>
+          <div className="dataset-content-title">
+            <h3>{page.name}</h3>
+            <span>{page.items.length} records</span>
+          </div>
           <div className="dataset-content-actions">
-            <button className="dataset-vault" onClick={()=>void moveToVault(false)} disabled={!vaultSel.size}>Move Selected to Prompt Vault{vaultSel.size ? ` (${vaultSel.size})` : ''}</button>
-            <button className="dataset-vault" onClick={()=>void moveToVault(true)} disabled={!page.items.length}>Move All to Prompt Vault</button>
-            <button className="dataset-danger" onClick={()=>void deleteAllImportedData()} disabled={!pages.length}>Delete All Imported Data</button>
-            <button className="dataset-primary" onClick={()=>void exportPage(page)}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span> Export JSON</button>
+            <button className="dataset-action dataset-import" onClick={()=>setStep('upload')}>
+              <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span>
+              Import JSON
+            </button>
+            <button className="dataset-action dataset-export" onClick={()=>void exportPage(page)}>
+              <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span>
+              Export JSON
+            </button>
+            <button className="dataset-action dataset-vault" onClick={()=>void moveToVault(false)} disabled={!vaultSel.size}>
+              Move Selected{vaultSel.size ? ` (${vaultSel.size})` : ''}
+            </button>
+            <button className="dataset-action dataset-vault" onClick={()=>void moveToVault(true)} disabled={!page.items.length}>
+              Move All to Prompt Vault
+            </button>
+            <button className="dataset-action dataset-danger" onClick={()=>void deleteAllImportedData()} disabled={!pages.length}>
+              Delete All Imported Data
+            </button>
           </div>
         </div>
         <div className="dataset-record-grid">
