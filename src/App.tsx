@@ -10,7 +10,7 @@ import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultP
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 19
+const APP_VERSION = 20
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
