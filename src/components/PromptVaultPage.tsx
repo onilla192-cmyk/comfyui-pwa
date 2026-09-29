@@ -54,11 +54,13 @@ function VaultImage({ cacheKey }: { cacheKey: string }) {
 export function PromptVaultPage({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<PromptVaultItem[]>(readVault)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const save = () => {
       setItems(readVault())
       setSelected(new Set())
+      setExpanded(new Set())
     }
     window.addEventListener('prompt-vault-updated', save)
     return () => window.removeEventListener('prompt-vault-updated', save)
@@ -77,6 +79,16 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     })
   }
 
+  const toggleExpanded = (id: string) => {
+    setExpanded((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+    if (navigator.vibrate) navigator.vibrate(12)
+  }
+
   const deleteSelected = async () => {
     const chosen = items.filter((item) => selected.has(item.id))
     if (!chosen.length) return
@@ -86,6 +98,11 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     const ids = new Set(chosen.map((item) => item.id))
     setItems((current) => current.filter((item) => !ids.has(item.id)))
     setSelected(new Set())
+    setExpanded((current) => {
+      const next = new Set(current)
+      chosen.forEach((item) => next.delete(item.id))
+      return next
+    })
   }
 
   const selectAll = () => setSelected(new Set(items.map((item) => item.id)))
@@ -95,7 +112,6 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     <section className="prompt-vault-page" aria-label="Prompt Vault">
       <header className="prompt-vault-header">
         <div className="prompt-vault-brand">
-          <span className="prompt-vault-brand-badge" aria-hidden="true">★</span>
           <div>
             <h2>Prompt Vault</h2>
             <span>{items.length} saved prompt{items.length === 1 ? '' : 's'}</span>
@@ -117,33 +133,47 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="prompt-vault-list">
-        {items.map((item, index) => (
-          <article className={`prompt-vault-card${selected.has(item.id) ? ' selected' : ''}`} key={item.id}>
-            <div className="prompt-vault-card-ribbon" aria-hidden="true" />
-            <button
-              type="button"
-              className="prompt-vault-select"
-              onClick={() => toggleSelected(item.id)}
-              aria-label={selected.has(item.id) ? `Deselect ${item.name}` : `Select ${item.name}`}
-              aria-pressed={selected.has(item.id)}
-            >
-              {selected.has(item.id) ? '✓' : ''}
-            </button>
-            <div className="prompt-vault-card-image">
-              {item.imageRefs[0]
-                ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} />
-                : <div className="prompt-vault-image-empty">No image</div>}
-              <span className="prompt-vault-number">{index + 1}</span>
-            </div>
-            <div className="prompt-vault-card-body">
-              <strong title={item.name}>{item.name}</strong>
-              <div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>
-                {item.prompt || 'No prompt provided.'}
+        {items.map((item, index) => {
+          const isExpanded = expanded.has(item.id)
+          return (
+            <article className={`prompt-vault-card${isExpanded ? ' prompt-vault-card-expanded' : ''}${selected.has(item.id) ? ' selected' : ''}`} key={item.id}>
+              <button
+                type="button"
+                className="prompt-vault-card-image"
+                onClick={() => toggleExpanded(item.id)}
+                aria-expanded={isExpanded}
+                aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.name}`}
+              >
+                {item.imageRefs[0]
+                  ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} />
+                  : <div className="prompt-vault-image-empty">No image</div>}
+                <span className="prompt-vault-number">{index + 1}</span>
+                <span className="prompt-vault-expand-hint">{isExpanded ? 'Tap to collapse' : 'Tap to expand'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="prompt-vault-select"
+                onClick={() => toggleSelected(item.id)}
+                aria-label={selected.has(item.id) ? `Deselect ${item.name}` : `Select ${item.name}`}
+                aria-pressed={selected.has(item.id)}
+              >
+                {selected.has(item.id) ? '✓' : ''}
+              </button>
+
+              <div className="prompt-vault-card-body">
+                <strong title={item.name}>{item.name}</strong>
+                {!isExpanded
+                  ? <div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>{item.prompt || 'No prompt provided.'}</div>
+                  : <div className="prompt-vault-expanded-content">
+                      <div className="prompt-vault-expanded-label">Prompt</div>
+                      <div className="prompt-vault-expanded-prompt">{item.prompt || 'No prompt provided.'}</div>
+                    </div>}
+                {item.imageRefs.length > 1 && <span className="prompt-vault-image-count">{item.imageRefs.length} images</span>}
               </div>
-              {item.imageRefs.length > 1 && <span className="prompt-vault-image-count">{item.imageRefs.length} images</span>}
-            </div>
-          </article>
-        ))}
+            </article>
+          )
+        })}
         {!items.length && (
           <div className="prompt-vault-empty">
             <strong>Prompt Vault is empty</strong>
