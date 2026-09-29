@@ -1218,6 +1218,56 @@ export default function App() {
           <span aria-hidden="true">◖))</span> SND {arcadeSoundOn ? 'ON' : 'OFF'}
         </button>
       </div>
+      <section className={`arcade-screen arcade-screen-${arcadePhase}`} aria-label="Arcade generation screen">
+        <div className="arcade-screen-topline">
+          <span>COMFY ARCADE // IMAGE WORKSTATION</span>
+          <span>{isBusy ? 'PROCESSING' : latestResultId ? 'RESULT READY' : 'READY'}</span>
+        </div>
+        <div className="arcade-screen-bezel">
+          <div className="arcade-screen-glass">
+            {isBusy ? (
+              <div className="arcade-screen-status">
+                <div className="arcade-screen-pixel-logo">COMFY<span>://</span>ARCADE</div>
+                <div className="arcade-screen-big">GENERATING</div>
+                <div className="arcade-screen-loader"><span style={{ width: `${percent}%` }} /></div>
+                <div className="arcade-screen-small">{progress ? `FRAME ${progress.value} / ${progress.max}` : 'LOADING CARTRIDGE'}</div>
+              </div>
+            ) : latestResultId ? (
+              (() => {
+                const latest = results.find((item) => item.id === latestResultId)
+                return latest ? (
+                  <div className="arcade-screen-result">
+                    <img src={latest.url} alt="Latest generated result" draggable={false} />
+                    <div className="arcade-screen-result-tag">NEW GENERATION // READY</div>
+                  </div>
+                ) : null
+              })()
+            ) : (
+              <div className="arcade-screen-status arcade-screen-idle">
+                <div className="arcade-screen-pixel-logo">COMFY<span>://</span>ARCADE</div>
+                <div className="arcade-screen-big">INSERT IMAGE</div>
+                <div className="arcade-screen-small">LOAD A CARTRIDGE TO BEGIN</div>
+                <div className="arcade-screen-blink">PRESS GENERATE</div>
+              </div>
+            )}
+          </div>
+          <div className="arcade-screen-reflection" aria-hidden="true" />
+        </div>
+        <div className="arcade-screen-speakers" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
+        {latestResultId && results.length > 0 && (
+          <div className={`arcade-output-cartridge arcade-output-${arcadePhase}`}>
+            <div className="arcade-output-label">FINISHED CARTRIDGE</div>
+            <div className="arcade-output-shell">
+              <div className="arcade-output-art">
+                <img src={results.find((item) => item.id === latestResultId)?.url} alt="" draggable={false} />
+              </div>
+              <div className="arcade-output-meta"><strong>RESULT</strong><span>READY TO LOAD</span></div>
+              <span className="arcade-output-contacts" aria-hidden="true">▮ ▮ ▮ ▮ ▮ ▮</span>
+            </div>
+          </div>
+        )}
+      </section>
+
       {isBusy && progress && (
         <div className="progress-wrap" aria-label="Generation progress">
           <div className="progress-bar">
