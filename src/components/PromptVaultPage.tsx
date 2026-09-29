@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { deleteCachedFiles, getCachedFile } from '../imageCache'
 
 export interface PromptVaultImageRef {
@@ -55,12 +55,14 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<PromptVaultItem[]>(readVault)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null)
 
   useEffect(() => {
     const save = () => {
       setItems(readVault())
       setSelected(new Set())
       setExpanded(new Set())
+      lastTapRef.current = null
     }
     window.addEventListener('prompt-vault-updated', save)
     return () => window.removeEventListener('prompt-vault-updated', save)
@@ -79,14 +81,25 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     })
   }
 
-  const toggleExpanded = (id: string) => {
-    setExpanded((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-    if (navigator.vibrate) navigator.vibrate(12)
+  const handleCardTap = (id: string) => {
+    const now = Date.now()
+    const previous = lastTapRef.current
+    if (previous && previous.id === id && now - previous.time <= 450) {
+      lastTapRef.current = null
+      setExpanded((current) => {
+        const next = new Set(current)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+      if (navigator.vibrate) navigator.vibrate(12)
+      return
+    }
+    lastTapRef.current = { id, time: now }
+  }
+
+  const updatePrompt = (id: string, prompt: string) => {
+    setItems((current) => current.map((item) => item.id === id ? { ...item, prompt } : item))
   }
 
   const deleteSelected = async () => {
@@ -133,28 +146,29 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="prompt-vault-list">
-        {items.map((item, index) => {
+        {items.map((item) => {
           const isExpanded = expanded.has(item.id)
           return (
-            <article className={`prompt-vault-card${isExpanded ? ' prompt-vault-card-expanded' : ''}${selected.has(item.id) ? ' selected' : ''}`} key={item.id}>
-              <button
-                type="button"
-                className="prompt-vault-card-image"
-                onClick={() => toggleExpanded(item.id)}
-                aria-expanded={isExpanded}
-                aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.name}`}
-              >
+            <article
+              className={`prompt-vault-card${isExpanded ? ' prompt-vault-card-expanded' : ''}${selected.has(item.id) ? ' selected' : ''}`}
+              key={item.id}
+              onClick={() => handleCardTap(item.id)}
+              onContextMenu={(event) => event.preventDefault()}
+              aria-label={`${item.name}. ${isExpanded ? 'Expanded.' : 'Double tap to expand.'}`}
+            >
+              <div className="prompt-vault-card-image">
                 {item.imageRefs[0]
                   ? <VaultImage cacheKey={item.imageRefs[0].cacheKey} />
                   : <div className="prompt-vault-image-empty">No image</div>}
-                <span className="prompt-vault-number">{index + 1}</span>
-                <span className="prompt-vault-expand-hint">{isExpanded ? 'Tap to collapse' : 'Tap to expand'}</span>
-              </button>
+              </div>
 
               <button
                 type="button"
                 className="prompt-vault-select"
-                onClick={() => toggleSelected(item.id)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  toggleSelected(item.id)
+                }}
                 aria-label={selected.has(item.id) ? `Deselect ${item.name}` : `Select ${item.name}`}
                 aria-pressed={selected.has(item.id)}
               >
@@ -165,9 +179,17 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
                 <strong title={item.name}>{item.name}</strong>
                 {!isExpanded
                   ? <div className="prompt-vault-prompt" title={item.prompt || 'No prompt provided.'}>{item.prompt || 'No prompt provided.'}</div>
-                  : <div className="prompt-vault-expanded-content">
-                      <div className="prompt-vault-expanded-label">Prompt</div>
-                      <div className="prompt-vault-expanded-prompt">{item.prompt || 'No prompt provided.'}</div>
+                  : <div className="prompt-vault-expanded-content" onClick={(event) => event.stopPropagation()}>
+                      <label className="prompt-vault-expanded-label" htmlFor={`prompt-vault-prompt-${item.id}`}>Prompt</label>
+                      <textarea
+                        id={`prompt-vault-prompt-${item.id}`}
+                        className="prompt-vault-expanded-prompt"
+                        value={item.prompt}
+                        onChange={(event) => updatePrompt(item.id, event.target.value)}
+                        placeholder="Enter prompt..."
+                        rows={7}
+                        onClick={(event) => event.stopPropagation()}
+                      />
                     </div>}
                 {item.imageRefs.length > 1 && <span className="prompt-vault-image-count">{item.imageRefs.length} images</span>}
               </div>
