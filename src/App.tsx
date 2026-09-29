@@ -460,10 +460,10 @@ export default function App() {
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
       cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, sleepSeconds, sleepLocked,
-      promptId: currentPromptId.current, progress,
+      promptId: currentPromptId.current, progress, errorLogs: errorLogs.slice(-100),
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked, hookPrompts])
+  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked, hookPrompts, errorLogs])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
@@ -831,10 +831,6 @@ export default function App() {
 
   const isUploading = uploading.one || uploading.two
   const percent = progress && progress.max > 0 ? Math.min(100, Math.round((progress.value / progress.max) * 100)) : 0
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loadSavedState(), errorLogs: errorLogs.slice(-100) })) } catch {}
-  }, [errorLogs])
 
   useEffect(() => () => cleanupProgress.current?.(), [])
   useEffect(() => () => {
