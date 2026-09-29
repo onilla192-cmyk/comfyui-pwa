@@ -348,7 +348,8 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
             onCardClick={() => armCard(item.id)}
             onToggleSelected={() => toggleSelected(item.id)}
           />
-        ))}ards' : 'Prompt Vault is empty'}</strong><span>{showArchived ? 'Archived cards will appear here.' : 'Create a card or move imported cards from Datasets here.'}</span></div>}
+        ))}
+        {!visibleItems.length && <div className="prompt-vault-empty"><strong>{showArchived ? 'No archived cards' : 'Prompt Vault is empty'}</strong><span>{showArchived ? 'Archived cards will appear here.' : 'Create a card or move imported cards from Datasets here.'}</span></div>}
       </div>
 
       {creating && (
