@@ -10,7 +10,7 @@ import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultP
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
 const HISTORY_PAGE_SIZE = 6
-const APP_VERSION = 27
+const APP_VERSION = 28
 interface CharacterImage { previewUrl: string; comfyName?: string; fileName: string; cacheKey: string }
 interface PromptLabel { id: string; name: string; text: string; createdAt: number }
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
@@ -2045,7 +2045,10 @@ function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: 
       <div className="image-picker-title"><span>{label}</span></div>
       <div className="image-picker-box-wrap">
         <label className="image-picker-box">
-          {image ? <img src={image.previewUrl} alt={`${label} preview`} /> : <span className="image-upload-plus" aria-hidden="true">+</span>}
+          {image ? <>
+            <span className="image-picker-depth" aria-hidden="true" style={{ backgroundImage: `url("${image.previewUrl}")` }} />
+            <img src={image.previewUrl} alt={`${label} preview`} />
+          </> : <span className="image-upload-plus" aria-hidden="true">+</span>}
           <input type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled || busy} onChange={(e) => { onChange(e.target.files?.[0]); e.currentTarget.value = '' }} />
         </label>
         {image && <button className="image-clear-btn" type="button" onClick={onClear} disabled={disabled || busy} aria-label={`Clear ${label}`}>×</button>}
