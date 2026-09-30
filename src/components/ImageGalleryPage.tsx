@@ -3,10 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 interface GalleryItem {
   id: string
   name: string
-  prompt: string
   src: string
   createdAt: number
 }
+
+type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
 
@@ -19,17 +20,28 @@ function loadGallery(): GalleryItem[] {
   }
 }
 
-export function ImageGalleryPage({ onClose }: { onClose: () => void }) {
+export function ImageGalleryPage({
+  onClose,
+  onSetFigure,
+}: {
+  onClose: () => void
+  onSetFigure: (which: Figure, item: GalleryItem) => void
+}) {
   const [items, setItems] = useState<GalleryItem[]>(loadGallery)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [armedId, setArmedId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const armTimer = useRef<number | null>(null)
 
   useEffect(() => {
     try {
       localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(items))
-    } catch {
-      // Keep the current gallery visible if storage is full.
-    }
+    } catch {}
   }, [items])
+
+  useEffect(() => () => {
+    if (armTimer.current) window.clearTimeout(armTimer.current)
+  }, [])
 
   function addImages(files: FileList | null) {
     if (!files?.length) return
@@ -42,7 +54,6 @@ export function ImageGalleryPage({ onClose }: { onClose: () => void }) {
         setItems((current) => [{
           id: 'gallery-' + Date.now() + '-' + Math.random().toString(36).slice(2),
           name: file.name,
-          prompt: '',
           src,
           createdAt: Date.now(),
         }, ...current])
@@ -51,13 +62,28 @@ export function ImageGalleryPage({ onClose }: { onClose: () => void }) {
     })
   }
 
-  function updatePrompt(id: string, prompt: string) {
-    setItems((current) => current.map((item) => item.id === id ? { ...item, prompt } : item))
+  function tapItem(item: GalleryItem) {
+    if (navigator.vibrate) navigator.vibrate(18)
+    if (armedId === item.id) {
+      if (armTimer.current) window.clearTimeout(armTimer.current)
+      setArmedId(null)
+      setSelectedId(item.id)
+      return
+    }
+    setArmedId(item.id)
+    if (armTimer.current) window.clearTimeout(armTimer.current)
+    armTimer.current = window.setTimeout(() => {
+      setArmedId((current) => current === item.id ? null : current)
+    }, 850)
   }
 
-  function removeItem(id: string) {
+  function deleteItem(id: string) {
     setItems((current) => current.filter((item) => item.id !== id))
+    setSelectedId(null)
+    setArmedId(null)
   }
+
+  const selected = items.find((item) => item.id === selectedId) || null
 
   return (
     <div className="gallery-page">
@@ -78,18 +104,33 @@ export function ImageGalleryPage({ onClose }: { onClose: () => void }) {
         </button>
 
         {items.map((item) => (
-          <article className="gallery-card" key={item.id}>
-            <div className="gallery-card-image">
-              <img src={item.src} alt={item.name} loading="lazy" />
-              <button type="button" className="gallery-delete-btn" onClick={() => removeItem(item.id)} aria-label={'Delete ' + item.name} title="Delete">×</button>
-            </div>
-            <div className="gallery-card-body">
-              <textarea value={item.prompt} onChange={(e) => updatePrompt(item.id, e.target.value)} placeholder="Prompt..." aria-label={'Prompt for ' + item.name} rows={2} />
-              <div className="gallery-card-name">{item.name}</div>
-            </div>
-          </article>
+          <button
+            type="button"
+            className={'gallery-card' + (armedId === item.id ? ' gallery-card-armed' : '')}
+            key={item.id}
+            onClick={() => tapItem(item)}
+            aria-label={'Open ' + item.name}
+          >
+            <img src={item.src} alt={item.name} loading="lazy" draggable={false} />
+          </button>
         ))}
       </div>
+
+      {selected && (
+        <div className="gallery-viewer-backdrop" onClick={() => setSelectedId(null)}>
+          <section className="gallery-viewer" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="gallery-viewer-close" onClick={() => setSelectedId(null)} aria-label="Close image">×</button>
+            <div className="gallery-viewer-image-wrap">
+              <img src={selected.src} alt={selected.name} />
+            </div>
+            <div className="gallery-viewer-actions">
+              <button type="button" onClick={() => { onSetFigure('one', selected); setSelectedId(null) }}>Figure A</button>
+              <button type="button" onClick={() => { onSetFigure('two', selected); setSelectedId(null) }}>Figure B</button>
+              <button type="button" className="gallery-viewer-delete" onClick={() => deleteItem(selected.id)}>Delete</button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
