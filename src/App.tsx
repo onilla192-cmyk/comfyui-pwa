@@ -263,7 +263,8 @@ export default function App() {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, []
+  }, [])
+
   const refreshGalleryPresets = async () => {
     try {
       const presets = await readGalleryPresets()
@@ -278,7 +279,7 @@ export default function App() {
     const timer = window.setInterval(() => void refreshGalleryPresets(), 1000)
     return () => window.clearInterval(timer)
   }, [])
-)
+
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
   function buildPromptBuilderPrompt() {
