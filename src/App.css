@@ -9780,3 +9780,49 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+
+/* Gallery: tighter corners and send feedback */
+.gallery-add-card,
+.gallery-card,
+.gallery-folder-card {
+  border-radius: 8px !important;
+}
+.gallery-add-icon {
+  border-radius: 8px !important;
+}
+.gallery-back-btn,
+.gallery-menu-btn,
+.gallery-edit-folder-btn {
+  border-radius: 8px !important;
+}
+.gallery-sidebar,
+.gallery-sidebar-close,
+.gallery-sidebar-action,
+.gallery-batch-actions,
+.gallery-batch-actions button,
+.gallery-viewer-actions button,
+.gallery-viewer-close,
+.gallery-folder-picker,
+.gallery-folder-picker-header button,
+.gallery-folder-choice {
+  border-radius: 8px !important;
+}
+.gallery-feedback {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 220;
+  transform: translateX(-50%);
+  min-width: 90px;
+  padding: 11px 18px;
+  border: 1px solid #5b6675;
+  border-radius: 7px;
+  background: #20252d;
+  color: #f5f5f7;
+  box-shadow: 0 8px 28px rgba(0,0,0,.38);
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  pointer-events: none;
+}
