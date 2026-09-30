@@ -9724,3 +9724,59 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   border-color: #a45b61 !important;
   background: #472528 !important;
 }
+
+
+/* Gallery scrolling / touch behavior */
+.gallery-page {
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+.gallery-grid {
+  touch-action: pan-y;
+}
+
+/* Keep folder controls on one clean horizontal row */
+.gallery-page-header {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.gallery-page-header > div:not(.gallery-header-actions) {
+  min-width: 0;
+}
+.gallery-header-actions {
+  margin-left: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  width: auto !important;
+}
+.gallery-edit-folder-btn,
+.gallery-menu-btn {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+}
+.gallery-edit-folder-btn {
+  display: grid;
+  place-items: center;
+}
+.gallery-edit-folder-btn svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
