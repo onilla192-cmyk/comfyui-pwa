@@ -30,6 +30,7 @@ export function ImageGalleryPage({
   const [items, setItems] = useState<GalleryItem[]>(loadGallery)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [armedId, setArmedId] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
 
@@ -115,6 +116,17 @@ export function ImageGalleryPage({
           </button>
         ))}
       </div>
+
+      {sidebarOpen && (
+        <div className="gallery-sidebar-backdrop" onClick={() => setSidebarOpen(false)}>
+          <aside className="gallery-sidebar" onClick={(e) => e.stopPropagation()}>
+            <div className="gallery-sidebar-header">
+              <h2>Gallery Menu</h2>
+              <button type="button" className="gallery-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close gallery menu">×</button>
+            </div>
+          </aside>
+        </div>
+      )}
 
       {selected && (
         <div className="gallery-viewer-backdrop" onClick={() => setSelectedId(null)}>
