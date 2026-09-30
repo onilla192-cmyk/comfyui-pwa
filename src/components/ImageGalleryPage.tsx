@@ -103,6 +103,8 @@ export function ImageGalleryPage({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [multiSelectMode, setMultiSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set())
+  const [deleteFolderOpen, setDeleteFolderOpen] = useState(false)
   const [storageReady, setStorageReady] = useState(false)
   const [sendFolderOpen, setSendFolderOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -158,6 +160,13 @@ export function ImageGalleryPage({
     })
   }
 
+  function renameCurrentFolder() {
+    if (!currentFolder) return
+    const name = window.prompt('Rename folder', currentFolder.name)?.trim()
+    if (!name || name === currentFolder.name) return
+    setFolders((current) => current.map((folder) => folder.id === currentFolder.id ? { ...folder, name } : folder))
+  }
+
   function addFolder() {
     const name = window.prompt('Name this folder', 'New Folder')?.trim()
     if (!name) return
@@ -195,7 +204,15 @@ export function ImageGalleryPage({
 
   function tapFolder(folder: GalleryFolder) {
     if (navigator.vibrate) navigator.vibrate(18)
-    if (multiSelectMode) return
+    if (multiSelectMode) {
+      setSelectedFolderIds((current) => {
+        const next = new Set(current)
+        if (next.has(folder.id)) next.delete(folder.id)
+        else next.add(folder.id)
+        return next
+      })
+      return
+    }
     setCurrentFolderId(folder.id)
     setSelectedId(null)
     setArmedId(null)
@@ -206,22 +223,44 @@ export function ImageGalleryPage({
     setSelectedId(null)
     setArmedId(null)
     setSelectedIds(new Set())
+    setSelectedFolderIds(new Set())
     setMultiSelectMode(false)
   }
 
   function toggleMultiSelect() {
     setMultiSelectMode((current) => !current)
     setSelectedIds(new Set())
+    setSelectedFolderIds(new Set())
     setSelectedId(null)
     setArmedId(null)
     setSidebarOpen(false)
     setSendFolderOpen(false)
+    setDeleteFolderOpen(false)
   }
 
   function deleteSelected() {
+    if (selectedFolderIds.size) {
+      setDeleteFolderOpen(true)
+      return
+    }
     if (!selectedIds.size) return
     setItems((current) => current.filter((item) => !selectedIds.has(item.id)))
     setSelectedIds(new Set())
+    setMultiSelectMode(false)
+  }
+
+  function resolveFolderDeletion(deleteImages: boolean) {
+    if (!selectedFolderIds.size) return
+    if (deleteImages) {
+      setItems((current) => current.filter((item) => !item.folderId || !selectedFolderIds.has(item.folderId)))
+    } else {
+      setItems((current) => current.map((item) => selectedFolderIds.has(item.folderId || '') ? { ...item, folderId: null } : item))
+    }
+    setFolders((current) => current.filter((folder) => !selectedFolderIds.has(folder.id)))
+    if (currentFolderId && selectedFolderIds.has(currentFolderId)) setCurrentFolderId(null)
+    setSelectedFolderIds(new Set())
+    setSelectedIds(new Set())
+    setDeleteFolderOpen(false)
     setMultiSelectMode(false)
   }
 
@@ -248,14 +287,17 @@ export function ImageGalleryPage({
           <h1>{currentFolder ? currentFolder.name : 'Image Gallery'}</h1>
           <span>{visibleItems.length} image{visibleItems.length === 1 ? '' : 's'}{multiSelectMode && selectedIds.size ? ' • ' + selectedIds.size + ' selected' : ''}</span>
         </div>
-        <button type="button" className="gallery-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open gallery menu" aria-expanded={sidebarOpen}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-        </button>
+        <div className="gallery-header-actions">
+          {currentFolder && <button type="button" className="gallery-edit-folder-btn" onClick={renameCurrentFolder} aria-label="Rename folder" title="Rename folder">✎</button>}
+          <button type="button" className="gallery-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open gallery menu" aria-expanded={sidebarOpen}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
+        </div>
       </header>
 
       <div className={'gallery-grid' + (multiSelectMode ? ' gallery-grid-multiselect' : '')}>
         {visibleFolders.map((folder) => (
-          <button type="button" className="gallery-folder-card" key={folder.id} onClick={() => tapFolder(folder)}>
+          <button type="button" className={'gallery-folder-card' + (selectedFolderIds.has(folder.id) ? ' gallery-folder-card-selected' : '')} key={folder.id} onClick={() => tapFolder(folder)} aria-pressed={multiSelectMode ? selectedFolderIds.has(folder.id) : undefined}>
             <span className="gallery-folder-icon">▰</span>
             <strong>{folder.name}</strong>
             <span>{items.filter((item) => item.folderId === folder.id).length} image{items.filter((item) => item.folderId === folder.id).length === 1 ? '' : 's'}</span>
@@ -294,13 +336,31 @@ export function ImageGalleryPage({
             </button>
             {multiSelectMode && (
               <div className="gallery-batch-actions">
-                <span>{selectedIds.size} selected</span>
-                <button type="button" className="gallery-send-folder-btn" disabled={!selectedIds.size} onClick={() => setSendFolderOpen(true)}>Send to Folder</button>
-                <button type="button" className="gallery-batch-delete" disabled={!selectedIds.size} onClick={deleteSelected}>Delete Selected</button>
+                <span>{selectedIds.size + selectedFolderIds.size} selected</span>
+                <button type="button" className="gallery-send-folder-btn" disabled={!selectedIds.size || selectedFolderIds.size > 0} onClick={() => setSendFolderOpen(true)}>Send to Folder</button>
+                <button type="button" className="gallery-batch-delete" disabled={!selectedIds.size && !selectedFolderIds.size} onClick={deleteSelected}>Delete Selected</button>
                 <button type="button" className="gallery-batch-cancel" onClick={toggleMultiSelect}>Cancel</button>
               </div>
             )}
           </aside>
+        </div>
+      )}
+
+      {deleteFolderOpen && multiSelectMode && (
+        <div className="gallery-folder-picker-backdrop" onClick={() => setDeleteFolderOpen(false)}>
+          <section className="gallery-folder-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="gallery-folder-picker-header">
+              <h2>Delete Folder{selectedFolderIds.size > 1 ? 's' : ''}</h2>
+              <button type="button" onClick={() => setDeleteFolderOpen(false)} aria-label="Close folder deletion dialog">×</button>
+            </div>
+            <p>What should happen to the images inside the selected folder{selectedFolderIds.size > 1 ? 's' : ''}?</p>
+            <button type="button" className="gallery-folder-choice" onClick={() => resolveFolderDeletion(false)}>
+              <span>↗</span><strong>Move Images to Main Gallery</strong>
+            </button>
+            <button type="button" className="gallery-folder-choice gallery-folder-delete-choice" onClick={() => resolveFolderDeletion(true)}>
+              <span>⌫</span><strong>Delete Images with Folder</strong>
+            </button>
+          </section>
         </div>
       )}
 
