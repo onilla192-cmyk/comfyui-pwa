@@ -1423,15 +1423,6 @@ export default function App() {
             </svg>
           </button>
         </div>
-      <div className="footer-status" aria-label="ComfyUI status">
-          <div className="sleep-timer footer-status-bubble" aria-live="polite">
-            {startingComfy ? <><span>Starting ComfyUI</span><div className="sleep-start-bar"><div style={{ width: startProgress + '%' }} /></div></> : comfySleeping ? <span>{sleepLocked ? 'ComfyUI On' : 'Standby'}</span> : sleepSeconds === 0 ? <span>{sleepLocked ? 'ComfyUI On' : 'Standby'}</span> : isBusy ? <><span>Sleep timer paused</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></> : <><span>Sleep in</span><strong>{Math.floor(sleepSeconds / 60)}:{String(sleepSeconds % 60).padStart(2, '0')}</strong></>}
-          </div>
-          <div className={`vram-status footer-status-bubble ${isBusy || startingComfy ? 'active' : comfySleeping ? 'free' : 'active'}`} aria-live="polite">
-            <span>{isBusy || startingComfy ? 'VRAM active' : comfySleeping ? 'VRAM free' : 'VRAM active'}</span>
-          </div>
-        </div>
-
       </section>
 
       {promptExpanded && (
