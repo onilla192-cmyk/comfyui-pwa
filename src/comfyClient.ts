@@ -107,7 +107,7 @@ function getClientId() {
 }
 
 export async function queuePrompt(prompt: WorkflowPrompt) {
-  await ensureComfyRunning()
+  // Generation must never start ComfyUI. The user must start ComfyUI separately.
   const response = await fetch(`${COMFY_BASE_URL}/prompt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
