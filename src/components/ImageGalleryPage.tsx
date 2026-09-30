@@ -215,7 +215,6 @@ export function ImageGalleryPage({
             aria-pressed={multiSelectMode ? selectedIds.has(item.id) : undefined}
           >
             <img src={item.src} alt={item.name} loading="lazy" draggable={false} />
-          >
             {multiSelectMode && <span className="gallery-select-mark" aria-hidden="true">{selectedIds.has(item.id) ? '✓' : ''}</span>}
           </button>
         ))}
