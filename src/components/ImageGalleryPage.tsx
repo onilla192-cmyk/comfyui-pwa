@@ -10,6 +10,9 @@ interface GalleryItem {
 type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
+const GALLERY_DB_NAME = 'comfyui-pwa-gallery'
+const GALLERY_DB_VERSION = 1
+const GALLERY_STORE_NAME = 'images'
 
 function loadGallery(): GalleryItem[] {
   try {
