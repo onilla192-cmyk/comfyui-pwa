@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, getRemoteControlStatus, startComfyUI, waitForComfyReady, freeComfyMemory, getComfySystemStats, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
-import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile } from './imageCache'
+import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage } from './imageCache'
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
@@ -430,6 +430,7 @@ export default function App() {
 
   const [imageOne, setImageOne] = useState<CharacterImage | null>(() => null)
   const [imageTwo, setImageTwo] = useState<CharacterImage | null>(() => null)
+  const [selectedImagesRestored, setSelectedImagesRestored] = useState(false)
   const [showImageTwo, setShowImageTwo] = useState(() => saved.showImageTwo ?? !!saved.imageTwo)
 
   useEffect(() => {
@@ -451,11 +452,15 @@ export default function App() {
         })
       }
     }
-    void restoreSelectedImages()
+    void restoreSelectedImages().finally(() => {
+      if (!cancelled) setSelectedImagesRestored(true)
+    })
+    void requestPersistentStorage()
     return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
+    if (!selectedImagesRestored) return
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({
       prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, disabledPromptBuilderLabels, masterPrompts, hookPrompts, negativePrompt, results, trash,
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
@@ -465,7 +470,7 @@ export default function App() {
       promptId: currentPromptId.current, progress, errorLogs: errorLogs.slice(-100),
     }))
     save()
-  }, [prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked, hookPrompts, errorLogs])
+  }, [selectedImagesRestored, prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked, hookPrompts, errorLogs])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
