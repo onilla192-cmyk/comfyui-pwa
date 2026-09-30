@@ -9554,3 +9554,131 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   background: #22c55e;
   border-color: #b7f7ce;
 }
+
+
+.gallery-folder-card {
+  min-width: 0;
+  min-height: 200px;
+  padding: 18px;
+  border: 2px solid #4a5361;
+  border-radius: 15px;
+  background: #20252d;
+  color: #f5f5f7;
+  box-shadow: 0 8px 24px rgba(0,0,0,.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: center;
+}
+.gallery-folder-card:hover {
+  background: #282e38;
+  border-color: #687586;
+}
+.gallery-folder-icon {
+  width: 58px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #687586;
+  border-radius: 9px;
+  background: #2b323d;
+  font-size: 25px;
+  line-height: 1;
+}
+.gallery-folder-card strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.gallery-folder-card > span:last-child {
+  color: #8e8e93;
+  font-size: 11px;
+}
+.gallery-send-folder-btn {
+  border-color: #365f7a !important;
+  background: #19364a !important;
+}
+.gallery-send-folder-btn:disabled {
+  opacity: .45;
+  cursor: default;
+}
+.gallery-folder-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0,0,0,.68);
+  backdrop-filter: blur(10px);
+}
+.gallery-folder-picker {
+  width: min(100%, 420px);
+  max-height: min(80vh, 620px);
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid #3d4552;
+  border-radius: 16px;
+  background: #1c1f25;
+  box-shadow: 0 18px 50px rgba(0,0,0,.5);
+}
+.gallery-folder-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.gallery-folder-picker-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.gallery-folder-picker-header button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #343a46;
+  border-radius: 10px;
+  background: #14171c;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+.gallery-folder-picker p {
+  margin: 0 0 14px;
+  color: #9fa7b5;
+  font-size: 12px;
+}
+.gallery-folder-choice {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 8px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #3d4552;
+  border-radius: 10px;
+  background: #242832;
+  color: #f5f5f7;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.gallery-folder-choice:hover {
+  background: #2d333e;
+  border-color: #657184;
+}
+.gallery-folder-choice span {
+  font-size: 20px;
+}
+.gallery-folder-choice strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
