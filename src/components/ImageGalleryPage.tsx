@@ -254,14 +254,6 @@ export function ImageGalleryPage({
       </header>
 
       <div className={'gallery-grid' + (multiSelectMode ? ' gallery-grid-multiselect' : '')}>
-        {currentFolderId === null && (
-          <button type="button" className="gallery-folder-card" onClick={() => undefined} aria-label="Folders">
-            <span className="gallery-folder-icon">+</span>
-            <strong>Folders</strong>
-            <span>{folders.length} folder{folders.length === 1 ? '' : 's'}</span>
-          </button>
-        )}
-
         {visibleFolders.map((folder) => (
           <button type="button" className="gallery-folder-card" key={folder.id} onClick={() => tapFolder(folder)}>
             <span className="gallery-folder-icon">▰</span>
