@@ -6,6 +6,7 @@ import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
+import { ImageGalleryPage } from './components/ImageGalleryPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -186,6 +187,7 @@ export default function App() {
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
+  const [galleryOpen, setGalleryOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
   const [standbyLogs, setStandbyLogs] = useState<string[]>([])
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
@@ -1218,7 +1220,10 @@ export default function App() {
       />
     )}
 
-    <main className="app-main">
+    {galleryOpen ? (
+      <ImageGalleryPage onClose={() => setGalleryOpen(false)} />
+    ) : (
+      <main className="app-main">
       {isBusy && progress && (
         <div className="progress-wrap" aria-label="Generation progress">
           <div className="progress-bar">
@@ -1875,8 +1880,9 @@ export default function App() {
         </section>
       </div>}
 
-    </main>
-    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || logsOpen || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
+      </main>
+    )}
+    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || logsOpen || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen || galleryOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <button
           className={`footer-menu-toggle ${footerExpanded ? 'expanded' : 'collapsed'}`}
@@ -1950,6 +1956,10 @@ export default function App() {
         <button className="icon-btn settings-icon" type="button" onClick={() => setSettingsOpen(true)} aria-label="Open settings" title="Settings">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/><path d="m19.4 15 .1.06a1.8 1.8 0 0 1-2.47 2.47l-.06-.1a1.8 1.8 0 0 0-3.1 1.04l-.01.12a1.8 1.8 0 0 1-3.6 0l-.01-.12a1.8 1.8 0 0 0-3.1-1.04l-.06.1a1.8 1.8 0 0 1-2.47-2.47l.1-.06a1.8 1.8 0 0 0-1.04-3.1l-.12-.01a1.8 1.8 0 0 1 0-3.6l.12-.01a1.8 1.8 0 0 0 1.04-3.1l-.1-.06A1.8 1.8 0 0 1 7.09 2.65l.06.1a1.8 1.8 0 0 0 3.1-1.04l.01-.12a1.8 1.8 0 0 1 3.6 0l.01.12a1.8 1.8 0 0 0 3.1 1.04l.06-.1a1.8 1.8 0 0 1 2.47 2.47l-.1.06a1.8 1.8 0 0 0 1.04 3.1l.12.01a1.8 1.8 0 0 1 0 3.6l-.12.01A1.8 1.8 0 0 0 19.4 15Z"/></svg>
         </button>
+        <button className="icon-btn gallery-icon" type="button" onClick={() => { setGalleryOpen(true); setFooterExpanded(false) }} aria-label="Open image gallery" title="Image Gallery">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 4"/></svg>
+        </button>
+
         </div>
         <div className="app-version">ComfyUI PWA {APP_VERSION}</div>
       </div>
