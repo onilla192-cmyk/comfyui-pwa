@@ -6,7 +6,7 @@ import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
-import { ImageGalleryPage } from './components/ImageGalleryPage'
+import { ImageGalleryPage, readGalleryPresets, type GalleryPreset } from './components/ImageGalleryPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -158,6 +158,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [ideasOpen, setIdeasOpen] = useState(false)
   const [resultsOpen, setResultsOpen] = useState(false)
+  const [presetsOpen, setPresetsOpen] = useState(false)
+  const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
   const [completedImageVisible, setCompletedImageVisible] = useState(true)
   const completedTapTimer = useRef<number | null>(null)
@@ -261,7 +263,22 @@ export default function App() {
       cancelled = true
       window.clearInterval(timer)
     }
+  }, []
+  const refreshGalleryPresets = async () => {
+    try {
+      const presets = await readGalleryPresets()
+      setGalleryPresets(presets)
+    } catch {
+      setGalleryPresets([])
+    }
+  }
+
+  useEffect(() => {
+    void refreshGalleryPresets()
+    const timer = window.setInterval(() => void refreshGalleryPresets(), 1000)
+    return () => window.clearInterval(timer)
   }, [])
+)
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
   function buildPromptBuilderPrompt() {
@@ -1363,6 +1380,13 @@ export default function App() {
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
+          <button className="preset-btn" type="button" onClick={() => { void refreshGalleryPresets(); setPresetsOpen(true) }} aria-label="Open created presets" title="Created presets">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <path d="M7.5 15.5l3-3 2.5 2.5 2-2 1.5 1.5"/>
+              <circle cx="9" cy="9" r="1.2"/>
+            </svg>
+          </button>
           <button className="results-btn" type="button" onClick={() => setResultsOpen(true)} aria-label="Open completed generations" title="Completed generations">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="4" y="4" width="16" height="16" rx="2"/>
@@ -1671,6 +1695,39 @@ export default function App() {
 
       {status === 'cancelling' && <p className="cancel-text">Cancelling generation…</p>}
       {errorMsg && <p className="error-text">{errorMsg}</p>}
+      {presetsOpen && (
+        <div className="preset-popup-backdrop" onClick={() => setPresetsOpen(false)}>
+          <section className="preset-popup" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Created presets">
+            <div className="preset-popup-header">
+              <div>
+                <h2>Created Presets</h2>
+                <span>{galleryPresets.length} preset{galleryPresets.length === 1 ? '' : 's'}</span>
+              </div>
+              <button type="button" className="close-btn" onClick={() => setPresetsOpen(false)} aria-label="Close presets">×</button>
+            </div>
+            <div className="preset-popup-list">
+              {galleryPresets.length ? galleryPresets.map((preset) => (
+                <button
+                  type="button"
+                  className="preset-popup-item"
+                  key={preset.id}
+                  onClick={() => {
+                    setPrompt(preset.prompt)
+                    setPromptBuilderOpen(false)
+                    setPresetsOpen(false)
+                  }}
+                >
+                  <strong>{preset.title}</strong>
+                  <span>{preset.prompt}</span>
+                </button>
+              )) : (
+                <div className="preset-popup-empty">No created presets. Create one from Gallery Menu.</div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
       {resultsOpen && (
         <section className="results-page" aria-label="Completed generations">
           <div className="results-page-header">
