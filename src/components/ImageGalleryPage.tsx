@@ -227,6 +227,7 @@ export function ImageGalleryPage({
   }
 
   function openPresetCreator() {
+    setSelectedPresetId(null)
     setPresetTitle('')
     setPresetPrompt('')
     setPresetCreatorOpen(true)
