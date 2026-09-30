@@ -1243,9 +1243,6 @@ export default function App() {
           <div className="prompt-field-header">
             <label htmlFor="prompt">Prompt</label>
             <div className="prompt-header-actions">
-              {!promptBuilderOpen && <button type="button" className="prompt-hook-btn" onClick={() => setHookPromptsPageOpen(true)} aria-label="Open Hook Prompts" title="Hook Prompts">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.5 4.5a5 5 0 0 1-11 0L5 8Z"/><path d="M8 8 9.5 5h5L16 8M7 17l-1 3h12l-1-3"/><path d="M12 11v4"/></svg>
-              </button>}
               <button
                 type="button"
                 className={`prompt-footer-toggle ${mainFooterVisible ? 'visible' : 'hidden'}`}
@@ -1256,18 +1253,6 @@ export default function App() {
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   {mainFooterVisible ? <path d="M5 9h14M5 15h14" /> : <path d="M5 12h14" />}
-                </svg>
-              </button>
-              <button
-                type="button"
-                className={`prompt-menu-btn${promptHeaderMenuOpen ? ' active' : ''}`}
-                onClick={() => setPromptHeaderMenuOpen((open) => !open)}
-                aria-label="Open prompt options"
-                aria-expanded={promptHeaderMenuOpen}
-                title="Prompt options"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 7h16M4 12h16M4 17h16" />
                 </svg>
               </button>
               {promptHeaderMenuOpen && (
