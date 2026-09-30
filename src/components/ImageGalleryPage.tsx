@@ -181,6 +181,7 @@ export function ImageGalleryPage({
   function tapItem(item: GalleryItem) {
     if (navigator.vibrate) navigator.vibrate(18)
     if (multiSelectMode) {
+      setSelectedFolderIds(new Set())
       setSelectedIds((current) => {
         const next = new Set(current)
         if (next.has(item.id)) next.delete(item.id)
@@ -205,6 +206,7 @@ export function ImageGalleryPage({
   function tapFolder(folder: GalleryFolder) {
     if (navigator.vibrate) navigator.vibrate(18)
     if (multiSelectMode) {
+      setSelectedIds(new Set())
       setSelectedFolderIds((current) => {
         const next = new Set(current)
         if (next.has(folder.id)) next.delete(folder.id)
@@ -285,7 +287,7 @@ export function ImageGalleryPage({
         <button type="button" className="gallery-back-btn" onClick={currentFolderId ? goToMainGallery : onClose} aria-label={currentFolderId ? 'Back to main gallery' : 'Back to editor'}>←</button>
         <div>
           <h1>{currentFolder ? currentFolder.name : 'Image Gallery'}</h1>
-          <span>{visibleItems.length} image{visibleItems.length === 1 ? '' : 's'}{multiSelectMode && selectedIds.size ? ' • ' + selectedIds.size + ' selected' : ''}</span>
+          <span>{visibleItems.length} image{visibleItems.length === 1 ? '' : 's'}{multiSelectMode && (selectedIds.size + selectedFolderIds.size) ? ' • ' + (selectedIds.size + selectedFolderIds.size) + ' selected' : ''}</span>
         </div>
         <div className="gallery-header-actions">
           {currentFolder && <button type="button" className="gallery-edit-folder-btn" onClick={renameCurrentFolder} aria-label="Rename folder" title="Rename folder">✎</button>}
