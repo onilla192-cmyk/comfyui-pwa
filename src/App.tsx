@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, getRemoteControlStatus, startComfyUI, waitForComfyReady, freeComfyMemory, getComfySystemStats, startComfyFromPhone } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, getRemoteControlStatus, startComfyUI, waitForComfyReady, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage } from './imageCache'
 import './App.css'
@@ -20,7 +20,6 @@ interface ErrorLogEntry { id: string; timestamp: number; message: string }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
-const SLEEP_TIMEOUT_SECONDS = 60
 const PROMPT_BUILDER_LABELS = [
   'BODY EFFECTS', 'CLOTHING', 'NIPPLES', 'BREASTS', 'HEAD ANGLE', 'LIPS', 'HAIR DETAILS', 'HANDS',
   'EYES', 'CAMERA', 'PRESERVATION', 'MOUTH', 'POSTURE', 'BODY DIRECTION', 'IMAGE EDIT', 'WATERMARKS',
@@ -172,16 +171,10 @@ export default function App() {
   const [megapixels, setMegapixels] = useState(saved.megapixels ?? 0.5)
   const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 720)
   const [cancelling, setCancelling] = useState(false)
-  // Start on the off screen until the phone-control endpoint confirms ComfyUI is running.
-  // This makes a refresh immediately reflect a stopped laptop without waiting for a timer.
-  const [comfySleeping, setComfySleeping] = useState(true)
   const [startingComfy, setStartingComfy] = useState(false)
   const [startProgress, setStartProgress] = useState(0)
   const [remoteStarting, setRemoteStarting] = useState(false)
   const [comfyPowerState, setComfyPowerState] = useState<'off' | 'idle' | 'active'>('off')
-  const standbyReleased = useRef(false)
-  const [sleepSeconds, setSleepSeconds] = useState(saved.sleepSeconds ?? SLEEP_TIMEOUT_SECONDS)
-  const [sleepLocked, setSleepLocked] = useState(saved.sleepLocked ?? false)
   const [footerExpanded, setFooterExpanded] = useState(false)
   const [mainFooterVisible, setMainFooterVisible] = useState(true)
   const [logsOpen, setLogsOpen] = useState(false)
@@ -189,7 +182,6 @@ export default function App() {
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
-  const [standbyLogs, setStandbyLogs] = useState<string[]>([])
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyPage, setHistoryPage] = useState(1)
@@ -466,11 +458,11 @@ export default function App() {
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
-      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, sleepSeconds, sleepLocked,
+      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension,
       promptId: currentPromptId.current, progress, errorLogs: errorLogs.slice(-100),
     }))
     save()
-  }, [selectedImagesRestored, prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, sleepSeconds, sleepLocked, hookPrompts, errorLogs])
+  }, [selectedImagesRestored, prompt, promptLabelBlock, activePromptLabelIds, promptLabels, promptLabelTrash, promptBuilderOpen, promptBuilderValues, promptBuilderLabels, negativePrompt, results, trash, imageOne, imageTwo, showImageTwo, cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, progress, status, hookPrompts, errorLogs])
 
   useEffect(() => {
     if (currentPromptId.current) void waitForResult(currentPromptId.current)
@@ -508,21 +500,10 @@ export default function App() {
         const remote = await getRemoteControlStatus()
         if (cancelled) return
 
-        // The launcher/command prompt is the source of truth for the power state.
-        // ComfyUI can remain reachable while its models are unloaded for standby.
-        if (remote.launcher !== 'running') {
-          setComfySleeping(true)
+        // The remote launcher is the source of truth. There is no app-side standby state.
+        if (remote.launcher !== 'running' || remote.comfyui === 'stopped') {
           setComfyPowerState('off')
-          standbyReleased.current = false
-        } else if (remoteStarting || startingComfy) {
-          setComfyPowerState('idle')
-        } else if (remote.comfyui === 'stopped') {
-          // The new Node launcher has only two server states:
-          // stopped = the power button must be available; running = active.
-          setComfyPowerState('off')
-          setComfySleeping(false)
-          standbyReleased.current = false
-        } else if (comfySleeping || remote.comfyui === 'starting') {
+        } else if (remoteStarting || startingComfy || remote.comfyui === 'starting') {
           setComfyPowerState('idle')
         } else {
           setComfyPowerState('active')
@@ -542,56 +523,12 @@ export default function App() {
   }, [isBusy, startingComfy])
 
   useEffect(() => {
-    if (sleepLocked || isBusy || comfySleeping || startingComfy || sleepSeconds > 0 || standbyReleased.current) return
-    // Standby: keep the ComfyUI server alive, but unload models and release
-    // cached GPU memory so other software can use the VRAM.
-    standbyReleased.current = true
-    const stamp = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    const addStandbyLog = (message: string) => setStandbyLogs((current) => [...current.slice(-49), `[${stamp()}] ${message}`])
-    addStandbyLog('Standby: unloading ComfyUI models and releasing GPU memory...')
-    void getComfySystemStats()
-      .then((before) => {
-        const device = before?.devices?.[0]
-        if (device?.vram_used != null) addStandbyLog(`GPU memory before: ${Math.round(Number(device.vram_used) / 1048576)} MB`)
-      })
-      .catch(() => {})
-      .finally(() => {
-        void freeComfyMemory()
-          .then(async () => {
-            addStandbyLog('Standby: ComfyUI memory release request completed.')
-            await new Promise((resolve) => setTimeout(resolve, 750))
-            try {
-              const after = await getComfySystemStats()
-              const device = after?.devices?.[0]
-              if (device?.vram_used != null) addStandbyLog(`GPU memory after: ${Math.round(Number(device.vram_used) / 1048576)} MB`)
-            } catch {}
-          })
-          .catch((err) => addStandbyLog(`Standby: WARNING — memory release failed: ${err instanceof Error ? err.message : 'unknown error'}`))
-          .finally(() => {
-            // Remain in standby until the user starts another generation.
-            // The server stays alive; only its models/VRAM are unloaded.
-            setComfySleeping(true)
-            setComfyPowerState('idle')
-            setSleepSeconds(0)
-          })
-      })
-  }, [isBusy, comfySleeping, startingComfy, sleepSeconds, sleepLocked])
-
-  useEffect(() => {
-    if (sleepLocked || isBusy || comfySleeping || startingComfy) return
-    const timer = window.setInterval(() => {
-      setSleepSeconds((current: number) => Math.max(0, current - 1))
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [isBusy, comfySleeping, startingComfy, sleepLocked])
-
-  useEffect(() => {
     if (!logsOpen) return
     let cancelled = false
     const loadLogs = async () => {
       try {
         const logs = await getLauncherLogs()
-        if (!cancelled) setLauncherLogs([...logs, ...standbyLogs])
+        if (!cancelled) setLauncherLogs(logs)
       } catch {}
     }
     void loadLogs()
@@ -600,7 +537,7 @@ export default function App() {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [logsOpen, standbyLogs])
+  }, [logsOpen])
 
 
   useEffect(() => {
@@ -779,20 +716,12 @@ export default function App() {
     const generationPrompt = hookBlock ? hookBlock + (mainGenerationPrompt ? '\n\n' + mainGenerationPrompt : '') : mainGenerationPrompt
     if (!generationPrompt || uploading.one || uploading.two || startingComfy) return
     setLatestResultId(null)
-    standbyReleased.current = false
-    setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
     setErrorMsg(null); setStatus('queued'); setProgress({ value: 0, max: 1 })
     let startupTimer: number | null = null
     try {
       const launcher = await getLauncherStatus()
-      // A running server with unloaded models is standby, not stopped.
-      // Wake the app-side standby state without restarting ComfyUI.
-      if (comfySleeping && launcher.comfyui !== 'stopped') {
-        setComfySleeping(false)
-      }
       if (launcher.comfyui === 'stopped') {
         setStartingComfy(true)
-        setComfySleeping(false)
         setStartProgress(5)
         startupTimer = window.setInterval(() => {
           setStartProgress((current) => Math.min(90, current + 5))
@@ -1129,10 +1058,7 @@ export default function App() {
       await startComfyFromPhone()
       window.clearInterval(timer)
       setStartProgress(100)
-      standbyReleased.current = false
-      setComfySleeping(false)
       setComfyPowerState('active')
-      setSleepSeconds(SLEEP_TIMEOUT_SECONDS)
       setStatus('idle')
       await new Promise((resolve) => setTimeout(resolve, 250))
       // Return to the PWA we started from, not the raw ComfyUI interface.
@@ -1142,8 +1068,6 @@ export default function App() {
       window.clearInterval(timer)
       setStartProgress(0)
       setComfyPowerState('off')
-      setComfySleeping(false)
-      standbyReleased.current = false
       setErrorMsg(recordErrorLog(err))
     } finally {
       setRemoteStarting(false)
@@ -1917,20 +1841,6 @@ export default function App() {
         </button>
         <div className="footer-actions">
 
-        <button
-          className={`icon-btn sleep-lock-btn ${sleepLocked ? 'locked' : 'unlocked'}`}
-          type="button"
-          onClick={() => setSleepLocked((current: boolean) => !current)}
-          aria-pressed={sleepLocked}
-          aria-label={sleepLocked ? 'Unlock auto sleep' : 'Lock auto sleep'}
-          title={sleepLocked ? 'Unlock auto sleep' : 'Lock auto sleep'}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            {sleepLocked
-              ? <><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>
-              : <><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 0 1 7.2-2.4" /></>}
-          </svg>
-        </button>
         <button
           className={`start-comfy-btn footer-power-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
           type="button"
