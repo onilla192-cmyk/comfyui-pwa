@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 
 interface GalleryItem {
   id: string
@@ -180,7 +180,7 @@ export function ImageGalleryPage({
     setFolders((current) => [...current, folder])
   }
 
-  function handleCardPointerDown(itemId: string, event: React.PointerEvent<HTMLButtonElement>) {
+  function handleCardPointerDown(itemId: string, event: ReactPointerEvent<HTMLButtonElement>) {
     if (event.pointerType === 'mouse') return
     pointerStart.current = { id: itemId, x: event.clientX, y: event.clientY }
     suppressTap.current = false
