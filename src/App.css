@@ -9470,3 +9470,87 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   width:36px; height:36px; border:1px solid #343a46; border-radius:10px; background:#14171c;
   color:#fff; font-size:22px; cursor:pointer;
 }
+
+.gallery-sidebar-action {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #3d4552;
+  border-radius: 11px;
+  background: #242832;
+  color: #f5f5f7;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gallery-sidebar-action.active {
+  border-color: #38bdf8;
+  background: #173247;
+}
+.gallery-sidebar-action-icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #687384;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.gallery-batch-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #343a46;
+  border-radius: 11px;
+  background: #14171c;
+}
+.gallery-batch-actions > span {
+  color: #9fa7b5;
+  font-size: 12px;
+}
+.gallery-batch-actions button {
+  min-height: 42px;
+  border: 1px solid #454c59;
+  border-radius: 9px;
+  background: #242832;
+  color: #f5f5f7;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gallery-batch-actions .gallery-batch-delete {
+  border-color: #754044;
+  background: #3a2022;
+  color: #ffdede;
+}
+.gallery-batch-actions .gallery-batch-delete:disabled {
+  opacity: .45;
+  cursor: default;
+}
+.gallery-card-selected {
+  border-color: #38d98b !important;
+  box-shadow: 0 0 0 2px rgba(56,217,139,.24), 0 0 20px rgba(56,217,139,.18) !important;
+}
+.gallery-select-mark {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(255,255,255,.8);
+  border-radius: 7px;
+  background: rgba(12,15,20,.72);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+.gallery-card-selected .gallery-select-mark {
+  background: #22c55e;
+  border-color: #b7f7ce;
+}
