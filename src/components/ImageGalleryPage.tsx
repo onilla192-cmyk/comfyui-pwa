@@ -109,6 +109,8 @@ export function ImageGalleryPage({
   const [sendFolderOpen, setSendFolderOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
+  const pointerStart = useRef<{ id: string; x: number; y: number } | null>(null)
+  const suppressTap = useRef(false)
 
   useEffect(() => {
     let active = true
@@ -176,6 +178,31 @@ export function ImageGalleryPage({
       createdAt: Date.now(),
     }
     setFolders((current) => [...current, folder])
+  }
+
+  function handleCardPointerDown(itemId: string, event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.pointerType === 'mouse') return
+    pointerStart.current = { id: itemId, x: event.clientX, y: event.clientY }
+    suppressTap.current = false
+  }
+
+  function handleCardPointerMove(event: React.PointerEvent<HTMLButtonElement>) {
+    const start = pointerStart.current
+    if (!start || event.pointerType === 'mouse') return
+    const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y)
+    if (distance > 10) suppressTap.current = true
+  }
+
+  function handleCardPointerEnd() {
+    pointerStart.current = null
+  }
+
+  function handleCardClick(item: GalleryItem) {
+    if (suppressTap.current) {
+      suppressTap.current = false
+      return
+    }
+    tapItem(item)
   }
 
   function tapItem(item: GalleryItem) {
@@ -290,7 +317,9 @@ export function ImageGalleryPage({
           <span>{visibleItems.length} image{visibleItems.length === 1 ? '' : 's'}{multiSelectMode && (selectedIds.size + selectedFolderIds.size) ? ' • ' + (selectedIds.size + selectedFolderIds.size) + ' selected' : ''}</span>
         </div>
         <div className="gallery-header-actions">
-          {currentFolder && <button type="button" className="gallery-edit-folder-btn" onClick={renameCurrentFolder} aria-label="Rename folder" title="Rename folder">✎</button>}
+          {currentFolder && <button type="button" className="gallery-edit-folder-btn" onClick={renameCurrentFolder} aria-label="Rename folder" title="Rename folder">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z" /><path d="m13.5 6.5 4 4" /></svg>
+          </button>}
           <button type="button" className="gallery-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open gallery menu" aria-expanded={sidebarOpen}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
           </button>
@@ -299,7 +328,7 @@ export function ImageGalleryPage({
 
       <div className={'gallery-grid' + (multiSelectMode ? ' gallery-grid-multiselect' : '')}>
         {visibleFolders.map((folder) => (
-          <button type="button" className={'gallery-folder-card' + (selectedFolderIds.has(folder.id) ? ' gallery-folder-card-selected' : '')} key={folder.id} onClick={() => tapFolder(folder)} aria-pressed={multiSelectMode ? selectedFolderIds.has(folder.id) : undefined}>
+          <button type="button" className={'gallery-folder-card' + (selectedFolderIds.has(folder.id) ? ' gallery-folder-card-selected' : '')} key={folder.id} onPointerDown={(event) => handleCardPointerDown(folder.id, event)} onPointerMove={handleCardPointerMove} onPointerUp={handleCardPointerEnd} onPointerCancel={() => { suppressTap.current = true; pointerStart.current = null }} onClick={() => { if (suppressTap.current) { suppressTap.current = false; return } tapFolder(folder) }} aria-pressed={multiSelectMode ? selectedFolderIds.has(folder.id) : undefined}>
             <span className="gallery-folder-icon">▰</span>
             <strong>{folder.name}</strong>
             <span>{items.filter((item) => item.folderId === folder.id).length} image{items.filter((item) => item.folderId === folder.id).length === 1 ? '' : 's'}</span>
@@ -314,7 +343,7 @@ export function ImageGalleryPage({
         </button>
 
         {visibleItems.map((item) => (
-          <button type="button" className={'gallery-card' + (armedId === item.id ? ' gallery-card-armed' : '') + (selectedIds.has(item.id) ? ' gallery-card-selected' : '')} key={item.id} onClick={() => tapItem(item)} aria-label={multiSelectMode ? ((selectedIds.has(item.id) ? 'Deselect ' : 'Select ') + item.name) : 'Open ' + item.name} aria-pressed={multiSelectMode ? selectedIds.has(item.id) : undefined}>
+          <button type="button" className={'gallery-card' + (armedId === item.id ? ' gallery-card-armed' : '') + (selectedIds.has(item.id) ? ' gallery-card-selected' : '')} key={item.id} onPointerDown={(event) => handleCardPointerDown(item.id, event)} onPointerMove={handleCardPointerMove} onPointerUp={handleCardPointerEnd} onPointerCancel={() => { suppressTap.current = true; pointerStart.current = null }} onClick={() => handleCardClick(item)} aria-label={multiSelectMode ? ((selectedIds.has(item.id) ? 'Deselect ' : 'Select ') + item.name) : 'Open ' + item.name} aria-pressed={multiSelectMode ? selectedIds.has(item.id) : undefined}>
             <img src={item.src} alt={item.name} loading="lazy" draggable={false} />
             {multiSelectMode && <span className="gallery-select-mark" aria-hidden="true">{selectedIds.has(item.id) ? '✓' : ''}</span>}
           </button>
