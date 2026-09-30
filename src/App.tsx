@@ -640,12 +640,16 @@ export default function App() {
     }
   }
 
-  async function setGalleryImage(which: 'one' | 'two', item: { src: string; name: string }) {
+  async function setGalleryImage(which: 'one' | 'two', item: { src: string; name: string }, presetPrompt?: string) {
     try {
       const response = await fetch(item.src)
+      if (!response.ok) throw new Error(`Could not read gallery image (${response.status})`)
       const blob = await response.blob()
       const file = new File([blob], item.name || 'Gallery image', { type: blob.type || 'image/png' })
       await handleImageChange(which, file)
+      if (presetPrompt?.trim()) {
+        setPrompt(addImagePrompt(presetPrompt.trim(), IMAGE_PROMPTS[which]))
+      }
     } catch (err) {
       setErrorMsg(recordErrorLog(err))
     }
@@ -1237,7 +1241,7 @@ export default function App() {
     )}
 
     {galleryOpen ? (
-      <ImageGalleryPage onClose={() => setGalleryOpen(false)} onSetFigure={(which, item) => { void setGalleryImage(which, item) }} />
+      <ImageGalleryPage onClose={() => setGalleryOpen(false)} onSetFigure={(which, item, presetPrompt) => { void setGalleryImage(which, item, presetPrompt) }} />
     ) : (
       <main className="app-main">
       {isBusy && progress && (
