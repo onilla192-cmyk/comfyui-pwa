@@ -987,8 +987,10 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 }
 .footer-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 48px);
+  grid-auto-flow: row;
+  gap: 5px;
 }
 .app-footer .icon-btn {
   width: 100%;
