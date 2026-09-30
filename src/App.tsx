@@ -171,10 +171,6 @@ export default function App() {
   const [megapixels, setMegapixels] = useState(saved.megapixels ?? 0.5)
   const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 720)
   const [cancelling, setCancelling] = useState(false)
-  const [startingComfy, setStartingComfy] = useState(false)
-  const [startProgress, setStartProgress] = useState(0)
-  const [remoteStarting, setRemoteStarting] = useState(false)
-  const [comfyPowerState, setComfyPowerState] = useState<'off' | 'idle' | 'active'>('off')
   const [footerExpanded, setFooterExpanded] = useState(false)
   const [mainFooterVisible, setMainFooterVisible] = useState(true)
   const [logsOpen, setLogsOpen] = useState(false)
@@ -493,34 +489,6 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    const check = async () => {
-      try {
-        const remote = await getRemoteControlStatus()
-        if (cancelled) return
-
-        // The remote launcher is the source of truth. There is no app-side standby state.
-        if (remote.launcher !== 'running' || remote.comfyui === 'stopped') {
-          setComfyPowerState('off')
-        } else if (remoteStarting || startingComfy || remote.comfyui === 'starting') {
-          setComfyPowerState('idle')
-        } else {
-          setComfyPowerState('active')
-        }
-
-      } catch {
-        if (cancelled) return
-
-        // Keep the current UI during transient network/Tailscale errors.
-        // The main app stays visible and the Start ComfyUI button remains available.
-      }
-    }
-
-    void check()
-    const timer = window.setInterval(check, 3000)
-    return () => { cancelled = true; window.clearInterval(timer) }
-  }, [isBusy, startingComfy])
 
   useEffect(() => {
     if (!logsOpen) return
@@ -1045,34 +1013,6 @@ export default function App() {
     setHistoryPage(1)
   }
 
-  async function handleRemoteStart() {
-    if (remoteStarting || startingComfy || comfyPowerState !== 'off') return
-    setRemoteStarting(true)
-    setErrorMsg(null)
-    setStartProgress(5)
-    setComfyPowerState('idle')
-    const timer = window.setInterval(() => {
-      setStartProgress((current) => Math.min(90, current + 5))
-    }, 1000)
-    try {
-      await startComfyFromPhone()
-      window.clearInterval(timer)
-      setStartProgress(100)
-      setComfyPowerState('active')
-      setStatus('idle')
-      await new Promise((resolve) => setTimeout(resolve, 250))
-      // Return to the PWA we started from, not the raw ComfyUI interface.
-      // Keep the current origin so this works on the production Vercel app.
-      // Stay on the current PWA screen after startup.
-    } catch (err) {
-      window.clearInterval(timer)
-      setStartProgress(0)
-      setComfyPowerState('off')
-      setErrorMsg(recordErrorLog(err))
-    } finally {
-      setRemoteStarting(false)
-    }
-  }
 
   const historyPageCount = Math.max(1, Math.ceil(results.length / HISTORY_PAGE_SIZE))
   const trashPageCount = Math.max(1, Math.ceil(trash.length / HISTORY_PAGE_SIZE))
@@ -1841,21 +1781,6 @@ export default function App() {
         </button>
         <div className="footer-actions">
 
-        <button
-          className={`start-comfy-btn footer-power-btn ${startingComfy || remoteStarting ? 'starting' : comfyPowerState}`}
-          type="button"
-          onClick={() => void handleRemoteStart()}
-          disabled={remoteStarting || startingComfy || comfyPowerState !== 'off'}
-          aria-label={remoteStarting || startingComfy ? 'ComfyUI is starting' : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'ComfyUI standby' : 'Start ComfyUI'}
-          title={remoteStarting || startingComfy ? `ComfyUI loading ${startProgress}%` : comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'idle' ? 'ComfyUI standby' : 'Start ComfyUI'}
-          style={{ '--power-progress': `${startProgress}%` } as React.CSSProperties}
-        >
-          <span className="power-progress-ring" aria-hidden="true" />
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2v10" />
-            <path d="M6.5 5.8a8 8 0 1 0 11 0" />
-          </svg>
-        </button>
         <button
           className={`icon-btn footer-hook-icon${hookPromptsPageOpen ? ' active' : ''}`}
           type="button"
