@@ -107,6 +107,8 @@ export function ImageGalleryPage({
   const [deleteFolderOpen, setDeleteFolderOpen] = useState(false)
   const [storageReady, setStorageReady] = useState(false)
   const [sendFolderOpen, setSendFolderOpen] = useState(false)
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
+  const feedbackTimer = useRef<number | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
   const pointerStart = useRef<{ id: string; x: number; y: number } | null>(null)
@@ -135,7 +137,14 @@ export function ImageGalleryPage({
 
   useEffect(() => () => {
     if (armTimer.current) window.clearTimeout(armTimer.current)
+    if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current)
   }, [])
+
+  function showFeedback(message: string) {
+    setFeedbackMessage(message)
+    if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current)
+    feedbackTimer.current = window.setTimeout(() => setFeedbackMessage(null), 1400)
+  }
 
   const currentFolder = folders.find((folder) => folder.id === currentFolderId) || null
   const visibleItems = items.filter((item) => (item.folderId ?? null) === currentFolderId)
@@ -310,6 +319,7 @@ export function ImageGalleryPage({
 
   return (
     <div className="gallery-page">
+      {feedbackMessage && <div className="gallery-feedback" role="status" aria-live="polite">{feedbackMessage}</div>}
       <header className="gallery-page-header">
         <button type="button" className="gallery-back-btn" onClick={currentFolderId ? goToMainGallery : onClose} aria-label={currentFolderId ? 'Back to main gallery' : 'Back to editor'}>←</button>
         <div>
@@ -421,8 +431,8 @@ export function ImageGalleryPage({
             <button type="button" className="gallery-viewer-close" onClick={() => setSelectedId(null)} aria-label="Close image">×</button>
             <div className="gallery-viewer-image-wrap"><img src={selected.src} alt={selected.name} /></div>
             <div className="gallery-viewer-actions">
-              <button type="button" onClick={() => { onSetFigure('one', selected); setSelectedId(null) }}>Figure A</button>
-              <button type="button" onClick={() => { onSetFigure('two', selected); setSelectedId(null) }}>Figure B</button>
+              <button type="button" onClick={() => { onSetFigure('one', selected); showFeedback('Sent!'); setSelectedId(null) }}>Figure A</button>
+              <button type="button" onClick={() => { onSetFigure('two', selected); showFeedback('Sent!'); setSelectedId(null) }}>Figure B</button>
               <button type="button" className="gallery-viewer-delete" onClick={() => deleteItem(selected.id)}>Delete</button>
             </div>
           </section>
