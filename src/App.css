@@ -9826,3 +9826,16 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   text-align: center;
   pointer-events: none;
 }
+
+
+/* Image node: no pop/press animation when tapped. */
+.image-picker-box,
+.image-picker-box:active,
+.image-picker-box:focus,
+.image-picker-box:focus-visible {
+  transform: none !important;
+  animation: none !important;
+}
+.image-picker-box {
+  transition: none !important;
+}
