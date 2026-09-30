@@ -102,12 +102,164 @@ async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], pr
   })
 }
 
+
+function looksLikeImageSource(value: unknown): value is string {
+  return typeof value === 'string' && (
+    value.startsWith('data:image/') ||
+    value.startsWith('blob:') ||
+    value.startsWith('http://') ||
+    value.startsWith('https://')
+  )
+}
+
+async function recoverImagesFromGalleryIndexedDb(
+  existingItems: GalleryItem[],
+  folders: GalleryFolder[],
+  presets: GalleryPreset[],
+): Promise<GalleryItem[]> {
+  const existingIds = new Set(existingItems.map((item) => item.id))
+  const recovered: GalleryItem[] = []
+
+  const dbNames: string[] = []
+  try {
+    if (typeof indexedDB.databases === 'function') {
+      const databases = await indexedDB.databases()
+      databases.forEach((entry) => {
+        if (entry.name && !dbNames.includes(entry.name)) dbNames.push(entry.name)
+      })
+    }
+  } catch {}
+
+  if (!dbNames.includes(GALLERY_DB_NAME)) dbNames.push(GALLERY_DB_NAME)
+
+  for (const dbName of dbNames) {
+    let db: IDBDatabase
+    try {
+      db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(dbName)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error || new Error('Could not open database'))
+      })
+    } catch {
+      continue
+    }
+
+    try {
+      const storeNames = Array.from(db.objectStoreNames)
+      if (!storeNames.length) {
+        db.close()
+        continue
+      }
+
+      await new Promise<void>((resolve) => {
+        let remaining = storeNames.length
+        const finish = () => {
+          remaining -= 1
+          if (remaining <= 0) resolve()
+        }
+
+        let tx: IDBTransaction
+        try {
+          tx = db.transaction(storeNames, 'readonly')
+        } catch {
+          resolve()
+          return
+        }
+
+        for (const storeName of storeNames) {
+          const request = tx.objectStore(storeName).openCursor()
+          request.onsuccess = async () => {
+            const cursor = request.result
+            if (!cursor) {
+              finish()
+              return
+            }
+
+            const record = cursor.value
+            if (record && typeof record === 'object') {
+              const candidate =
+                record.src ??
+                record.imageSrc ??
+                record.image ??
+                record.data ??
+                record.base64 ??
+                record.url
+
+              if (looksLikeImageSource(candidate)) {
+                const id = typeof record.id === 'string'
+                  ? record.id
+                  : typeof cursor.primaryKey === 'string'
+                    ? cursor.primaryKey
+                    : 'recovered-' + Date.now() + '-' + Math.random().toString(36).slice(2)
+
+                if (!existingIds.has(id)) {
+                  const legacy = (() => {
+                    try {
+                      const parsed = JSON.parse(localStorage.getItem(GALLERY_STORAGE_KEY) || '[]')
+                      return Array.isArray(parsed)
+                        ? parsed.find((item) => item && item.id === id)
+                        : null
+                    } catch {
+                      return null
+                    }
+                  })()
+
+                  recovered.push({
+                    id,
+                    name: typeof record.name === 'string'
+                      ? record.name
+                      : typeof record.filename === 'string'
+                        ? record.filename
+                        : typeof legacy?.name === 'string'
+                          ? legacy.name
+                          : 'Recovered Image',
+                    src: candidate,
+                    createdAt: typeof record.createdAt === 'number'
+                      ? record.createdAt
+                      : typeof legacy?.createdAt === 'number'
+                        ? legacy.createdAt
+                        : Date.now(),
+                    folderId: typeof record.folderId === 'string'
+                      ? record.folderId
+                      : typeof legacy?.folderId === 'string'
+                        ? legacy.folderId
+                        : null,
+                  })
+                  existingIds.add(id)
+                }
+              }
+            }
+
+            cursor.continue()
+          }
+          request.onerror = () => finish()
+        }
+
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => resolve()
+        tx.onabort = () => resolve()
+      })
+    } finally {
+      db.close()
+    }
+  }
+
+  if (recovered.length) {
+    await writeGalleryDb([...existingItems, ...recovered], folders, presets)
+  }
+
+  return [...existingItems, ...recovered].sort((a, b) => b.createdAt - a.createdAt)
+}
+
 async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const stored = await readGalleryDb()
-  if (stored.items.length || stored.folders.length || stored.presets.length) return stored
   const legacy = loadGallery()
-  if (legacy.length) await writeGalleryDb(legacy, [], [])
-  return { items: legacy, folders: [], presets: [] }
+  const startingItems = stored.items.length ? stored.items : legacy
+  const recoveredItems = await recoverImagesFromGalleryIndexedDb(startingItems, stored.folders, stored.presets)
+  if (recoveredItems.length || stored.folders.length || stored.presets.length) {
+    return { items: recoveredItems, folders: stored.folders, presets: stored.presets }
+  }
+  return { items: legacy, folders: stored.folders, presets: stored.presets }
 }
 
 export function ImageGalleryPage({
