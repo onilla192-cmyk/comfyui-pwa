@@ -240,6 +240,7 @@ export function ImageGalleryPage({
     setPresetManagerMode(mode)
     setPresetMenuExpanded(false)
     setPresetCreatorOpen(false)
+    setSidebarOpen(false)
   }
 
   function editPreset(preset: GalleryPreset) {
