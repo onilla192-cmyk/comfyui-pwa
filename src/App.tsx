@@ -635,6 +635,17 @@ export default function App() {
     }
   }
 
+  async function setGalleryImage(which: 'one' | 'two', item: { src: string; name: string }) {
+    try {
+      const response = await fetch(item.src)
+      const blob = await response.blob()
+      const file = new File([blob], item.name || 'Gallery image', { type: blob.type || 'image/png' })
+      await handleImageChange(which, file)
+    } catch (err) {
+      setErrorMsg(recordErrorLog(err))
+    }
+  }
+
   async function handleImageChange(which: 'one' | 'two', file?: File) {
     if (!file) return
     setErrorMsg(null)
@@ -1221,7 +1232,7 @@ export default function App() {
     )}
 
     {galleryOpen ? (
-      <ImageGalleryPage onClose={() => setGalleryOpen(false)} />
+      <ImageGalleryPage onClose={() => setGalleryOpen(false)} onSetFigure={(which, item) => { void setGalleryImage(which, item); setGalleryOpen(false) }} />
     ) : (
       <main className="app-main">
       {isBusy && progress && (
