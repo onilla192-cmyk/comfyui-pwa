@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs, getNodeObjectInfo } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs, getNodeObjectInfo, getRemoteControlStatus, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage } from './imageCache'
 import './App.css'
@@ -192,6 +192,8 @@ export default function App() {
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
+  const [comfyPowerState, setComfyPowerState] = useState<'off' | 'starting' | 'active'>('off')
+  const [powerProgress, setPowerProgress] = useState(0)
   const [fadeImageGlow, setFadeImageGlow] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyPage, setHistoryPage] = useState(1)
@@ -240,6 +242,25 @@ export default function App() {
 
   useEffect(() => {
     void refreshSettingsOptions()
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const checkPower = async () => {
+      try {
+        const remote = await getRemoteControlStatus()
+        if (cancelled) return
+        setComfyPowerState(remote.comfyui === 'running' ? 'active' : 'off')
+      } catch {
+        if (!cancelled) setComfyPowerState('off')
+      }
+    }
+    void checkPower()
+    const timer = window.setInterval(() => void checkPower(), 3000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
   }, [])
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
@@ -1843,6 +1864,38 @@ export default function App() {
           <span className="footer-menu-chevron" aria-hidden="true" />
         </button>
         <div className="footer-actions">
+        <button
+          className={'footer-power-btn ' + comfyPowerState}
+          type="button"
+          onClick={async () => {
+            if (comfyPowerState !== 'off') return
+            setComfyPowerState('starting')
+            setPowerProgress(8)
+            const timer = window.setInterval(() => setPowerProgress((value) => Math.min(90, value + 7)), 1000)
+            try {
+              await startComfyFromPhone()
+              window.clearInterval(timer)
+              setPowerProgress(100)
+              setComfyPowerState('active')
+            } catch (error) {
+              window.clearInterval(timer)
+              setPowerProgress(0)
+              setComfyPowerState('off')
+              recordErrorLog(error)
+            }
+          }}
+          disabled={comfyPowerState !== 'off'}
+          aria-label={comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'starting' ? 'ComfyUI starting' : 'Start ComfyUI'}
+          title={comfyPowerState === 'active' ? 'ComfyUI active' : comfyPowerState === 'starting' ? 'ComfyUI starting ' + powerProgress + '%' : 'Start ComfyUI'}
+          style={{ '--power-progress': powerProgress + '%' } as React.CSSProperties}
+        >
+          <span className="power-progress-ring" aria-hidden="true" />
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v10" />
+            <path d="M6.5 5.8a8 8 0 1 0 11 0" />
+          </svg>
+          {comfyPowerState === 'starting' && <span className="power-progress-text">{powerProgress}%</span>}
+        </button>
 
         <button
           className={`icon-btn footer-hook-icon${hookPromptsPageOpen ? ' active' : ''}`}
