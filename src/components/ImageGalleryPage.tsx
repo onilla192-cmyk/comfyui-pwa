@@ -94,6 +94,17 @@ export function ImageGalleryPage({
           <h1>Image Gallery</h1>
           <span>{items.length} image{items.length === 1 ? '' : 's'}</span>
         </div>
+        <button
+          type="button"
+          className="gallery-menu-btn"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open gallery menu"
+          aria-expanded={sidebarOpen}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
       </header>
 
       <div className="gallery-grid">
