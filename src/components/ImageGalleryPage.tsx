@@ -39,7 +39,7 @@ type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
 const GALLERY_DB_NAME = 'comfyui-pwa-gallery'
-const GALLERY_DB_VERSION = 4
+const GALLERY_DB_VERSION = 7
 const GALLERY_STORE_NAME = 'images'
 const GALLERY_IMAGE_DATA_STORE_NAME = 'imageData'
 const GALLERY_FOLDER_STORE_NAME = 'folders'
@@ -181,7 +181,8 @@ async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], pr
     const presetStore = tx.objectStore(GALLERY_PRESET_STORE_NAME)
     imageStore.clear()
     folderStore.clear()
-    presetStore.clear()
+    // Never clear the preset store during an automatic gallery save. Presets are user data.
+    // Keeping this store append/merge-only prevents an incomplete React state from deleting presets.
     items.forEach((item) => imageStore.put({
       id: item.id,
       name: item.name,
@@ -190,6 +191,7 @@ async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], pr
       folderId: item.folderId ?? null,
     } satisfies GalleryStoredItem))
     folders.forEach((folder) => folderStore.put(folder))
+    // Presets are intentionally merge-only here. Explicit preset deletion is handled separately.
     presets.forEach((preset) => presetStore.put(preset))
     tx.oncomplete = () => { db.close(); resolve() }
     tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save gallery')) }
