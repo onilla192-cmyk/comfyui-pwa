@@ -2,6 +2,16 @@ const DB_NAME = 'comfyui-console-images'
 const STORE_NAME = 'images'
 const DB_VERSION = 1
 
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (!navigator.storage?.persist) return false
+    if (navigator.storage.persisted && await navigator.storage.persisted()) return true
+    return await navigator.storage.persist()
+  } catch {
+    return false
+  }
+}
+
 export interface BackupImage {
   key: string
   type: string
@@ -40,7 +50,12 @@ function getBlob(key: string): Promise<Blob | undefined> {
 
 export async function cacheFile(key: string, file: Blob): Promise<string> {
   await putBlob(key, file)
-  return URL.createObjectURL(file)
+  // Verify the browser actually committed the blob before exposing it as the
+  // selected image. This prevents a state save from pointing at missing data.
+  const saved = await getBlob(key)
+  if (!saved) throw new Error('The selected image could not be saved locally.')
+  void requestPersistentStorage()
+  return URL.createObjectURL(saved)
 }
 
 export async function getCachedFile(key: string): Promise<Blob | null> {
