@@ -1934,6 +1934,25 @@ export default function App() {
             <path d="M6.5 5.8a8 8 0 1 0 11 0" />
           </svg>
         </button>
+        <button
+          className={`icon-btn footer-hook-icon${hookPromptsPageOpen ? ' active' : ''}`}
+          type="button"
+          onClick={() => { setHookPromptsPageOpen(true); setFooterExpanded(false) }}
+          aria-label="Open Hook Prompts"
+          title="Hook Prompts"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.5 4.5a5 5 0 0 1-11 0L5 8Z"/><path d="M8 8 9.5 5h5L16 8M7 17l-1 3h12l-1-3"/><path d="M12 11v4"/></svg>
+        </button>
+        <button
+          className={`icon-btn footer-menu-icon${promptHeaderMenuOpen ? ' active' : ''}`}
+          type="button"
+          onClick={() => { setPromptHeaderMenuOpen((open) => !open); setFooterExpanded(false) }}
+          aria-label="Open prompt menu"
+          aria-expanded={promptHeaderMenuOpen}
+          title="Prompt menu"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
         <button className="icon-btn history-icon" type="button" onClick={openHistory} aria-label="Open history" title="History">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/><path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/><path d="M10 6h7M10 10h7"/></svg>
         </button>
