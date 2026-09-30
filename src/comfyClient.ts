@@ -44,6 +44,12 @@ export async function getLauncherStatus(): Promise<LauncherStatus> {
   return response.json() as Promise<LauncherStatus>
 }
 
+export async function getNodeObjectInfo(nodeType: string): Promise<any> {
+  const response = await fetch(`${COMFY_BASE_URL}/object_info/${encodeURIComponent(nodeType)}`, { cache: 'no-store' })
+  if (!response.ok) throw new Error(`Could not read ComfyUI node info for ${nodeType} (${response.status})`)
+  return response.json()
+}
+
 export async function getComfySystemStats(): Promise<any> {
   const response = await fetch(`${COMFY_BASE_URL}/system_stats`, { cache: 'no-store' })
   if (!response.ok) throw new Error(`Could not read ComfyUI system stats (${response.status})`)
