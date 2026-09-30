@@ -14,13 +14,21 @@ interface GalleryFolder {
   createdAt: number
 }
 
+interface GalleryPreset {
+  id: string
+  title: string
+  prompt: string
+  createdAt: number
+}
+
 type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
 const GALLERY_DB_NAME = 'comfyui-pwa-gallery'
-const GALLERY_DB_VERSION = 2
+const GALLERY_DB_VERSION = 3
 const GALLERY_STORE_NAME = 'images'
 const GALLERY_FOLDER_STORE_NAME = 'folders'
+const GALLERY_PRESET_STORE_NAME = 'presets'
 
 function loadGallery(): GalleryItem[] {
   try {
@@ -38,24 +46,27 @@ function openGalleryDb(): Promise<IDBDatabase> {
       const db = request.result
       if (!db.objectStoreNames.contains(GALLERY_STORE_NAME)) db.createObjectStore(GALLERY_STORE_NAME, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(GALLERY_FOLDER_STORE_NAME)) db.createObjectStore(GALLERY_FOLDER_STORE_NAME, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(GALLERY_PRESET_STORE_NAME)) db.createObjectStore(GALLERY_PRESET_STORE_NAME, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Could not open gallery storage'))
   })
 }
 
-async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[] }> {
+async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const db = await openGalleryDb()
   return new Promise((resolve, reject) => {
-    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME], 'readonly')
+    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME, GALLERY_PRESET_STORE_NAME], 'readonly')
     const imageRequest = tx.objectStore(GALLERY_STORE_NAME).getAll()
     const folderRequest = tx.objectStore(GALLERY_FOLDER_STORE_NAME).getAll()
+    const presetRequest = tx.objectStore(GALLERY_PRESET_STORE_NAME).getAll()
     tx.oncomplete = () => {
       db.close()
       const items = (imageRequest.result || []).map((item: GalleryItem) => ({ ...item, folderId: item.folderId ?? null }))
         .sort((a: GalleryItem, b: GalleryItem) => b.createdAt - a.createdAt)
       const folders = (folderRequest.result || []).sort((a: GalleryFolder, b: GalleryFolder) => a.createdAt - b.createdAt)
-      resolve({ items, folders })
+      const presets = (presetRequest.result || []).sort((a: GalleryPreset, b: GalleryPreset) => a.createdAt - b.createdAt)
+      resolve({ items, folders, presets })
     }
     tx.onerror = () => {
       db.close()
@@ -64,28 +75,31 @@ async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: Gallery
   })
 }
 
-async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[]): Promise<void> {
+async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], presets: GalleryPreset[]): Promise<void> {
   const db = await openGalleryDb()
   return new Promise((resolve, reject) => {
-    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME], 'readwrite')
+    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME, GALLERY_PRESET_STORE_NAME], 'readwrite')
     const imageStore = tx.objectStore(GALLERY_STORE_NAME)
     const folderStore = tx.objectStore(GALLERY_FOLDER_STORE_NAME)
+    const presetStore = tx.objectStore(GALLERY_PRESET_STORE_NAME)
     imageStore.clear()
     folderStore.clear()
+    presetStore.clear()
     items.forEach((item) => imageStore.put(item))
     folders.forEach((folder) => folderStore.put(folder))
+    presets.forEach((preset) => presetStore.put(preset))
     tx.oncomplete = () => { db.close(); resolve() }
     tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save gallery')) }
     tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not save gallery')) }
   })
 }
 
-async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[] }> {
+async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const stored = await readGalleryDb()
-  if (stored.items.length || stored.folders.length) return stored
+  if (stored.items.length || stored.folders.length || stored.presets.length) return stored
   const legacy = loadGallery()
-  if (legacy.length) await writeGalleryDb(legacy, [])
-  return { items: legacy, folders: [] }
+  if (legacy.length) await writeGalleryDb(legacy, [], [])
+  return { items: legacy, folders: [], presets: [] }
 }
 
 export function ImageGalleryPage({
@@ -93,10 +107,11 @@ export function ImageGalleryPage({
   onSetFigure,
 }: {
   onClose: () => void
-  onSetFigure: (which: Figure, item: GalleryItem) => void
+  onSetFigure: (which: Figure, item: GalleryItem, presetPrompt?: string) => void
 }) {
   const [items, setItems] = useState<GalleryItem[]>([])
   const [folders, setFolders] = useState<GalleryFolder[]>([])
+  const [presets, setPresets] = useState<GalleryPreset[]>([])
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [armedId, setArmedId] = useState<string | null>(null)
@@ -108,6 +123,11 @@ export function ImageGalleryPage({
   const [storageReady, setStorageReady] = useState(false)
   const [sendFolderOpen, setSendFolderOpen] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
+  const [presetMenuOpen, setPresetMenuOpen] = useState(false)
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
+  const [presetCreatorOpen, setPresetCreatorOpen] = useState(false)
+  const [presetTitle, setPresetTitle] = useState('')
+  const [presetPrompt, setPresetPrompt] = useState('')
   const feedbackTimer = useRef<number | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
@@ -120,11 +140,13 @@ export function ImageGalleryPage({
       if (!active) return
       setItems(stored.items)
       setFolders(stored.folders)
+      setPresets(stored.presets)
       setStorageReady(true)
     }).catch(() => {
       if (!active) return
       setItems(loadGallery())
       setFolders([])
+      setPresets([])
       setStorageReady(true)
     })
     return () => { active = false }
@@ -132,8 +154,8 @@ export function ImageGalleryPage({
 
   useEffect(() => {
     if (!storageReady) return
-    void writeGalleryDb(items, folders)
-  }, [items, folders, storageReady])
+    void writeGalleryDb(items, folders, presets)
+  }, [items, folders, presets, storageReady])
 
   useEffect(() => () => {
     if (armTimer.current) window.clearTimeout(armTimer.current)
@@ -150,6 +172,7 @@ export function ImageGalleryPage({
   const visibleItems = items.filter((item) => (item.folderId ?? null) === currentFolderId)
   const visibleFolders = currentFolderId === null ? folders : []
   const selected = items.find((item) => item.id === selectedId) || null
+  const selectedPreset = presets.find((preset) => preset.id === selectedPresetId) || null
 
   function addImages(files: FileList | null) {
     if (!files?.length) return
@@ -176,6 +199,36 @@ export function ImageGalleryPage({
     const name = window.prompt('Rename folder', currentFolder.name)?.trim()
     if (!name || name === currentFolder.name) return
     setFolders((current) => current.map((folder) => folder.id === currentFolder.id ? { ...folder, name } : folder))
+  }
+
+  function createPreset() {
+    const title = presetTitle.trim()
+    const prompt = presetPrompt.trim()
+    if (!title || !prompt) return
+    if (presets.some((preset) => preset.title.toLowerCase() === title.toLowerCase())) {
+      window.alert('A preset with that title already exists.')
+      return
+    }
+    const preset: GalleryPreset = {
+      id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+      title,
+      prompt,
+      createdAt: Date.now(),
+    }
+    setPresets((current) => [...current, preset])
+    setSelectedPresetId(preset.id)
+    setPresetTitle('')
+    setPresetPrompt('')
+    setPresetCreatorOpen(false)
+    setPresetMenuOpen(false)
+    showFeedback('Preset Saved')
+  }
+
+  function openPresetCreator() {
+    setPresetTitle('')
+    setPresetPrompt('')
+    setPresetCreatorOpen(true)
+    setSidebarOpen(false)
   }
 
   function addFolder() {
@@ -367,6 +420,10 @@ export function ImageGalleryPage({
               <h2>Gallery Menu</h2>
               <button type="button" className="gallery-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close gallery menu">×</button>
             </div>
+            <button type="button" className="gallery-sidebar-action" onClick={openPresetCreator}>
+              <span className="gallery-sidebar-action-icon">＋</span>
+              <span>Create Preset</span>
+            </button>
             <button type="button" className="gallery-sidebar-action" onClick={addFolder}>
               <span className="gallery-sidebar-action-icon">+</span>
               <span>Add Folder</span>
@@ -384,6 +441,32 @@ export function ImageGalleryPage({
               </div>
             )}
           </aside>
+        </div>
+      )}
+
+      {presetCreatorOpen && (
+        <div className="gallery-preset-modal-backdrop" onClick={() => setPresetCreatorOpen(false)}>
+          <section className="gallery-preset-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gallery-preset-modal-header">
+              <div>
+                <h2>Create Preset</h2>
+                <span>Save a title and prompt for the gallery preset picker.</span>
+              </div>
+              <button type="button" onClick={() => setPresetCreatorOpen(false)} aria-label="Close preset creator">×</button>
+            </div>
+            <label className="gallery-preset-field">
+              <span>Preset Title</span>
+              <input value={presetTitle} onChange={(e) => setPresetTitle(e.target.value)} placeholder="Preset title" autoFocus />
+            </label>
+            <label className="gallery-preset-field">
+              <span>Prompt</span>
+              <textarea value={presetPrompt} onChange={(e) => setPresetPrompt(e.target.value)} placeholder="Enter the prompt for this preset..." rows={7} />
+            </label>
+            <div className="gallery-preset-modal-actions">
+              <button type="button" onClick={() => setPresetCreatorOpen(false)}>Cancel</button>
+              <button type="button" className="primary" disabled={!presetTitle.trim() || !presetPrompt.trim()} onClick={createPreset}>Save Preset</button>
+            </div>
+          </section>
         </div>
       )}
 
@@ -431,9 +514,35 @@ export function ImageGalleryPage({
             <button type="button" className="gallery-viewer-close" onClick={() => setSelectedId(null)} aria-label="Close image">×</button>
             <div className="gallery-viewer-image-wrap"><img src={selected.src} alt={selected.name} /></div>
             <div className="gallery-viewer-actions">
-              <button type="button" onClick={() => { onSetFigure('one', selected); showFeedback('Sent!'); setSelectedId(null) }}>Figure A</button>
-              <button type="button" onClick={() => { onSetFigure('two', selected); showFeedback('Sent!'); setSelectedId(null) }}>Figure B</button>
+              <button type="button" onClick={() => { onSetFigure('one', selected, selectedPreset?.prompt); showFeedback(selectedPreset ? 'Preset Sent' : 'Sent!') }}>Figure A</button>
+              <button type="button" onClick={() => { onSetFigure('two', selected, selectedPreset?.prompt); showFeedback(selectedPreset ? 'Preset Sent' : 'Sent!') }}>Figure B</button>
               <button type="button" className="gallery-viewer-delete" onClick={() => deleteItem(selected.id)}>Delete</button>
+            </div>
+            <div className="gallery-preset-picker">
+              <button
+                type="button"
+                className={'gallery-choose-preset' + (selectedPreset ? ' gallery-preset-selected' : '')}
+                onClick={() => setPresetMenuOpen((open) => !open)}
+                aria-expanded={presetMenuOpen}
+              >
+                {selectedPreset ? 'Preset Selected' : 'Choose a Preset'}
+              </button>
+              {presetMenuOpen && (
+                <div className="gallery-preset-dropdown" role="listbox" aria-label="Preset options">
+                  {presets.length ? presets.map((preset) => (
+                    <button
+                      type="button"
+                      className={'gallery-preset-option' + (selectedPresetId === preset.id ? ' active' : '')}
+                      key={preset.id}
+                      onClick={() => { setSelectedPresetId(preset.id); setPresetMenuOpen(false) }}
+                    >
+                      {preset.title}
+                    </button>
+                  )) : (
+                    <div className="gallery-preset-empty">No presets yet. Create one from Gallery Menu.</div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
         </div>
