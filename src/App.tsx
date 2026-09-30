@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs, getNodeObjectInfo } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage } from './imageCache'
 import './App.css'
@@ -20,6 +20,11 @@ interface ErrorLogEntry { id: string; timestamp: number; message: string }
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
+const DEFAULT_UNET_NAME = 'qwen_image_2.1_bf16.safetensors'
+const DEFAULT_CLIP_NAME = 'qwen3vl_8b_bf16.safetensors'
+const DEFAULT_VAE_NAME = 'qwen_image_2.1_vae_bf16.safetensors'
+const DEFAULT_UPSCALE_METHOD = 'lanczos'
+const FALLBACK_UPSCALE_METHODS = ['nearest-exact', 'bilinear', 'area', 'bicubic', 'lanczos']
 const PROMPT_BUILDER_LABELS = [
   'BODY EFFECTS', 'CLOTHING', 'NIPPLES', 'BREASTS', 'HEAD ANGLE', 'LIPS', 'HAIR DETAILS', 'HANDS',
   'EYES', 'CAMERA', 'PRESERVATION', 'MOUTH', 'POSTURE', 'BODY DIRECTION', 'IMAGE EDIT', 'WATERMARKS',
@@ -169,7 +174,16 @@ export default function App() {
   const [scheduler, setScheduler] = useState(saved.scheduler ?? 'normal')
   const [aspectRatio, setAspectRatio] = useState(saved.aspectRatio ?? '1:1 (Square)')
   const [megapixels, setMegapixels] = useState(saved.megapixels ?? 0.5)
-  const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 720)
+  const [maxDimension, setMaxDimension] = useState(saved.maxDimension ?? 800)
+  const [unetName, setUnetName] = useState(saved.unetName ?? DEFAULT_UNET_NAME)
+  const [clipName, setClipName] = useState(saved.clipName ?? DEFAULT_CLIP_NAME)
+  const [vaeName, setVaeName] = useState(saved.vaeName ?? DEFAULT_VAE_NAME)
+  const [upscaleMethod, setUpscaleMethod] = useState(saved.upscaleMethod ?? DEFAULT_UPSCALE_METHOD)
+  const [unetOptions, setUnetOptions] = useState<string[]>([])
+  const [clipOptions, setClipOptions] = useState<string[]>([])
+  const [vaeOptions, setVaeOptions] = useState<string[]>([])
+  const [upscaleOptions, setUpscaleOptions] = useState<string[]>(FALLBACK_UPSCALE_METHODS)
+  const [settingsOptionsLoading, setSettingsOptionsLoading] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [footerExpanded, setFooterExpanded] = useState(false)
   const [mainFooterVisible, setMainFooterVisible] = useState(true)
@@ -194,6 +208,39 @@ export default function App() {
   }
 
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
+
+  function comboOptions(data: any, nodeType: string, inputName: string): string[] {
+    const values = data?.[nodeType]?.input?.required?.[inputName]?.[0]
+    return Array.isArray(values) ? values.filter((value: unknown): value is string => typeof value === 'string') : []
+  }
+
+  async function refreshSettingsOptions() {
+    setSettingsOptionsLoading(true)
+    try {
+      const [unetInfo, clipInfo, vaeInfo, scaleInfo] = await Promise.all([
+        getNodeObjectInfo('UNETLoader'),
+        getNodeObjectInfo('CLIPLoader'),
+        getNodeObjectInfo('VAELoader'),
+        getNodeObjectInfo('ImageScaleToMaxDimension'),
+      ])
+      const nextUnet = comboOptions(unetInfo, 'UNETLoader', 'unet_name')
+      const nextClip = comboOptions(clipInfo, 'CLIPLoader', 'clip_name')
+      const nextVae = comboOptions(vaeInfo, 'VAELoader', 'vae_name')
+      const nextUpscale = comboOptions(scaleInfo, 'ImageScaleToMaxDimension', 'upscale_method')
+      if (nextUnet.length) setUnetOptions(nextUnet)
+      if (nextClip.length) setClipOptions(nextClip)
+      if (nextVae.length) setVaeOptions(nextVae)
+      if (nextUpscale.length) setUpscaleOptions(nextUpscale)
+    } catch (error) {
+      console.warn('Could not load ComfyUI settings options.', error)
+    } finally {
+      setSettingsOptionsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void refreshSettingsOptions()
+  }, [])
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
   function buildPromptBuilderPrompt() {
@@ -454,7 +501,7 @@ export default function App() {
       imageOne: imageOne ? { ...imageOne, previewUrl: undefined } : null,
       imageTwo: imageTwo ? { ...imageTwo, previewUrl: undefined } : null,
       showImageTwo,
-      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension,
+      cfg, steps, scheduler, aspectRatio, megapixels, maxDimension, unetName, clipName, vaeName, upscaleMethod,
       promptId: currentPromptId.current, progress, errorLogs: errorLogs.slice(-100),
     }))
     save()
@@ -708,6 +755,7 @@ export default function App() {
         image1: imageOneName, image2: imageTwoName,
         seed: Math.floor(Math.random() * 1_000_000_000), cfg, steps, scheduler,
         aspectRatio, megapixels, maxDimension,
+        unetName, clipName, vaeName, upscaleMethod,
       })
       const { prompt_id } = await queuePrompt(workflow)
       currentPromptId.current = prompt_id
@@ -1043,7 +1091,39 @@ export default function App() {
           <SettingNumber label="Megapixels" value={megapixels} min={0.25} max={4} step={0.25} onChange={setMegapixels} />
           <SettingNumber label="Max dimension (Scale to Max Dimension)" value={maxDimension} min={256} max={2048} step={32} onChange={setMaxDimension} suffix="px" />
         </section>
-        <p className="settings-note">Max dimension controls the longest side of the generated image and the Scale Image to Max Dimension nodes. Aspect ratio determines the other side.</p>
+        <section className="settings-section">
+          <div className="settings-section-heading">
+            <h3>Models &amp; Upscaling</h3>
+            <button type="button" className="settings-refresh-btn" onClick={() => void refreshSettingsOptions()} disabled={settingsOptionsLoading}>
+              {settingsOptionsLoading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+          <label className="setting">
+            <span>Diffusion model</span>
+            <select value={unetName} onChange={(e) => setUnetName(e.target.value)}>
+              {[...new Set([unetName, ...unetOptions])].filter(Boolean).map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </label>
+          <label className="setting">
+            <span>CLIP model</span>
+            <select value={clipName} onChange={(e) => setClipName(e.target.value)}>
+              {[...new Set([clipName, ...clipOptions])].filter(Boolean).map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </label>
+          <label className="setting">
+            <span>VAE model</span>
+            <select value={vaeName} onChange={(e) => setVaeName(e.target.value)}>
+              {[...new Set([vaeName, ...vaeOptions])].filter(Boolean).map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </label>
+          <label className="setting">
+            <span>Upscale method</span>
+            <select value={upscaleMethod} onChange={(e) => setUpscaleMethod(e.target.value)}>
+              {[...new Set([upscaleMethod, ...upscaleOptions])].filter(Boolean).map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </label>
+        </section>
+        <p className="settings-note">These model and upscale settings are sent into the Qwen workflow when you press Generate. Model choices are read directly from the connected ComfyUI instance.</p>
       </aside>
     </div>}
 
