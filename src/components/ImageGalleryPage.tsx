@@ -126,6 +126,8 @@ export function ImageGalleryPage({
   const [presetMenuOpen, setPresetMenuOpen] = useState(false)
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
   const [presetCreatorOpen, setPresetCreatorOpen] = useState(false)
+  const [presetMenuExpanded, setPresetMenuExpanded] = useState(false)
+  const [presetManagerMode, setPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
   const [presetTitle, setPresetTitle] = useState('')
   const [presetPrompt, setPresetPrompt] = useState('')
   const feedbackTimer = useRef<number | null>(null)
@@ -228,7 +230,45 @@ export function ImageGalleryPage({
     setPresetTitle('')
     setPresetPrompt('')
     setPresetCreatorOpen(true)
+    setPresetManagerMode(null)
+    setPresetMenuExpanded(false)
     setSidebarOpen(false)
+  }
+
+  function openPresetManager(mode: 'edit' | 'delete') {
+    setPresetManagerMode(mode)
+    setPresetMenuExpanded(false)
+    setPresetCreatorOpen(false)
+  }
+
+  function editPreset(preset: GalleryPreset) {
+    setPresetTitle(preset.title)
+    setPresetPrompt(preset.prompt)
+    setSelectedPresetId(preset.id)
+    setPresetCreatorOpen(true)
+    setPresetManagerMode(null)
+  }
+
+  function saveEditedPreset() {
+    const title = presetTitle.trim()
+    const prompt = presetPrompt.trim()
+    if (!title || !prompt || !selectedPresetId) return
+    if (presets.some((preset) => preset.id !== selectedPresetId && preset.title.toLowerCase() === title.toLowerCase())) {
+      window.alert('A preset with that title already exists.')
+      return
+    }
+    setPresets((current) => current.map((preset) => preset.id === selectedPresetId ? { ...preset, title, prompt } : preset))
+    setPresetTitle('')
+    setPresetPrompt('')
+    setPresetCreatorOpen(false)
+    setSelectedPresetId(selectedPresetId)
+    showFeedback('Preset Updated')
+  }
+
+  function deletePreset(presetId: string) {
+    setPresets((current) => current.filter((preset) => preset.id !== presetId))
+    if (selectedPresetId === presetId) setSelectedPresetId(null)
+    showFeedback('Preset Deleted')
   }
 
   function addFolder() {
@@ -420,10 +460,23 @@ export function ImageGalleryPage({
               <h2>Gallery Menu</h2>
               <button type="button" className="gallery-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close gallery menu">×</button>
             </div>
-            <button type="button" className="gallery-sidebar-action" onClick={openPresetCreator}>
-              <span className="gallery-sidebar-action-icon">＋</span>
-              <span>Create Preset</span>
+            <button
+              type="button"
+              className={'gallery-sidebar-action' + (presetMenuExpanded ? ' active' : '')}
+              onClick={() => setPresetMenuExpanded((open) => !open)}
+              aria-expanded={presetMenuExpanded}
+            >
+              <span className="gallery-sidebar-action-icon">✦</span>
+              <span>Presets</span>
+              <span className="gallery-preset-menu-chevron">{presetMenuExpanded ? '⌃' : '⌄'}</span>
             </button>
+            {presetMenuExpanded && (
+              <div className="gallery-sidebar-submenu">
+                <button type="button" onClick={openPresetCreator}>Create Preset</button>
+                <button type="button" onClick={() => openPresetManager('edit')} disabled={!presets.length}>Edit Preset</button>
+                <button type="button" onClick={() => openPresetManager('delete')} disabled={!presets.length}>Delete Preset</button>
+              </div>
+            )}
             <button type="button" className="gallery-sidebar-action" onClick={addFolder}>
               <span className="gallery-sidebar-action-icon">+</span>
               <span>Add Folder</span>
@@ -449,10 +502,10 @@ export function ImageGalleryPage({
           <section className="gallery-preset-modal" onClick={(e) => e.stopPropagation()}>
             <div className="gallery-preset-modal-header">
               <div>
-                <h2>Create Preset</h2>
-                <span>Save a title and prompt for the gallery preset picker.</span>
+                <h2>{selectedPresetId && presets.some((preset) => preset.id === selectedPresetId && preset.title === presetTitle) ? 'Edit Preset' : 'Create Preset'}</h2>
+                <span>{selectedPresetId ? 'Update the selected preset title and prompt.' : 'Save a title and prompt for the gallery preset picker.'}</span>
               </div>
-              <button type="button" onClick={() => setPresetCreatorOpen(false)} aria-label="Close preset creator">×</button>
+              <button type="button" onClick={() => { setPresetCreatorOpen(false); setSelectedPresetId(null) }} aria-label="Close preset editor">×</button>
             </div>
             <label className="gallery-preset-field">
               <span>Preset Title</span>
@@ -463,8 +516,35 @@ export function ImageGalleryPage({
               <textarea value={presetPrompt} onChange={(e) => setPresetPrompt(e.target.value)} placeholder="Enter the prompt for this preset..." rows={7} />
             </label>
             <div className="gallery-preset-modal-actions">
-              <button type="button" onClick={() => setPresetCreatorOpen(false)}>Cancel</button>
-              <button type="button" className="primary" disabled={!presetTitle.trim() || !presetPrompt.trim()} onClick={createPreset}>Save Preset</button>
+              <button type="button" onClick={() => { setPresetCreatorOpen(false); setSelectedPresetId(null) }}>Cancel</button>
+              <button type="button" className="primary" disabled={!presetTitle.trim() || !presetPrompt.trim()} onClick={selectedPresetId ? saveEditedPreset : createPreset}>{selectedPresetId ? 'Save Changes' : 'Save Preset'}</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {presetManagerMode && (
+        <div className="gallery-preset-modal-backdrop" onClick={() => setPresetManagerMode(null)}>
+          <section className="gallery-preset-modal gallery-preset-manager" onClick={(e) => e.stopPropagation()}>
+            <div className="gallery-preset-modal-header">
+              <div>
+                <h2>{presetManagerMode === 'edit' ? 'Edit Preset' : 'Delete Preset'}</h2>
+                <span>{presetManagerMode === 'edit' ? 'Choose a preset to edit.' : 'Choose a preset to delete.'}</span>
+              </div>
+              <button type="button" onClick={() => setPresetManagerMode(null)} aria-label="Close preset manager">×</button>
+            </div>
+            <div className="gallery-preset-management-list">
+              {presets.map((preset) => (
+                <button
+                  type="button"
+                  key={preset.id}
+                  className={presetManagerMode === 'edit' ? 'gallery-preset-management-option' : 'gallery-preset-management-option delete'}
+                  onClick={() => presetManagerMode === 'edit' ? editPreset(preset) : deletePreset(preset.id)}
+                >
+                  <span>{preset.title}</span>
+                  <span>{presetManagerMode === 'edit' ? 'Edit' : 'Delete'}</span>
+                </button>
+              ))}
             </div>
           </section>
         </div>
