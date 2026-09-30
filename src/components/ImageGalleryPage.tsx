@@ -4,8 +4,22 @@ interface GalleryItem {
   id: string
   name: string
   src: string
+  thumbnailSrc?: string
   createdAt: number
   folderId: string | null
+}
+
+interface GalleryStoredItem {
+  id: string
+  name: string
+  thumbnailSrc: string
+  createdAt: number
+  folderId: string | null
+}
+
+interface GalleryImageData {
+  id: string
+  src: string
 }
 
 interface GalleryFolder {
@@ -25,8 +39,9 @@ type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
 const GALLERY_DB_NAME = 'comfyui-pwa-gallery'
-const GALLERY_DB_VERSION = 6
+const GALLERY_DB_VERSION = 4
 const GALLERY_STORE_NAME = 'images'
+const GALLERY_IMAGE_DATA_STORE_NAME = 'imageData'
 const GALLERY_FOLDER_STORE_NAME = 'folders'
 const GALLERY_PRESET_STORE_NAME = 'presets'
 
@@ -44,9 +59,8 @@ function openGalleryDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(GALLERY_DB_NAME, GALLERY_DB_VERSION)
     request.onupgradeneeded = () => {
       const db = request.result
-      // Never remove or clear existing stores while opening an older gallery database.
-      // This also lets the restored app read presets from a newer IndexedDB version.
       if (!db.objectStoreNames.contains(GALLERY_STORE_NAME)) db.createObjectStore(GALLERY_STORE_NAME, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(GALLERY_IMAGE_DATA_STORE_NAME)) db.createObjectStore(GALLERY_IMAGE_DATA_STORE_NAME, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(GALLERY_FOLDER_STORE_NAME)) db.createObjectStore(GALLERY_FOLDER_STORE_NAME, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(GALLERY_PRESET_STORE_NAME)) db.createObjectStore(GALLERY_PRESET_STORE_NAME, { keyPath: 'id' })
     }
@@ -64,8 +78,11 @@ async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: Gallery
     const presetRequest = tx.objectStore(GALLERY_PRESET_STORE_NAME).getAll()
     tx.oncomplete = () => {
       db.close()
-      const items = (imageRequest.result || []).map((item: GalleryItem) => ({ ...item, folderId: item.folderId ?? null }))
-        .sort((a: GalleryItem, b: GalleryItem) => b.createdAt - a.createdAt)
+      const items = (imageRequest.result || []).map((item: GalleryStoredItem & { src?: string }) => ({
+        ...item,
+        src: typeof item.src === 'string' ? item.src : '',
+        folderId: item.folderId ?? null,
+      })).sort((a: GalleryItem, b: GalleryItem) => b.createdAt - a.createdAt)
       const folders = (folderRequest.result || []).sort((a: GalleryFolder, b: GalleryFolder) => a.createdAt - b.createdAt)
       const presets = (presetRequest.result || []).sort((a: GalleryPreset, b: GalleryPreset) => a.createdAt - b.createdAt)
       resolve({ items, folders, presets })
@@ -77,6 +94,78 @@ async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: Gallery
   })
 }
 
+async function getGalleryImageSrc(id: string): Promise<string> {
+  const db = await openGalleryDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(GALLERY_IMAGE_DATA_STORE_NAME, 'readonly')
+    const request = tx.objectStore(GALLERY_IMAGE_DATA_STORE_NAME).get(id)
+    request.onsuccess = () => resolve(typeof request.result?.src === 'string' ? request.result.src : '')
+    request.onerror = () => reject(request.error || new Error('Could not load image'))
+    tx.oncomplete = () => db.close()
+    tx.onerror = () => {
+      db.close()
+      reject(tx.error || new Error('Could not load image'))
+    }
+  })
+}
+
+async function putGalleryImageData(id: string, src: string): Promise<void> {
+  const db = await openGalleryDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(GALLERY_IMAGE_DATA_STORE_NAME, 'readwrite')
+    tx.objectStore(GALLERY_IMAGE_DATA_STORE_NAME).put({ id, src } satisfies GalleryImageData)
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save image')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not save image')) }
+  })
+}
+
+async function deleteGalleryImageData(id: string): Promise<void> {
+  const db = await openGalleryDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(GALLERY_IMAGE_DATA_STORE_NAME, 'readwrite')
+    tx.objectStore(GALLERY_IMAGE_DATA_STORE_NAME).delete(id)
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not delete image')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not delete image')) }
+  })
+}
+
+async function deleteGalleryImageDataMany(ids: string[]): Promise<void> {
+  if (!ids.length) return
+  const db = await openGalleryDb()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(GALLERY_IMAGE_DATA_STORE_NAME, 'readwrite')
+    const store = tx.objectStore(GALLERY_IMAGE_DATA_STORE_NAME)
+    ids.forEach((id) => store.delete(id))
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not delete images')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not delete images')) }
+  })
+}
+
+async function makeThumbnail(src: string, maxSize = 360): Promise<string> {
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(image.naturalWidth, image.naturalHeight))
+      const width = Math.max(1, Math.round(image.naturalWidth * scale))
+      const height = Math.max(1, Math.round(image.naturalHeight * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      if (!context) {
+        resolve(src)
+        return
+      }
+      context.drawImage(image, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', 0.78))
+    }
+    image.onerror = () => resolve(src)
+    image.src = src
+  })
+}
 
 export async function readGalleryPresets(): Promise<GalleryPreset[]> {
   const stored = await readGalleryDb()
@@ -93,7 +182,13 @@ async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], pr
     imageStore.clear()
     folderStore.clear()
     presetStore.clear()
-    items.forEach((item) => imageStore.put(item))
+    items.forEach((item) => imageStore.put({
+      id: item.id,
+      name: item.name,
+      thumbnailSrc: item.thumbnailSrc || item.src,
+      createdAt: item.createdAt,
+      folderId: item.folderId ?? null,
+    } satisfies GalleryStoredItem))
     folders.forEach((folder) => folderStore.put(folder))
     presets.forEach((preset) => presetStore.put(preset))
     tx.oncomplete = () => { db.close(); resolve() }
@@ -102,164 +197,50 @@ async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], pr
   })
 }
 
-
-function looksLikeImageSource(value: unknown): value is string {
-  return typeof value === 'string' && (
-    value.startsWith('data:image/') ||
-    value.startsWith('blob:') ||
-    value.startsWith('http://') ||
-    value.startsWith('https://')
-  )
-}
-
-async function recoverImagesFromGalleryIndexedDb(
-  existingItems: GalleryItem[],
-  folders: GalleryFolder[],
-  presets: GalleryPreset[],
-): Promise<GalleryItem[]> {
-  const existingIds = new Set(existingItems.map((item) => item.id))
-  const recovered: GalleryItem[] = []
-
-  const dbNames: string[] = []
-  try {
-    if (typeof indexedDB.databases === 'function') {
-      const databases = await indexedDB.databases()
-      databases.forEach((entry) => {
-        if (entry.name && !dbNames.includes(entry.name)) dbNames.push(entry.name)
-      })
-    }
-  } catch {}
-
-  if (!dbNames.includes(GALLERY_DB_NAME)) dbNames.push(GALLERY_DB_NAME)
-
-  for (const dbName of dbNames) {
-    let db: IDBDatabase
-    try {
-      db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(dbName)
-        request.onsuccess = () => resolve(request.result)
-        request.onerror = () => reject(request.error || new Error('Could not open database'))
-      })
-    } catch {
-      continue
-    }
-
-    try {
-      const storeNames = Array.from(db.objectStoreNames)
-      if (!storeNames.length) {
-        db.close()
-        continue
-      }
-
-      await new Promise<void>((resolve) => {
-        let remaining = storeNames.length
-        const finish = () => {
-          remaining -= 1
-          if (remaining <= 0) resolve()
-        }
-
-        let tx: IDBTransaction
-        try {
-          tx = db.transaction(storeNames, 'readonly')
-        } catch {
-          resolve()
-          return
-        }
-
-        for (const storeName of storeNames) {
-          const request = tx.objectStore(storeName).openCursor()
-          request.onsuccess = async () => {
-            const cursor = request.result
-            if (!cursor) {
-              finish()
-              return
-            }
-
-            const record = cursor.value
-            if (record && typeof record === 'object') {
-              const candidate =
-                record.src ??
-                record.imageSrc ??
-                record.image ??
-                record.data ??
-                record.base64 ??
-                record.url
-
-              if (looksLikeImageSource(candidate)) {
-                const id = typeof record.id === 'string'
-                  ? record.id
-                  : typeof cursor.primaryKey === 'string'
-                    ? cursor.primaryKey
-                    : 'recovered-' + Date.now() + '-' + Math.random().toString(36).slice(2)
-
-                if (!existingIds.has(id)) {
-                  const legacy = (() => {
-                    try {
-                      const parsed = JSON.parse(localStorage.getItem(GALLERY_STORAGE_KEY) || '[]')
-                      return Array.isArray(parsed)
-                        ? parsed.find((item) => item && item.id === id)
-                        : null
-                    } catch {
-                      return null
-                    }
-                  })()
-
-                  recovered.push({
-                    id,
-                    name: typeof record.name === 'string'
-                      ? record.name
-                      : typeof record.filename === 'string'
-                        ? record.filename
-                        : typeof legacy?.name === 'string'
-                          ? legacy.name
-                          : 'Recovered Image',
-                    src: candidate,
-                    createdAt: typeof record.createdAt === 'number'
-                      ? record.createdAt
-                      : typeof legacy?.createdAt === 'number'
-                        ? legacy.createdAt
-                        : Date.now(),
-                    folderId: typeof record.folderId === 'string'
-                      ? record.folderId
-                      : typeof legacy?.folderId === 'string'
-                        ? legacy.folderId
-                        : null,
-                  })
-                  existingIds.add(id)
-                }
-              }
-            }
-
-            cursor.continue()
-          }
-          request.onerror = () => finish()
-        }
-
-        tx.oncomplete = () => resolve()
-        tx.onerror = () => resolve()
-        tx.onabort = () => resolve()
-      })
-    } finally {
-      db.close()
-    }
-  }
-
-  if (recovered.length) {
-    await writeGalleryDb([...existingItems, ...recovered], folders, presets)
-  }
-
-  return [...existingItems, ...recovered].sort((a, b) => b.createdAt - a.createdAt)
-}
-
 async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const stored = await readGalleryDb()
+  const legacyItems = stored.items
   const legacy = loadGallery()
-  const startingItems = stored.items.length ? stored.items : legacy
-  const recoveredItems = await recoverImagesFromGalleryIndexedDb(startingItems, stored.folders, stored.presets)
-  if (recoveredItems.length || stored.folders.length || stored.presets.length) {
-    return { items: recoveredItems, folders: stored.folders, presets: stored.presets }
+  const hasImageData = await new Promise<boolean>((resolve) => {
+    const dbPromise = openGalleryDb()
+    return dbPromise.then((db) => new Promise<boolean>((resolveInner) => {
+      const tx = db.transaction(GALLERY_IMAGE_DATA_STORE_NAME, 'readonly')
+      const request = tx.objectStore(GALLERY_IMAGE_DATA_STORE_NAME).count()
+      request.onsuccess = () => resolveInner(request.result > 0)
+      request.onerror = () => resolveInner(false)
+      tx.oncomplete = () => db.close()
+    }))
+  })
+  if (!hasImageData) {
+    const sourceItems = legacy.length ? legacy : legacyItems
+    const inlineItems = sourceItems.filter((item) => Boolean(item.src))
+    for (const item of inlineItems) {
+      const thumbnailSrc = item.thumbnailSrc || await makeThumbnail(item.src)
+      await putGalleryImageData(item.id, item.src)
+      item.thumbnailSrc = thumbnailSrc
+    }
+    // Preserve the original metadata records. Never clear/rewrite the images
+    // store as part of migration.
+    if (inlineItems.length) {
+      const db = await openGalleryDb()
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(GALLERY_STORE_NAME, 'readwrite')
+        const store = tx.objectStore(GALLERY_STORE_NAME)
+        inlineItems.forEach((item) => store.put({
+          id: item.id,
+          name: item.name,
+          thumbnailSrc: item.thumbnailSrc || '',
+          createdAt: item.createdAt,
+          folderId: item.folderId ?? null,
+        } satisfies GalleryStoredItem))
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not migrate gallery metadata')) }
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not migrate gallery metadata')) }
+      })
+    }
+    return { items: sourceItems.map((item) => ({ ...item, src: '' })), folders: stored.folders, presets: stored.presets }
   }
-  return { items: legacy, folders: stored.folders, presets: stored.presets }
+  return { items: legacyItems, folders: stored.folders, presets: stored.presets }
 }
 
 export function ImageGalleryPage({
@@ -281,6 +262,8 @@ export function ImageGalleryPage({
   const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set())
   const [deleteFolderOpen, setDeleteFolderOpen] = useState(false)
   const [storageReady, setStorageReady] = useState(false)
+  const [viewerSrc, setViewerSrc] = useState<string | null>(null)
+  const [viewerLoading, setViewerLoading] = useState(false)
   const [sendFolderOpen, setSendFolderOpen] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
   const [presetMenuOpen, setPresetMenuOpen] = useState(false)
@@ -306,11 +289,10 @@ export function ImageGalleryPage({
       setStorageReady(true)
     }).catch(() => {
       if (!active) return
-      // Do not mark storage ready after a failed IndexedDB read. Otherwise the
-      // save effect could clear a database containing recoverable presets.
       setItems(loadGallery())
       setFolders([])
       setPresets([])
+      setStorageReady(true)
     })
     return () => { active = false }
   }, [])
@@ -319,6 +301,23 @@ export function ImageGalleryPage({
     if (!storageReady) return
     void writeGalleryDb(items, folders, presets)
   }, [items, folders, presets, storageReady])
+
+  useEffect(() => {
+    if (!selectedId) {
+      setViewerSrc(null)
+      return
+    }
+    let active = true
+    setViewerLoading(true)
+    void getGalleryImageSrc(selectedId).then((src) => {
+      if (active) setViewerSrc(src || null)
+    }).catch(() => {
+      if (active) setViewerSrc(null)
+    }).finally(() => {
+      if (active) setViewerLoading(false)
+    })
+    return () => { active = false }
+  }, [selectedId])
 
   useEffect(() => () => {
     if (armTimer.current) window.clearTimeout(armTimer.current)
@@ -337,24 +336,29 @@ export function ImageGalleryPage({
   const selected = items.find((item) => item.id === selectedId) || null
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetId) || null
 
-  function addImages(files: FileList | null) {
+  async function addImages(files: FileList | null) {
     if (!files?.length) return
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith('image/')) return
-      const reader = new FileReader()
-      reader.onload = () => {
-        const src = typeof reader.result === 'string' ? reader.result : ''
-        if (!src) return
-        setItems((current) => [{
-          id: 'gallery-' + Date.now() + '-' + Math.random().toString(36).slice(2),
-          name: file.name,
-          src,
-          createdAt: Date.now(),
-          folderId: currentFolderId,
-        }, ...current])
-      }
-      reader.readAsDataURL(file)
-    })
+    const selectedFiles = Array.from(files).filter((file) => file.type.startsWith('image/'))
+    for (const file of selectedFiles) {
+      const src = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+        reader.onerror = () => reject(reader.error || new Error('Could not read image'))
+        reader.readAsDataURL(file)
+      }).catch(() => '')
+      if (!src) continue
+      const id = 'gallery-' + Date.now() + '-' + Math.random().toString(36).slice(2)
+      const thumbnailSrc = await makeThumbnail(src)
+      await putGalleryImageData(id, src)
+      setItems((current) => [{
+        id,
+        name: file.name,
+        src: '',
+        thumbnailSrc,
+        createdAt: Date.now(),
+        folderId: currentFolderId,
+      }, ...current])
+    }
   }
 
   function renameCurrentFolder() {
@@ -538,6 +542,8 @@ export function ImageGalleryPage({
       return
     }
     if (!selectedIds.size) return
+    const ids = [...selectedIds]
+    void deleteGalleryImageDataMany(ids).catch(() => {})
     setItems((current) => current.filter((item) => !selectedIds.has(item.id)))
     setSelectedIds(new Set())
     setMultiSelectMode(false)
@@ -546,6 +552,8 @@ export function ImageGalleryPage({
   function resolveFolderDeletion(deleteImages: boolean) {
     if (!selectedFolderIds.size) return
     if (deleteImages) {
+      const idsToDelete = items.filter((item) => item.folderId && selectedFolderIds.has(item.folderId)).map((item) => item.id)
+      void deleteGalleryImageDataMany(idsToDelete).catch(() => {})
       setItems((current) => current.filter((item) => !item.folderId || !selectedFolderIds.has(item.folderId)))
     } else {
       setItems((current) => current.map((item) => selectedFolderIds.has(item.folderId || '') ? { ...item, folderId: null } : item))
@@ -568,6 +576,7 @@ export function ImageGalleryPage({
   }
 
   function deleteItem(id: string) {
+    void deleteGalleryImageData(id).catch(() => {})
     setItems((current) => current.filter((item) => item.id !== id))
     setSelectedId(null)
     setArmedId(null)
@@ -610,7 +619,7 @@ export function ImageGalleryPage({
 
         {visibleItems.map((item) => (
           <button type="button" className={'gallery-card' + (armedId === item.id ? ' gallery-card-armed' : '') + (selectedIds.has(item.id) ? ' gallery-card-selected' : '')} key={item.id} onPointerDown={(event) => handleCardPointerDown(item.id, event)} onPointerMove={handleCardPointerMove} onPointerUp={handleCardPointerEnd} onPointerCancel={() => { suppressTap.current = true; pointerStart.current = null }} onClick={() => handleCardClick(item)} aria-label={multiSelectMode ? ((selectedIds.has(item.id) ? 'Deselect ' : 'Select ') + item.name) : 'Open ' + item.name} aria-pressed={multiSelectMode ? selectedIds.has(item.id) : undefined}>
-            <img src={item.src} alt={item.name} loading="lazy" draggable={false} />
+            <img src={item.thumbnailSrc || item.src} alt={item.name} loading="lazy" decoding="async" draggable={false} />
             {multiSelectMode && <span className="gallery-select-mark" aria-hidden="true">{selectedIds.has(item.id) ? '✓' : ''}</span>}
           </button>
         ))}
@@ -755,10 +764,10 @@ export function ImageGalleryPage({
         <div className="gallery-viewer-backdrop" onClick={() => setSelectedId(null)}>
           <section className="gallery-viewer" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="gallery-viewer-close" onClick={() => setSelectedId(null)} aria-label="Close image">×</button>
-            <div className="gallery-viewer-image-wrap"><img src={selected.src} alt={selected.name} /></div>
+            <div className="gallery-viewer-image-wrap">{viewerLoading ? <div className="gallery-viewer-loading">Loading image…</div> : viewerSrc ? <img src={viewerSrc} alt={selected.name} /> : <div className="gallery-viewer-loading">Image unavailable</div>}</div>
             <div className="gallery-viewer-actions">
-              <button type="button" onClick={() => { onSetFigure('one', selected, selectedPreset?.prompt); showFeedback(selectedPreset ? 'Preset Sent' : 'Sent!') }}>Figure A</button>
-              <button type="button" onClick={() => { onSetFigure('two', selected, selectedPreset?.prompt); showFeedback(selectedPreset ? 'Preset Sent' : 'Sent!') }}>Figure B</button>
+              <button type="button" disabled={viewerLoading || !viewerSrc} onClick={() => { onSetFigure('one', { ...selected, src: viewerSrc || '' }, selectedPreset?.prompt); showFeedback(selectedPreset ? 'Preset Sent' : 'Sent!') }}>Figure A</button>
+              <button type="button" disabled={viewerLoading || !viewerSrc} onClick={() => { onSetFigure('two', { ...selected, src: viewerSrc || '' }, selectedPreset?.prompt); showFeedback(selectedPreset ? 'Preset Sent' : 'Sent!') }}>Figure B</button>
               <button type="button" className="gallery-viewer-delete" onClick={() => deleteItem(selected.id)}>Delete</button>
             </div>
             <div className="gallery-preset-picker">
