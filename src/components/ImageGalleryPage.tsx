@@ -14,7 +14,7 @@ interface GalleryFolder {
   createdAt: number
 }
 
-interface GalleryPreset {
+export interface GalleryPreset {
   id: string
   title: string
   prompt: string
@@ -73,6 +73,12 @@ async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: Gallery
       reject(tx.error || new Error('Could not read gallery storage'))
     }
   })
+}
+
+
+export async function readGalleryPresets(): Promise<GalleryPreset[]> {
+  const stored = await readGalleryDb()
+  return stored.presets
 }
 
 async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], presets: GalleryPreset[]): Promise<void> {
