@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherStatus, getLauncherLogs, getRemoteControlStatus, startComfyUI, waitForComfyReady, startComfyFromPhone } from './comfyClient'
+import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
 import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage } from './imageCache'
 import './App.css'
@@ -682,25 +682,10 @@ export default function App() {
     const mainGenerationPrompt = promptBuilderOpen ? buildPromptBuilderPrompt() : prompt.trim()
     const hookBlock = hookPrompts.filter((item) => item.enabled).map((item) => item.text.trim()).filter(Boolean).join('\n\n')
     const generationPrompt = hookBlock ? hookBlock + (mainGenerationPrompt ? '\n\n' + mainGenerationPrompt : '') : mainGenerationPrompt
-    if (!generationPrompt || uploading.one || uploading.two || startingComfy) return
+    if (!generationPrompt || uploading.one || uploading.two) return
     setLatestResultId(null)
     setErrorMsg(null); setStatus('queued'); setProgress({ value: 0, max: 1 })
-    let startupTimer: number | null = null
     try {
-      const launcher = await getLauncherStatus()
-      if (launcher.comfyui === 'stopped') {
-        setStartingComfy(true)
-        setStartProgress(5)
-        startupTimer = window.setInterval(() => {
-          setStartProgress((current) => Math.min(90, current + 5))
-        }, 1000)
-        await startComfyUI()
-        await waitForComfyReady()
-        if (startupTimer !== null) window.clearInterval(startupTimer)
-        setStartProgress(100)
-        await new Promise((resolve) => setTimeout(resolve, 250))
-        setStartingComfy(false)
-      }
       let imageOneName = imageOne?.comfyName
       let imageTwoName = imageTwo?.comfyName
       if (imageOne?.cacheKey) {
@@ -729,8 +714,6 @@ export default function App() {
       setProgress({ value: 0, max: 1 })
       void waitForResult(prompt_id)
     } catch (err) {
-      if (startupTimer !== null) window.clearInterval(startupTimer)
-      setStartingComfy(false)
       setStatus('error'); setErrorMsg(recordErrorLog(err))
     }
   }
