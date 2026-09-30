@@ -5,19 +5,27 @@ interface GalleryItem {
   name: string
   src: string
   createdAt: number
+  folderId: string | null
+}
+
+interface GalleryFolder {
+  id: string
+  name: string
+  createdAt: number
 }
 
 type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
 const GALLERY_DB_NAME = 'comfyui-pwa-gallery'
-const GALLERY_DB_VERSION = 1
+const GALLERY_DB_VERSION = 2
 const GALLERY_STORE_NAME = 'images'
+const GALLERY_FOLDER_STORE_NAME = 'folders'
 
 function loadGallery(): GalleryItem[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(GALLERY_STORAGE_KEY) || '[]')
-    return Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed) ? parsed.map((item) => ({ ...item, folderId: item.folderId ?? null })) : []
   } catch {
     return []
   }
@@ -29,46 +37,55 @@ function openGalleryDb(): Promise<IDBDatabase> {
     request.onupgradeneeded = () => {
       const db = request.result
       if (!db.objectStoreNames.contains(GALLERY_STORE_NAME)) db.createObjectStore(GALLERY_STORE_NAME, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(GALLERY_FOLDER_STORE_NAME)) db.createObjectStore(GALLERY_FOLDER_STORE_NAME, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Could not open gallery storage'))
   })
 }
 
-async function readGalleryDb(): Promise<GalleryItem[]> {
+async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[] }> {
   const db = await openGalleryDb()
   return new Promise((resolve, reject) => {
-    const request = db.transaction(GALLERY_STORE_NAME, 'readonly').objectStore(GALLERY_STORE_NAME).getAll()
-    request.onsuccess = () => {
+    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME], 'readonly')
+    const imageRequest = tx.objectStore(GALLERY_STORE_NAME).getAll()
+    const folderRequest = tx.objectStore(GALLERY_FOLDER_STORE_NAME).getAll()
+    tx.oncomplete = () => {
       db.close()
-      resolve((request.result || []).sort((a: GalleryItem, b: GalleryItem) => b.createdAt - a.createdAt))
+      const items = (imageRequest.result || []).map((item: GalleryItem) => ({ ...item, folderId: item.folderId ?? null }))
+        .sort((a: GalleryItem, b: GalleryItem) => b.createdAt - a.createdAt)
+      const folders = (folderRequest.result || []).sort((a: GalleryFolder, b: GalleryFolder) => a.createdAt - b.createdAt)
+      resolve({ items, folders })
     }
-    request.onerror = () => {
+    tx.onerror = () => {
       db.close()
-      reject(request.error || new Error('Could not read gallery storage'))
+      reject(tx.error || new Error('Could not read gallery storage'))
     }
   })
 }
 
-async function writeGalleryDb(items: GalleryItem[]): Promise<void> {
+async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[]): Promise<void> {
   const db = await openGalleryDb()
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(GALLERY_STORE_NAME, 'readwrite')
-    const store = tx.objectStore(GALLERY_STORE_NAME)
-    store.clear()
-    items.forEach((item) => store.put(item))
+    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME], 'readwrite')
+    const imageStore = tx.objectStore(GALLERY_STORE_NAME)
+    const folderStore = tx.objectStore(GALLERY_FOLDER_STORE_NAME)
+    imageStore.clear()
+    folderStore.clear()
+    items.forEach((item) => imageStore.put(item))
+    folders.forEach((folder) => folderStore.put(folder))
     tx.oncomplete = () => { db.close(); resolve() }
     tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save gallery')) }
     tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not save gallery')) }
   })
 }
 
-async function migrateLegacyGallery(): Promise<GalleryItem[]> {
-  const existing = await readGalleryDb()
-  if (existing.length) return existing
+async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[] }> {
+  const stored = await readGalleryDb()
+  if (stored.items.length || stored.folders.length) return stored
   const legacy = loadGallery()
-  if (legacy.length) await writeGalleryDb(legacy)
-  return legacy
+  if (legacy.length) await writeGalleryDb(legacy, [])
+  return { items: legacy, folders: [] }
 }
 
 export function ImageGalleryPage({
@@ -78,40 +95,48 @@ export function ImageGalleryPage({
   onClose: () => void
   onSetFigure: (which: Figure, item: GalleryItem) => void
 }) {
-  const [items, setItems] = useState<GalleryItem[]>(loadGallery)
+  const [items, setItems] = useState<GalleryItem[]>([])
+  const [folders, setFolders] = useState<GalleryFolder[]>([])
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [armedId, setArmedId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [multiSelectMode, setMultiSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [storageReady, setStorageReady] = useState(false)
+  const [sendFolderOpen, setSendFolderOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
 
   useEffect(() => {
     let active = true
     void migrateLegacyGallery().then((stored) => {
-      if (active) {
-        setItems(stored)
-        setStorageReady(true)
-      }
+      if (!active) return
+      setItems(stored.items)
+      setFolders(stored.folders)
+      setStorageReady(true)
     }).catch(() => {
-      if (active) {
-        setItems(loadGallery())
-        setStorageReady(true)
-      }
+      if (!active) return
+      setItems(loadGallery())
+      setFolders([])
+      setStorageReady(true)
     })
     return () => { active = false }
   }, [])
 
   useEffect(() => {
     if (!storageReady) return
-    void writeGalleryDb(items)
-  }, [items, storageReady])
+    void writeGalleryDb(items, folders)
+  }, [items, folders, storageReady])
 
   useEffect(() => () => {
     if (armTimer.current) window.clearTimeout(armTimer.current)
   }, [])
+
+  const currentFolder = folders.find((folder) => folder.id === currentFolderId) || null
+  const visibleItems = items.filter((item) => (item.folderId ?? null) === currentFolderId)
+  const visibleFolders = currentFolderId === null ? folders : []
+  const selected = items.find((item) => item.id === selectedId) || null
 
   function addImages(files: FileList | null) {
     if (!files?.length) return
@@ -126,10 +151,22 @@ export function ImageGalleryPage({
           name: file.name,
           src,
           createdAt: Date.now(),
+          folderId: currentFolderId,
         }, ...current])
       }
       reader.readAsDataURL(file)
     })
+  }
+
+  function addFolder() {
+    const name = window.prompt('Name this folder', 'New Folder')?.trim()
+    if (!name) return
+    const folder: GalleryFolder = {
+      id: 'folder-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+      name,
+      createdAt: Date.now(),
+    }
+    setFolders((current) => [...current, folder])
   }
 
   function tapItem(item: GalleryItem) {
@@ -156,12 +193,29 @@ export function ImageGalleryPage({
     }, 850)
   }
 
+  function tapFolder(folder: GalleryFolder) {
+    if (navigator.vibrate) navigator.vibrate(18)
+    if (multiSelectMode) return
+    setCurrentFolderId(folder.id)
+    setSelectedId(null)
+    setArmedId(null)
+  }
+
+  function goToMainGallery() {
+    setCurrentFolderId(null)
+    setSelectedId(null)
+    setArmedId(null)
+    setSelectedIds(new Set())
+    setMultiSelectMode(false)
+  }
+
   function toggleMultiSelect() {
     setMultiSelectMode((current) => !current)
     setSelectedIds(new Set())
     setSelectedId(null)
     setArmedId(null)
     setSidebarOpen(false)
+    setSendFolderOpen(false)
   }
 
   function deleteSelected() {
@@ -171,36 +225,51 @@ export function ImageGalleryPage({
     setMultiSelectMode(false)
   }
 
+  function sendSelectedToFolder(folderId: string | null) {
+    if (!selectedIds.size) return
+    setItems((current) => current.map((item) => selectedIds.has(item.id) ? { ...item, folderId } : item))
+    setSelectedIds(new Set())
+    setMultiSelectMode(false)
+    setSendFolderOpen(false)
+    setSidebarOpen(false)
+  }
+
   function deleteItem(id: string) {
     setItems((current) => current.filter((item) => item.id !== id))
     setSelectedId(null)
     setArmedId(null)
   }
 
-  const selected = items.find((item) => item.id === selectedId) || null
-
   return (
     <div className="gallery-page">
       <header className="gallery-page-header">
-        <button type="button" className="gallery-back-btn" onClick={onClose} aria-label="Back to editor">←</button>
+        <button type="button" className="gallery-back-btn" onClick={currentFolderId ? goToMainGallery : onClose} aria-label={currentFolderId ? 'Back to main gallery' : 'Back to editor'}>←</button>
         <div>
-          <h1>Image Gallery</h1>
-          <span>{items.length} image{items.length === 1 ? '' : 's'}{multiSelectMode && selectedIds.size ? ' • ' + selectedIds.size + ' selected' : ''}</span>
+          <h1>{currentFolder ? currentFolder.name : 'Image Gallery'}</h1>
+          <span>{visibleItems.length} image{visibleItems.length === 1 ? '' : 's'}{multiSelectMode && selectedIds.size ? ' • ' + selectedIds.size + ' selected' : ''}</span>
         </div>
-        <button
-          type="button"
-          className="gallery-menu-btn"
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open gallery menu"
-          aria-expanded={sidebarOpen}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          </svg>
+        <button type="button" className="gallery-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open gallery menu" aria-expanded={sidebarOpen}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
         </button>
       </header>
 
       <div className={'gallery-grid' + (multiSelectMode ? ' gallery-grid-multiselect' : '')}>
+        {currentFolderId === null && (
+          <button type="button" className="gallery-folder-card" onClick={() => undefined} aria-label="Folders">
+            <span className="gallery-folder-icon">+</span>
+            <strong>Folders</strong>
+            <span>{folders.length} folder{folders.length === 1 ? '' : 's'}</span>
+          </button>
+        )}
+
+        {visibleFolders.map((folder) => (
+          <button type="button" className="gallery-folder-card" key={folder.id} onClick={() => tapFolder(folder)}>
+            <span className="gallery-folder-icon">▰</span>
+            <strong>{folder.name}</strong>
+            <span>{items.filter((item) => item.folderId === folder.id).length} image{items.filter((item) => item.folderId === folder.id).length === 1 ? '' : 's'}</span>
+          </button>
+        ))}
+
         <button type="button" className="gallery-add-card" onClick={() => inputRef.current?.click()}>
           <span className="gallery-add-icon">+</span>
           <strong>Add Image</strong>
@@ -208,15 +277,8 @@ export function ImageGalleryPage({
           <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden onChange={(e) => { addImages(e.target.files); e.currentTarget.value = '' }} />
         </button>
 
-        {items.map((item) => (
-          <button
-            type="button"
-            className={'gallery-card' + (armedId === item.id ? ' gallery-card-armed' : '') + (selectedIds.has(item.id) ? ' gallery-card-selected' : '')}
-            key={item.id}
-            onClick={() => tapItem(item)}
-            aria-label={multiSelectMode ? ((selectedIds.has(item.id) ? 'Deselect ' : 'Select ') + item.name) : 'Open ' + item.name}
-            aria-pressed={multiSelectMode ? selectedIds.has(item.id) : undefined}
-          >
+        {visibleItems.map((item) => (
+          <button type="button" className={'gallery-card' + (armedId === item.id ? ' gallery-card-armed' : '') + (selectedIds.has(item.id) ? ' gallery-card-selected' : '')} key={item.id} onClick={() => tapItem(item)} aria-label={multiSelectMode ? ((selectedIds.has(item.id) ? 'Deselect ' : 'Select ') + item.name) : 'Open ' + item.name} aria-pressed={multiSelectMode ? selectedIds.has(item.id) : undefined}>
             <img src={item.src} alt={item.name} loading="lazy" draggable={false} />
             {multiSelectMode && <span className="gallery-select-mark" aria-hidden="true">{selectedIds.has(item.id) ? '✓' : ''}</span>}
           </button>
@@ -230,6 +292,10 @@ export function ImageGalleryPage({
               <h2>Gallery Menu</h2>
               <button type="button" className="gallery-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close gallery menu">×</button>
             </div>
+            <button type="button" className="gallery-sidebar-action" onClick={addFolder}>
+              <span className="gallery-sidebar-action-icon">+</span>
+              <span>Add Folder</span>
+            </button>
             <button type="button" className={'gallery-sidebar-action' + (multiSelectMode ? ' active' : '')} onClick={toggleMultiSelect}>
               <span className="gallery-sidebar-action-icon">✓</span>
               <span>{multiSelectMode ? 'Exit Multiselect' : 'Multiselect'}</span>
@@ -237,6 +303,7 @@ export function ImageGalleryPage({
             {multiSelectMode && (
               <div className="gallery-batch-actions">
                 <span>{selectedIds.size} selected</span>
+                <button type="button" className="gallery-send-folder-btn" disabled={!selectedIds.size} onClick={() => setSendFolderOpen(true)}>Send to Folder</button>
                 <button type="button" className="gallery-batch-delete" disabled={!selectedIds.size} onClick={deleteSelected}>Delete Selected</button>
                 <button type="button" className="gallery-batch-cancel" onClick={toggleMultiSelect}>Cancel</button>
               </div>
@@ -245,13 +312,31 @@ export function ImageGalleryPage({
         </div>
       )}
 
+      {sendFolderOpen && multiSelectMode && (
+        <div className="gallery-folder-picker-backdrop" onClick={() => setSendFolderOpen(false)}>
+          <section className="gallery-folder-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="gallery-folder-picker-header">
+              <h2>Send to Folder</h2>
+              <button type="button" onClick={() => setSendFolderOpen(false)} aria-label="Close folder picker">×</button>
+            </div>
+            <p>Choose where to move {selectedIds.size} selected image{selectedIds.size === 1 ? '' : 's'}.</p>
+            <button type="button" className="gallery-folder-choice" onClick={() => sendSelectedToFolder(null)}>
+              <span>▰</span><strong>Main Image Gallery</strong>
+            </button>
+            {folders.map((folder) => (
+              <button type="button" className="gallery-folder-choice" key={folder.id} onClick={() => sendSelectedToFolder(folder.id)}>
+                <span>▰</span><strong>{folder.name}</strong>
+              </button>
+            ))}
+          </section>
+        </div>
+      )}
+
       {selected && (
         <div className="gallery-viewer-backdrop" onClick={() => setSelectedId(null)}>
           <section className="gallery-viewer" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="gallery-viewer-close" onClick={() => setSelectedId(null)} aria-label="Close image">×</button>
-            <div className="gallery-viewer-image-wrap">
-              <img src={selected.src} alt={selected.name} />
-            </div>
+            <div className="gallery-viewer-image-wrap"><img src={selected.src} alt={selected.name} /></div>
             <div className="gallery-viewer-actions">
               <button type="button" onClick={() => { onSetFigure('one', selected); setSelectedId(null) }}>Figure A</button>
               <button type="button" onClick={() => { onSetFigure('two', selected); setSelectedId(null) }}>Figure B</button>
