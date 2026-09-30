@@ -38,64 +38,62 @@ export function DatasetPage({onClose,onMoveToVault}:{onClose:()=>void;sourceItem
   </div>
   <div className="dataset-imported-layout">
     <div className="dataset-page-content">
-      {page ? <>
-        {pages.length > 1 && <div className="dataset-page-switcher">
-          {pages.map(p=><button className={p.id===active?'active':''} key={p.id} onClick={()=>{setActive(p.id);setVaultSel(new Set())}}>
-            <span>{p.name}</span><small>{p.items.length} records</small>
-          </button>)}
-        </div>}
-        <div className="dataset-content-header">
-          <div className="dataset-content-title">
-            <h3>{page.name}</h3>
-            <span>{page.items.length} records</span>
-          </div>
-          <div className="dataset-content-actions">
-            <button className="dataset-action dataset-import" onClick={()=>setStep('upload')}>
-              <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span>
-              Import JSON
-            </button>
-            <button className="dataset-action dataset-export" onClick={()=>void exportPage(page)}>
-              <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span>
-              Export JSON
-            </button>
-            <button className="dataset-action dataset-vault" onClick={()=>void moveToVault(false)} disabled={!vaultSel.size}>
-              Move Selected{vaultSel.size ? ` (${vaultSel.size})` : ''}
-            </button>
-            <button className="dataset-action dataset-vault" onClick={()=>void moveToVault(true)} disabled={!page.items.length}>
-              Move All to Prompt Vault
-            </button>
-            <button className="dataset-action dataset-danger" onClick={()=>void deleteAllImportedData()} disabled={!pages.length}>
-              Delete All Imported Data
-            </button>
-          </div>
+      {pages.length > 1 && <div className="dataset-page-switcher">
+        {pages.map(p=><button className={p.id===active?'active':''} key={p.id} onClick={()=>{setActive(p.id);setVaultSel(new Set())}}>
+          <span>{p.name}</span><small>{p.items.length} records</small>
+        </button>)}
+      </div>}
+      <div className="dataset-content-header dataset-empty-state">
+        <div className="dataset-content-title">
+          <h3>{page?.name||'Imported'}</h3>
+          <span>{page?.items.length||0} records</span>
         </div>
-        <div className="dataset-record-grid">
-          {page.items.map(i=>{
-            const mime=(i.imageRefs[0]?.mimeType||'image/png').split('/')[1]?.toUpperCase()||'IMAGE';
-            return <article className={`dataset-record${vaultSel.has(i.id)?' selected':''}`} key={i.id}>
-              <div className="dataset-record-image-wrap">
-                <button type="button" className="dataset-record-select" onClick={()=>setVaultSel(current=>{const next=new Set(current);next.has(i.id)?next.delete(i.id):next.add(i.id);return next})} aria-label={vaultSel.has(i.id)?`Deselect ${i.name}`:`Select ${i.name}`} aria-pressed={vaultSel.has(i.id)}>{vaultSel.has(i.id)?'✓':''}</button>
-                <button type="button" className="dataset-record-more" onClick={()=>setViewer(i)} aria-label={`Open ${i.name}`}>•••</button>
-                <button type="button" className="dataset-record-image-button" onClick={()=>setViewer(i)} aria-label={`Open ${i.name}`}><div className="dataset-record-image">{i.imageRefs[0]?<Cached keyId={i.imageRefs[0].cacheKey}/>:<span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 2-2 5 5"/></svg></span>}</div></button>
-              </div>
-              <div className="dataset-record-body">
-                <strong>{i.name}</strong>
-                <div className="dataset-record-prompt-preview">{i.prompt||'No prompt provided'}</div>
-                <div className="dataset-record-meta"><span>▧ {i.imageRefs.length} {i.imageRefs.length===1?'image':'images'}</span><span>{mime}</span></div>
-                <div className="dataset-record-actions">
-                  <button type="button" onClick={()=>void copyPrompt(i)} aria-label="Copy prompt" title="Copy prompt">▣</button>
-                  <button type="button" className={vaultSel.has(i.id)?'active':''} onClick={()=>setVaultSel(current=>{const next=new Set(current);next.has(i.id)?next.delete(i.id):next.add(i.id);return next})} aria-label="Select for Prompt Vault" title="Select">◇</button>
-                  <button type="button" onClick={()=>void moveToVault(false)} disabled={!vaultSel.has(i.id)} aria-label="Move to Prompt Vault" title="Move to Prompt Vault">□</button>
-                  <button type="button" className="dataset-record-delete" onClick={()=>void deleteItem(i)} aria-label="Delete record" title="Delete record">♜</button>
-                </div>
-              </div>
-            </article>
-          })}
+        <div className="dataset-content-actions">
+          <button className="dataset-action dataset-import" onClick={()=>setStep('upload')}>
+            <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span>
+            Import JSON
+          </button>
+          <button className="dataset-action dataset-export" onClick={()=>page&&void exportPage(page)} disabled={!page}>
+            <span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span>
+            Export JSON
+          </button>
+          <button className="dataset-action dataset-vault" onClick={()=>void moveToVault(false)} disabled={!page||!vaultSel.size}>
+            Move Selected{vaultSel.size ? ` (${vaultSel.size})` : ''}
+          </button>
+          <button className="dataset-action dataset-vault" onClick={()=>void moveToVault(true)} disabled={!page||!page.items.length}>
+            Move All to Prompt Vault
+          </button>
+          <button className="dataset-action dataset-danger" onClick={()=>void deleteAllImportedData()} disabled={!pages.length}>
+            Delete All Imported Data
+          </button>
         </div>
-      </> : <div className="dataset-empty">Import a compatible dataset JSON to create a page.</div>}
+      </div>
+      {page && <div className="dataset-record-grid">
+        {page.items.map(i=> {
+          const mime=(i.imageRefs[0]?.mimeType||'image/png').split('/')[1]?.toUpperCase()||'IMAGE';
+          return <article className={`dataset-record${vaultSel.has(i.id)?' selected':''}`} key={i.id}>
+            <div className="dataset-record-image-wrap">
+              <button type="button" className="dataset-record-select" onClick={()=>setVaultSel(current=>{const next=new Set(current);next.has(i.id)?next.delete(i.id):next.add(i.id);return next})} aria-label={vaultSel.has(i.id)?`Deselect ${i.name}`:`Select ${i.name}`} aria-pressed={vaultSel.has(i.id)}>{vaultSel.has(i.id)?'✓':''}</button>
+              <button type="button" className="dataset-record-more" onClick={()=>setViewer(i)} aria-label={`Open ${i.name}`}>•••</button>
+              <button type="button" className="dataset-record-image-button" onClick={()=>setViewer(i)} aria-label={`Open ${i.name}`}><div className="dataset-record-image">{i.imageRefs[0]?<Cached keyId={i.imageRefs[0].cacheKey}/>:<span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 5-5 4 4 2-2 5 5"/></svg></span>}</div></button>
+            </div>
+            <div className="dataset-record-body">
+              <strong>{i.name}</strong>
+              <div className="dataset-record-prompt-preview">{i.prompt||'No prompt provided'}</div>
+              <div className="dataset-record-meta"><span>▧ {i.imageRefs.length} {i.imageRefs.length===1?'image':'images'}</span><span>{mime}</span></div>
+              <div className="dataset-record-actions">
+                <button type="button" onClick={()=>void copyPrompt(i)} aria-label="Copy prompt" title="Copy prompt">▣</button>
+                <button type="button" className={vaultSel.has(i.id)?'active':''} onClick={()=>setVaultSel(current=>{const next=new Set(current);next.has(i.id)?next.delete(i.id):next.add(i.id);return next})} aria-label="Select for Prompt Vault" title="Select">◇</button>
+                <button type="button" onClick={()=>void moveToVault(false)} disabled={!vaultSel.has(i.id)} aria-label="Move to Prompt Vault" title="Move to Prompt Vault">□</button>
+                <button type="button" className="dataset-record-delete" onClick={()=>void deleteItem(i)} aria-label="Delete record" title="Delete record">♜</button>
+              </div>
+            </div>
+          </article>
+        })}
+      </div>}
     </div>
   </div>
-{viewer&&<div className="dataset-viewer-backdrop" onClick={()=>setViewer(null)}><section className="dataset-viewer" onClick={e=>e.stopPropagation()}><div className="dataset-viewer-header"><h3>{viewer.name}</h3><button className="close-btn" onClick={()=>setViewer(null)}>×</button></div><div className="dataset-viewer-image">{viewer.imageRefs[0]?<Cached keyId={viewer.imageRefs[0].cacheKey}/>:<div className="dataset-image-empty">No image</div>}</div><div className="dataset-viewer-prompt"><div><strong>Prompt</strong><button type="button" onClick={()=>void navigator.clipboard?.writeText(viewer.prompt)}>Copy</button></div><textarea className="dataset-viewer-prompt-editor" value={viewer.prompt} onChange={e=>{const next=e.target.value;setViewer(v=>v&&v.id===viewer.id?{...v,prompt:next}:v);setPages(ps=>ps.map(p=>p.id===active?{...p,items:p.items.map(x=>x.id===viewer.id?{...x,prompt:next}:x)}:p))}} onClick={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} placeholder="No prompt provided" aria-label="Edit prompt"/></div></section></div>}
+  {viewer&&<div className="dataset-viewer-backdrop" onClick={()=>setViewer(null)}><section className="dataset-viewer" onClick={e=>e.stopPropagation()}><div className="dataset-viewer-header"><h3>{viewer.name}</h3><button className="close-btn" onClick={()=>setViewer(null)}>×</button></div><div className="dataset-viewer-image">{viewer.imageRefs[0]?<Cached keyId={viewer.imageRefs[0].cacheKey}/>:<div className="dataset-image-empty">No image</div>}</div><div className="dataset-viewer-prompt"><div><strong>Prompt</strong><button type="button" onClick={()=>void navigator.clipboard?.writeText(viewer.prompt)}>Copy</button></div><textarea className="dataset-viewer-prompt-editor" value={viewer.prompt} onChange={e=>{const next=e.target.value;setViewer(v=>v&&v.id===viewer.id?{...v,prompt:next}:v);setPages(ps=>ps.map(p=>p.id===active?{...p,items:p.items.map(x=>x.id===viewer.id?{...x,prompt:next}:x)}:p))}} onClick={e=>e.stopPropagation()} onPointerDown={e=>e.stopPropagation()} placeholder="No prompt provided" aria-label="Edit prompt"/></div></section></div>}
   {step!=='idle' && <div className="dataset-modal-backdrop"><section className="dataset-modal">
     <div className="dataset-modal-header"><h3><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4M9 11h6M9 15h6M9 19h4"/></svg></span> Import Dataset</h3><button className="close-btn" onClick={reset} disabled={step==='importing'}>×</button></div>
     {step==='upload' && <div className="dataset-modal-body dataset-upload-state"><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span><h3>Upload Dataset JSON</h3><p>Import images and prompts into a new page.</p><button className="dataset-primary large" onClick={()=>input.current?.click()}><span className="dataset-inline-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg></span> Select dataset.json</button><input ref={input} type="file" accept=".json,application/json" hidden onChange={upload}/>{err&&<div className="dataset-error">{err}</div>}</div>}
