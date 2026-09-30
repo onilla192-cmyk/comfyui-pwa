@@ -340,11 +340,23 @@ async function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<G
   return Array.from(byId.values()).sort((a, b) => a.createdAt - b.createdAt)
 }
 
+const RECOVERED_FOLDER_NAMES = ['Caucasian Girls', 'Asian Girls', 'Myself', 'My Hunter', 'iPhone Gallery']
+
+function ensureKnownGalleryFolders(folders: GalleryFolder[]): GalleryFolder[] {
+  if (folders.length) return folders
+  const now = Date.now()
+  return RECOVERED_FOLDER_NAMES.map((name, index) => ({
+    id: 'folder-recovered-' + index + '-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    name,
+    createdAt: now + index,
+  }))
+}
+
 async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const stored = await readGalleryDb()
   const legacyItems = stored.items
   const recoveredPresets = await recoverPresetsFromIndexedDb(stored.presets)
-  const recoveredFolders = await recoverFoldersFromIndexedDb(stored.folders)
+  const recoveredFolders = ensureKnownGalleryFolders(await recoverFoldersFromIndexedDb(stored.folders))
   const legacy = loadGallery()
   const hasImageData = await new Promise<boolean>((resolve) => {
     const dbPromise = openGalleryDb()
