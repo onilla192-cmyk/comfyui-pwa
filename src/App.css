@@ -987,7 +987,7 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 }
 .footer-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(2, 48px);
   grid-auto-flow: row;
   gap: 5px;
@@ -1008,6 +1008,21 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
   background: #242832;
   border-color: #343a46;
 }
+.app-footer .icon-btn.active,
+.app-footer .footer-hook-icon:hover,
+.app-footer .footer-menu-icon:hover {
+  background: #242832;
+  border-color: #59616d;
+}
+.app-footer .footer-hook-icon svg,
+.app-footer .footer-menu-icon svg {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .app-footer .icon-btn:active {
   transform: translateY(1px);
 }
