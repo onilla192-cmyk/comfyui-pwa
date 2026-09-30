@@ -516,7 +516,13 @@ export default function App() {
           standbyReleased.current = false
         } else if (remoteStarting || startingComfy) {
           setComfyPowerState('idle')
-        } else if (comfySleeping || remote.comfyui !== 'running') {
+        } else if (remote.comfyui === 'stopped') {
+          // The new Node launcher has only two server states:
+          // stopped = the power button must be available; running = active.
+          setComfyPowerState('off')
+          setComfySleeping(false)
+          standbyReleased.current = false
+        } else if (comfySleeping || remote.comfyui === 'starting') {
           setComfyPowerState('idle')
         } else {
           setComfyPowerState('active')
@@ -1134,6 +1140,10 @@ export default function App() {
       // Stay on the current PWA screen after startup.
     } catch (err) {
       window.clearInterval(timer)
+      setStartProgress(0)
+      setComfyPowerState('off')
+      setComfySleeping(false)
+      standbyReleased.current = false
       setErrorMsg(recordErrorLog(err))
     } finally {
       setRemoteStarting(false)
