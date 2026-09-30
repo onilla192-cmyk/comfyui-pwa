@@ -10564,3 +10564,53 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
 
 
 .settings-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}.settings-section-heading h3{margin-bottom:0}.settings-refresh-btn{border:1px solid #353a45;border-radius:8px;background:#111318;color:#cfd3da;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer}.settings-refresh-btn:active{background:#242832}.settings-refresh-btn:disabled{opacity:.5;cursor:default}.settings-drawer .setting select{min-width:0}.settings-drawer .setting select option{background:#111318;color:#f3f4f6}
+
+
+/* Remote ComfyUI power control */
+.footer-power-btn {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  overflow: hidden;
+}
+.footer-power-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  position: relative;
+  z-index: 2;
+}
+.footer-power-btn.off { color: #fff; }
+.footer-power-btn.active { color: #36e27b; }
+.footer-power-btn.starting { color: #ffd21f; cursor: wait; }
+.footer-power-btn:disabled { cursor: default; }
+.power-progress-ring {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: conic-gradient(currentColor var(--power-progress, 0%), transparent 0);
+  opacity: .28;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+}
+.power-progress-text {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  z-index: 3;
+  font-size: 7px;
+  line-height: 1;
+  font-weight: 700;
+}
