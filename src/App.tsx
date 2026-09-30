@@ -1232,7 +1232,7 @@ export default function App() {
     )}
 
     {galleryOpen ? (
-      <ImageGalleryPage onClose={() => setGalleryOpen(false)} onSetFigure={(which, item) => { void setGalleryImage(which, item); setGalleryOpen(false) }} />
+      <ImageGalleryPage onClose={() => setGalleryOpen(false)} onSetFigure={(which, item) => { void setGalleryImage(which, item) }} />
     ) : (
       <main className="app-main">
       {isBusy && progress && (
