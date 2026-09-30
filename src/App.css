@@ -987,7 +987,7 @@ html:has(.prompt-label-editor-backdrop), body:has(.prompt-label-editor-backdrop)
 }
 .footer-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: repeat(2, 48px);
   grid-auto-flow: row;
   gap: 5px;
@@ -5891,8 +5891,8 @@ button:not(:disabled):focus-visible {
   transition: max-height .2s ease, opacity .15s ease, padding .2s ease;
 }
 .app-footer.footer-expanded .footer-actions {
-  max-height: 70px;
-  min-height: 61px !important;
+  max-height: 112px;
+  min-height: 112px !important;
   padding: 5px !important;
   border-top: 1px solid rgba(84,84,88,.38);
   opacity: 1;
