@@ -30,11 +30,18 @@ export interface WorkflowInputs {
   aspectRatio?: string
   megapixels?: number
   maxDimension?: number
+  unetName?: string
+  clipName?: string
+  vaeName?: string
+  upscaleMethod?: string
 }
 
 export function buildWorkflow(inputs: WorkflowInputs): WorkflowPrompt {
   const workflow: WorkflowPrompt = JSON.parse(JSON.stringify(BASE_WORKFLOW))
   workflow['459:474'].inputs.prompt = inputs.prompt
+  if (inputs.unetName) workflow['459:451'].inputs.unet_name = inputs.unetName
+  if (inputs.clipName) workflow['459:453'].inputs.clip_name = inputs.clipName
+  if (inputs.vaeName) workflow['459:454'].inputs.vae_name = inputs.vaeName
   if (inputs.negativePrompt !== undefined) workflow['459:474'].inputs.negative_prompt = inputs.negativePrompt
   if (inputs.image1) {
     workflow['470'].inputs.image = inputs.image1
@@ -72,6 +79,10 @@ export function buildWorkflow(inputs: WorkflowInputs): WorkflowPrompt {
       '21:9 (Ultrawide)': '21:9 (Ultrawide)',
     }
     workflow['13'].inputs.aspect_ratio = aspectRatioAliases[inputs.aspectRatio] || inputs.aspectRatio
+  }
+  if (inputs.upscaleMethod) {
+    workflow['481'].inputs.upscale_method = inputs.upscaleMethod
+    workflow['482'].inputs.upscale_method = inputs.upscaleMethod
   }
   if (inputs.maxDimension !== undefined) {
     // Make Max Dimension authoritative for the generated output as well as the
