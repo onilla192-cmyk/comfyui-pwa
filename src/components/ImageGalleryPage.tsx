@@ -25,7 +25,7 @@ type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
 const GALLERY_DB_NAME = 'comfyui-pwa-gallery'
-const GALLERY_DB_VERSION = 3
+const GALLERY_DB_VERSION = 6
 const GALLERY_STORE_NAME = 'images'
 const GALLERY_FOLDER_STORE_NAME = 'folders'
 const GALLERY_PRESET_STORE_NAME = 'presets'
@@ -44,6 +44,8 @@ function openGalleryDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(GALLERY_DB_NAME, GALLERY_DB_VERSION)
     request.onupgradeneeded = () => {
       const db = request.result
+      // Never remove or clear existing stores while opening an older gallery database.
+      // This also lets the restored app read presets from a newer IndexedDB version.
       if (!db.objectStoreNames.contains(GALLERY_STORE_NAME)) db.createObjectStore(GALLERY_STORE_NAME, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(GALLERY_FOLDER_STORE_NAME)) db.createObjectStore(GALLERY_FOLDER_STORE_NAME, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(GALLERY_PRESET_STORE_NAME)) db.createObjectStore(GALLERY_PRESET_STORE_NAME, { keyPath: 'id' })
@@ -152,10 +154,11 @@ export function ImageGalleryPage({
       setStorageReady(true)
     }).catch(() => {
       if (!active) return
+      // Do not mark storage ready after a failed IndexedDB read. Otherwise the
+      // save effect could clear a database containing recoverable presets.
       setItems(loadGallery())
       setFolders([])
       setPresets([])
-      setStorageReady(true)
     })
     return () => { active = false }
   }, [])
