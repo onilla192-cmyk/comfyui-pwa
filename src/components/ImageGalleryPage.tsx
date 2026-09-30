@@ -197,9 +197,79 @@ async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], pr
   })
 }
 
+
+function looksLikeGalleryPreset(value: unknown): value is GalleryPreset {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Record<string, unknown>
+  return typeof item.title === 'string' && typeof item.prompt === 'string'
+}
+
+async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<GalleryPreset[]> {
+  const byId = new Map(existing.map((preset) => [preset.id, preset]))
+  const databases: string[] = []
+  try {
+    if (typeof indexedDB.databases === 'function') {
+      const entries = await indexedDB.databases()
+      for (const entry of entries) if (entry.name && !databases.includes(entry.name)) databases.push(entry.name)
+    }
+  } catch {}
+  if (!databases.includes(GALLERY_DB_NAME)) databases.push(GALLERY_DB_NAME)
+
+  for (const databaseName of databases) {
+    let db: IDBDatabase
+    try {
+      db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(databaseName)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error || new Error('Could not open IndexedDB database'))
+      })
+    } catch { continue }
+
+    try {
+      const storeNames = Array.from(db.objectStoreNames)
+      if (!storeNames.length) continue
+      await new Promise<void>((resolve) => {
+        let remaining = storeNames.length
+        const finish = () => { remaining -= 1; if (remaining <= 0) resolve() }
+        let tx: IDBTransaction
+        try { tx = db.transaction(storeNames, 'readonly') } catch { resolve(); return }
+        for (const storeName of storeNames) {
+          const request = tx.objectStore(storeName).openCursor()
+          request.onsuccess = () => {
+            const cursor = request.result
+            if (!cursor) { finish(); return }
+            const value = cursor.value
+            if (looksLikeGalleryPreset(value)) {
+              const item = value as Partial<GalleryPreset>
+              const id = typeof item.id === 'string' && item.id
+                ? item.id
+                : 'preset-recovered-' + Date.now() + '-' + Math.random().toString(36).slice(2)
+              if (!byId.has(id)) {
+                byId.set(id, {
+                  id,
+                  title: item.title!,
+                  prompt: item.prompt!,
+                  createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
+                })
+              }
+            }
+            cursor.continue()
+          }
+          request.onerror = () => finish()
+        }
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => resolve()
+        tx.onabort = () => resolve()
+      })
+    } finally { db.close() }
+  }
+  return Array.from(byId.values()).sort((a, b) => a.createdAt - b.createdAt)
+}
+
 async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const stored = await readGalleryDb()
   const legacyItems = stored.items
+  const recoveredPresets = await recoverPresetsFromIndexedDb(stored.presets)
   const legacy = loadGallery()
   const hasImageData = await new Promise<boolean>((resolve) => {
     const dbPromise = openGalleryDb()
@@ -238,9 +308,9 @@ async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: 
         tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not migrate gallery metadata')) }
       })
     }
-    return { items: sourceItems.map((item) => ({ ...item, src: '' })), folders: stored.folders, presets: stored.presets }
+    return { items: sourceItems.map((item) => ({ ...item, src: '' })), folders: stored.folders, presets: recoveredPresets }
   }
-  return { items: legacyItems, folders: stored.folders, presets: stored.presets }
+  return { items: legacyItems, folders: stored.folders, presets: recoveredPresets }
 }
 
 export function ImageGalleryPage({
