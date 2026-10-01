@@ -10732,3 +10732,8 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   text-align: center;
   color: #7f8795;
 }
+/* Keep the Created Presets data available to Edit/Delete, but hide the
+   inline preset list from the Gallery Menu. */
+.gallery-sidebar-preset-list {
+  display: none !important;
+}
