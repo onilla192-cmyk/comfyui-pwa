@@ -1,0 +1,8 @@
+{
+  "name": "comfyui-pwa-cloudflare",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npm --prefix comfyui-pwa-backup-2026-09-30 install --no-audit --no-fund && npm --prefix comfyui-pwa-backup-2026-09-30 run build"
+  }
+}
