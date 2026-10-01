@@ -2430,6 +2430,13 @@ function IndexedDbInspector({
   const [recordsError, setRecordsError] = useState('')
   const [selectedRecord, setSelectedRecord] = useState<{ key: string; value: unknown } | null>(null)
   const [recordLoading, setRecordLoading] = useState(false)
+  const [recordPreviewUrl, setRecordPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (recordPreviewUrl) URL.revokeObjectURL(recordPreviewUrl)
+    }
+  }, [recordPreviewUrl])
 
   const load = async () => {
     setLoading(true)
@@ -2460,10 +2467,19 @@ function IndexedDbInspector({
 
   async function openRecord(key: { key: string; rawKey: IDBValidKey }) {
     if (!selectedStore) return
+    if (recordPreviewUrl) {
+      URL.revokeObjectURL(recordPreviewUrl)
+      setRecordPreviewUrl(null)
+    }
     setSelectedRecord({ key: key.key, value: null })
     setRecordLoading(true)
     try {
       const value = await inspectRecord(selectedStore.databaseName, selectedStore.storeName, key.rawKey)
+      if (value instanceof Blob) {
+        setRecordPreviewUrl(URL.createObjectURL(value))
+      } else if (value instanceof ArrayBuffer) {
+        setRecordPreviewUrl(URL.createObjectURL(new Blob([value])))
+      }
       setSelectedRecord({ key: key.key, value })
     } catch (e) {
       setSelectedRecord({ key: key.key, value: { error: e instanceof Error ? e.message : 'Could not read record.' } })
@@ -2493,7 +2509,10 @@ function IndexedDbInspector({
         {selectedStore ? (
           <>
             <div className="indexeddb-records-header">
-              <button type="button" className="indexeddb-back-btn" onClick={() => { setSelectedStore(null); setStoreKeys([]); setSelectedRecord(null) }}>← Databases</button>
+              <button type="button" className="indexeddb-back-btn" onClick={() => {
+                if (recordPreviewUrl) { URL.revokeObjectURL(recordPreviewUrl); setRecordPreviewUrl(null) }
+                setSelectedStore(null); setStoreKeys([]); setSelectedRecord(null)
+              }}>← Databases</button>
               <div>
                 <strong>{selectedStore.databaseName}</strong>
                 <span>{selectedStore.storeName} · {selectedStore.count} record{selectedStore.count === 1 ? '' : 's'}</span>
@@ -2502,17 +2521,25 @@ function IndexedDbInspector({
 
             {selectedRecord ? (
               <div className="indexeddb-record-detail">
-                <button type="button" className="indexeddb-back-btn" onClick={() => setSelectedRecord(null)}>← Records</button>
+                <button type="button" className="indexeddb-back-btn" onClick={() => {
+                  if (recordPreviewUrl) { URL.revokeObjectURL(recordPreviewUrl); setRecordPreviewUrl(null) }
+                  setSelectedRecord(null)
+                }}>← Records</button>
                 <div className="indexeddb-record-title">{selectedRecord.key}</div>
                 {recordLoading ? <div className="indexeddb-inspector-empty">Reading record…</div> : (() => {
                   const value = selectedRecord.value as { src?: unknown; data?: unknown; mimeType?: unknown } | null
-                  const src = typeof value?.src === 'string' ? value.src : typeof value?.data === 'string' && value.data.startsWith('data:image/') ? value.data : ''
+                  const src = typeof value?.src === 'string'
+                    ? value.src
+                    : typeof value?.data === 'string' && value.data.startsWith('data:image/')
+                      ? value.data
+                      : recordPreviewUrl
+                  const blob = value instanceof Blob ? value : null
                   return src ? (
                     <div className="indexeddb-image-preview">
                       <img src={src} alt={selectedRecord.key} />
                       <div className="indexeddb-image-meta">
                         <span>Image data</span>
-                        <small>{src.startsWith('data:') ? 'Data URL stored in IndexedDB' : 'Image source stored in IndexedDB'}</small>
+                        <small>{blob ? `${blob.type || 'image'} · ${Math.round(blob.size / 1024)} KB · Blob stored in IndexedDB` : 'Image source stored in IndexedDB'}</small>
                       </div>
                     </div>
                   ) : (
