@@ -1,11 +1,11 @@
-export interface GalleryPreset {
+export interface CreatedPreset {
   id: string
   title: string
   prompt: string
   createdAt: number
 }
 
-const DB_NAME = 'comfyui-pwa-gallery'
+const DB_NAME = 'comfyui-pwa-created-presets'
 const PRESET_STORE = 'presets'
 
 function openDb(): Promise<IDBDatabase> {
@@ -13,9 +13,6 @@ function openDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME)
     request.onupgradeneeded = () => {
       const db = request.result
-      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('imageData')) db.createObjectStore('imageData', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('folders')) db.createObjectStore('folders', { keyPath: 'id' })
       if (!db.objectStoreNames.contains(PRESET_STORE)) db.createObjectStore(PRESET_STORE, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
@@ -23,14 +20,66 @@ function openDb(): Promise<IDBDatabase> {
   })
 }
 
-export async function readCreatedPresets(): Promise<GalleryPreset[]> {
+async function importLegacyPresetRecords(): Promise<void> {
+  if (typeof indexedDB.databases !== 'function') return
+  let databases: Array<{ name?: string }> = []
+  try { databases = await indexedDB.databases() } catch { return }
+  const target = DB_NAME
+  const candidates = databases.map((entry) => entry.name).filter((name): name is string => !!name && name !== target)
+  if (!candidates.length) return
+  const imported: CreatedPreset[] = []
+  for (const databaseName of candidates) {
+    try {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(databaseName)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+      if (!db.objectStoreNames.contains(PRESET_STORE)) { db.close(); continue }
+      const records = await new Promise<unknown[]>((resolve, reject) => {
+        const request = db.transaction(PRESET_STORE, 'readonly').objectStore(PRESET_STORE).getAll()
+        request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : [])
+        request.onerror = () => reject(request.error)
+      })
+      db.close()
+      records.forEach((value) => {
+        if (!value || typeof value !== 'object') return
+        const item = value as Record<string, unknown>
+        if (typeof item.id !== 'string' || typeof item.title !== 'string' || typeof item.prompt !== 'string') return
+        imported.push({
+          id: item.id,
+          title: item.title,
+          prompt: item.prompt,
+          createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
+        })
+      })
+    } catch {}
+  }
+  if (!imported.length) return
+  const current = await readCreatedPresetsInternal()
+  const ids = new Set(current.map((p) => p.id))
+  const titles = new Set(current.map((p) => p.title.toLowerCase()))
+  const toAdd = imported.filter((p) => !ids.has(p.id) && !titles.has(p.title.toLowerCase()))
+  if (!toAdd.length) return
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(PRESET_STORE, 'readwrite')
+    const store = tx.objectStore(PRESET_STORE)
+    toAdd.forEach((p) => store.put(p))
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not migrate presets')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not migrate presets')) }
+  })
+}
+
+async function readCreatedPresetsInternal(): Promise<CreatedPreset[]> {
   const db = await openDb()
   return new Promise((resolve, reject) => {
     const request = db.transaction(PRESET_STORE, 'readonly').objectStore(PRESET_STORE).getAll()
     request.onsuccess = () => {
       db.close()
       const values = Array.isArray(request.result) ? request.result : []
-      resolve(values.filter((v): v is GalleryPreset =>
+      resolve(values.filter((v): v is CreatedPreset =>
         !!v && typeof v.id === 'string' && typeof v.title === 'string' && typeof v.prompt === 'string'
       ).sort((a, b) => a.createdAt - b.createdAt))
     }
@@ -38,7 +87,12 @@ export async function readCreatedPresets(): Promise<GalleryPreset[]> {
   })
 }
 
-export async function createCreatedPreset(title: string, prompt: string): Promise<GalleryPreset> {
+export async function readCreatedPresets(): Promise<CreatedPreset[]> {
+  await importLegacyPresetRecords()
+  return readCreatedPresetsInternal()
+}
+
+export async function createCreatedPreset(title: string, prompt: string): Promise<CreatedPreset> {
   const cleanTitle = title.trim()
   const cleanPrompt = prompt.trim()
   if (!cleanTitle || !cleanPrompt) throw new Error('Preset title and prompt are required.')
@@ -46,12 +100,12 @@ export async function createCreatedPreset(title: string, prompt: string): Promis
   if (existing.some((p) => p.title.toLowerCase() === cleanTitle.toLowerCase())) {
     throw new Error('A preset with that title already exists.')
   }
-  const preset: GalleryPreset = { id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2), title: cleanTitle, prompt: cleanPrompt, createdAt: Date.now() }
+  const preset: CreatedPreset = { id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2), title: cleanTitle, prompt: cleanPrompt, createdAt: Date.now() }
   await putCreatedPreset(preset)
   return preset
 }
 
-export async function updateCreatedPreset(id: string, title: string, prompt: string): Promise<GalleryPreset> {
+export async function updateCreatedPreset(id: string, title: string, prompt: string): Promise<CreatedPreset> {
   const cleanTitle = title.trim()
   const cleanPrompt = prompt.trim()
   if (!cleanTitle || !cleanPrompt) throw new Error('Preset title and prompt are required.')
@@ -66,7 +120,7 @@ export async function updateCreatedPreset(id: string, title: string, prompt: str
   return updated
 }
 
-async function putCreatedPreset(preset: GalleryPreset): Promise<void> {
+async function putCreatedPreset(preset: CreatedPreset): Promise<void> {
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(PRESET_STORE, 'readwrite')
@@ -88,7 +142,7 @@ export async function deleteCreatedPreset(id: string): Promise<void> {
   })
 }
 
-export function exportCreatedPresets(presets: GalleryPreset[]): void {
+export function exportCreatedPresets(presets: CreatedPreset[]): void {
   const payload = { format: 'comfyui-pwa-created-presets', version: 1, exportedAt: new Date().toISOString(), presets }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
