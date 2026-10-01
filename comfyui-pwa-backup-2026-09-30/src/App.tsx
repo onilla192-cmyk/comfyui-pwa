@@ -256,6 +256,73 @@ export default function App() {
     return output
   }
 
+  async function inspectIndexedDbKeys(databaseName: string, storeName: string): Promise<Array<{ key: string; rawKey: IDBValidKey }>> {
+    if (!('indexedDB' in window)) return []
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error || new Error('Could not open IndexedDB database.'))
+    })
+    return new Promise((resolve, reject) => {
+      const keys: Array<{ key: string; rawKey: IDBValidKey }> = []
+      let settled = false
+      const finish = (error?: unknown) => {
+        if (settled) return
+        settled = true
+        db.close()
+        if (error) reject(error)
+        else resolve(keys)
+      }
+      try {
+        const tx = db.transaction(storeName, 'readonly')
+        const request = tx.objectStore(storeName).openKeyCursor()
+        request.onsuccess = () => {
+          const cursor = request.result
+          if (!cursor) {
+            finish()
+            return
+          }
+          keys.push({ key: typeof cursor.key === 'string' ? cursor.key : JSON.stringify(cursor.key), rawKey: cursor.key })
+          cursor.continue()
+        }
+        request.onerror = () => finish(request.error || new Error('Could not read IndexedDB records.'))
+        tx.onerror = () => finish(tx.error || new Error('Could not read IndexedDB records.'))
+        tx.onabort = () => finish(tx.error || new Error('Could not read IndexedDB records.'))
+      } catch (error) {
+        finish(error)
+      }
+    })
+  }
+
+  async function inspectIndexedDbRecord(databaseName: string, storeName: string, key: IDBValidKey): Promise<unknown> {
+    if (!('indexedDB' in window)) return null
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error || new Error('Could not open IndexedDB database.'))
+    })
+    return new Promise((resolve, reject) => {
+      let settled = false
+      const finish = (error?: unknown, value?: unknown) => {
+        if (settled) return
+        settled = true
+        db.close()
+        if (error) reject(error)
+        else resolve(value)
+      }
+      try {
+        const tx = db.transaction(storeName, 'readonly')
+        const request = tx.objectStore(storeName).get(key)
+        request.onsuccess = () => finish(undefined, request.result ?? null)
+        request.onerror = () => finish(request.error || new Error('Could not read IndexedDB record.'))
+        tx.onerror = () => finish(tx.error || new Error('Could not read IndexedDB record.'))
+        tx.onabort = () => finish(tx.error || new Error('Could not read IndexedDB record.'))
+      } catch (error) {
+        finish(error)
+      }
+    })
+  }
+
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
 
   function comboOptions(data: any, nodeType: string, inputName: string): string[] {
@@ -1984,7 +2051,7 @@ export default function App() {
         </section>
       </div>}
 
-      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => setIndexedDbInspectorOpen(false)} inspect={inspectIndexedDb} />}
+      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => setIndexedDbInspectorOpen(false)} inspect={inspectIndexedDb} inspectKeys={inspectIndexedDbKeys} inspectRecord={inspectIndexedDbRecord} />}
 
       {historyOpen && <div className="history-backdrop" onClick={() => setHistoryOpen(false)}>
         <section className="history-panel" onClick={(e) => e.stopPropagation()}>
@@ -2343,10 +2410,27 @@ function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: 
   )
 }
 
-function IndexedDbInspector({ onClose, inspect }: { onClose: () => void; inspect: () => Promise<Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }>> }) {
+function IndexedDbInspector({
+  onClose,
+  inspect,
+  inspectKeys,
+  inspectRecord,
+}: {
+  onClose: () => void
+  inspect: () => Promise<Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }>>
+  inspectKeys: (databaseName: string, storeName: string) => Promise<Array<{ key: string; rawKey: IDBValidKey }>>
+  inspectRecord: (databaseName: string, storeName: string, key: IDBValidKey) => Promise<unknown>
+}) {
   const [loading, setLoading] = useState(true)
   const [databases, setDatabases] = useState<Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }>>([])
   const [error, setError] = useState('')
+  const [selectedStore, setSelectedStore] = useState<{ databaseName: string; storeName: string; count: number } | null>(null)
+  const [storeKeys, setStoreKeys] = useState<Array<{ key: string; rawKey: IDBValidKey }>>([])
+  const [recordsLoading, setRecordsLoading] = useState(false)
+  const [recordsError, setRecordsError] = useState('')
+  const [selectedRecord, setSelectedRecord] = useState<{ key: string; value: unknown } | null>(null)
+  const [recordLoading, setRecordLoading] = useState(false)
+
   const load = async () => {
     setLoading(true)
     setError('')
@@ -2358,18 +2442,111 @@ function IndexedDbInspector({ onClose, inspect }: { onClose: () => void; inspect
       setLoading(false)
     }
   }
+
+  async function openStore(databaseName: string, storeName: string, count: number) {
+    setSelectedStore({ databaseName, storeName, count })
+    setSelectedRecord(null)
+    setRecordsLoading(true)
+    setRecordsError('')
+    try {
+      setStoreKeys(await inspectKeys(databaseName, storeName))
+    } catch (e) {
+      setStoreKeys([])
+      setRecordsError(e instanceof Error ? e.message : 'Could not read IndexedDB records.')
+    } finally {
+      setRecordsLoading(false)
+    }
+  }
+
+  async function openRecord(key: { key: string; rawKey: IDBValidKey }) {
+    if (!selectedStore) return
+    setSelectedRecord({ key: key.key, value: null })
+    setRecordLoading(true)
+    try {
+      const value = await inspectRecord(selectedStore.databaseName, selectedStore.storeName, key.rawKey)
+      setSelectedRecord({ key: key.key, value })
+    } catch (e) {
+      setSelectedRecord({ key: key.key, value: { error: e instanceof Error ? e.message : 'Could not read record.' } })
+    } finally {
+      setRecordLoading(false)
+    }
+  }
+
   useEffect(() => { void load() }, [])
+
+  const isImageRecord = selectedStore?.storeName.toLowerCase().includes('imagedata') || selectedStore?.storeName.toLowerCase().includes('image')
+
   return <div className="indexeddb-inspector-backdrop" onClick={onClose}>
     <section className="indexeddb-inspector" onClick={(e) => e.stopPropagation()}>
       <header className="indexeddb-inspector-header">
-        <div><h2>IndexedDB Inspector</h2><span>Read-only browser storage view</span></div>
-        <div className="indexeddb-inspector-actions"><button type="button" onClick={() => void load()} disabled={loading}>{loading ? 'Reading…' : 'Refresh'}</button><button type="button" onClick={onClose} aria-label="Close">×</button></div>
+        <div>
+          <h2>IndexedDB Inspector</h2>
+          <span>Read-only browser storage view</span>
+        </div>
+        <div className="indexeddb-inspector-actions">
+          <button type="button" onClick={() => void load()} disabled={loading}>{loading ? 'Reading…' : 'Refresh'}</button>
+          <button type="button" onClick={onClose} aria-label="Close">×</button>
+        </div>
       </header>
+
       <div className="indexeddb-inspector-body">
-        {loading ? <div className="indexeddb-inspector-empty">Reading IndexedDB…</div> : error ? <div className="indexeddb-inspector-error">{error}</div> : databases.length ? databases.map((db) => <article className="indexeddb-db" key={db.name}>
-          <div className="indexeddb-db-title"><strong>{db.name}</strong><span>Version {db.version}</span></div>
-          {db.stores.length ? <div className="indexeddb-store-list">{db.stores.map((store) => <div className="indexeddb-store" key={store.name}><span>{store.name}</span><b>{store.count < 0 ? '—' : store.count}</b></div>)}</div> : <div className="indexeddb-no-stores">No object stores.</div>}
-        </article>) : <div className="indexeddb-inspector-empty">No IndexedDB databases were found.</div>}
+        {selectedStore ? (
+          <>
+            <div className="indexeddb-records-header">
+              <button type="button" className="indexeddb-back-btn" onClick={() => { setSelectedStore(null); setStoreKeys([]); setSelectedRecord(null) }}>← Databases</button>
+              <div>
+                <strong>{selectedStore.databaseName}</strong>
+                <span>{selectedStore.storeName} · {selectedStore.count} record{selectedStore.count === 1 ? '' : 's'}</span>
+              </div>
+            </div>
+
+            {selectedRecord ? (
+              <div className="indexeddb-record-detail">
+                <button type="button" className="indexeddb-back-btn" onClick={() => setSelectedRecord(null)}>← Records</button>
+                <div className="indexeddb-record-title">{selectedRecord.key}</div>
+                {recordLoading ? <div className="indexeddb-inspector-empty">Reading record…</div> : (() => {
+                  const value = selectedRecord.value as { src?: unknown; data?: unknown; mimeType?: unknown } | null
+                  const src = typeof value?.src === 'string' ? value.src : typeof value?.data === 'string' && value.data.startsWith('data:image/') ? value.data : ''
+                  return src ? (
+                    <div className="indexeddb-image-preview">
+                      <img src={src} alt={selectedRecord.key} />
+                      <div className="indexeddb-image-meta">
+                        <span>Image data</span>
+                        <small>{src.startsWith('data:') ? 'Data URL stored in IndexedDB' : 'Image source stored in IndexedDB'}</small>
+                      </div>
+                    </div>
+                  ) : (
+                    <pre className="indexeddb-record-json">{JSON.stringify(selectedRecord.value, null, 2)}</pre>
+                  )
+                })()}
+              </div>
+            ) : (
+              <>
+                <div className="indexeddb-records-note">{isImageRecord ? 'Tap an image record to view the image stored inside IndexedDB.' : 'Tap a record to inspect its contents.'}</div>
+                {recordsLoading ? <div className="indexeddb-inspector-empty">Reading records…</div> : recordsError ? <div className="indexeddb-inspector-error">{recordsError}</div> : storeKeys.length ? (
+                  <div className="indexeddb-record-list">
+                    {storeKeys.map((record) => (
+                      <button type="button" className="indexeddb-record-row" key={record.key} onClick={() => void openRecord(record)}>
+                        {isImageRecord ? <span className="indexeddb-record-thumb"><span>IMG</span></span> : <span className="indexeddb-record-generic">DB</span>}
+                        <span className="indexeddb-record-key">{record.key}</span>
+                        <span className="indexeddb-record-chevron">›</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : <div className="indexeddb-inspector-empty">This object store is empty.</div>}
+              </>
+            )}
+          </>
+        ) : (
+          loading ? <div className="indexeddb-inspector-empty">Reading IndexedDB…</div> : error ? <div className="indexeddb-inspector-error">{error}</div> : databases.length ? databases.map((db) => <article className="indexeddb-db" key={db.name}>
+            <div className="indexeddb-db-title"><strong>{db.name}</strong><span>Version {db.version}</span></div>
+            {db.stores.length ? <div className="indexeddb-store-list">{db.stores.map((store) => (
+              <button type="button" className="indexeddb-store indexeddb-store-button" key={store.name} onClick={() => void openStore(db.name, store.name, store.count)}>
+                <span>{store.name}</span><b>{store.count < 0 ? '—' : store.count}</b><i>›</i>
+              </button>
+            ))}</div> : <div className="indexeddb-no-stores">No object stores.</div>}
+          </article>) : <div className="indexeddb-inspector-empty">No IndexedDB databases were found.</div>
+        )}
       </div>
     </section>
   </div>
