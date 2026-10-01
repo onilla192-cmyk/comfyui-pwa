@@ -2537,7 +2537,7 @@ function IndexedDbInspector({
       <header className="indexeddb-inspector-header">
         <div>
           <h2>IndexedDB Inspector</h2>
-          <span>Read-only browser storage view</span>
+          <span>Browser storage view</span>
         </div>
         <div className="indexeddb-inspector-actions">
           <button type="button" onClick={() => void load()} disabled={loading}>{loading ? 'Reading…' : 'Refresh'}</button>
