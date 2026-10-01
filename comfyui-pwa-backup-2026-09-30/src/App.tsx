@@ -2307,7 +2307,7 @@ export default function App() {
           <span className="footer-menu-chevron" aria-hidden="true" />
         </button>
         <div className="footer-actions">
-n className="icon-btn logs-icon" type="button" onClick={() => setLogsOpen(true)} aria-label="Open launcher logs" title="Launcher logs">
+        <button className="icon-btn logs-icon" type="button" onClick={() => setLogsOpen(true)} aria-label="Open launcher logs" title="Launcher logs">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
         </button>
         <button className="icon-btn gallery-icon" type="button" onClick={() => { setGalleryOpen(true); setFooterExpanded(false) }} aria-label="Open image gallery" title="Image Gallery">
