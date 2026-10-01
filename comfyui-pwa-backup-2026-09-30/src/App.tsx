@@ -1315,7 +1315,13 @@ export default function App() {
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
   return <div className="app">
-    <header className="app-empty-header" aria-hidden="true" />
+    <header className="app-empty-header">
+      <button type="button" className="main-header-menu-button" aria-label="Open menu" title="Menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
+    </header>
     {logsOpen && <div className="logs-backdrop" onClick={() => setLogsOpen(false)}>
       <section className="logs-panel" onClick={(e) => e.stopPropagation()}>
         <div className="logs-header">
