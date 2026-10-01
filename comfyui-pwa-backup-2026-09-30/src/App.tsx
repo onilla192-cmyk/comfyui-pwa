@@ -428,7 +428,7 @@ export default function App() {
 
   const refreshGalleryPresets = async () => {
     try {
-      const presets = await readGalleryPresets()
+      const presets = await readCreatedPresets()
       setGalleryPresets(presets)
     } catch {
       setGalleryPresets([])
