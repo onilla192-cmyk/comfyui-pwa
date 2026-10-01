@@ -1,0 +1,2 @@
+name = "comfyui-pwa"
+pages_build_output_dir = "./comfyui-pwa-backup-2026-09-30/dist"
