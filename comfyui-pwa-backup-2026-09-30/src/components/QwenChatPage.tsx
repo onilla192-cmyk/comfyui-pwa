@@ -279,6 +279,15 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
     }
   }
 
+  function sendToMainPrompt(message: QwenChatMessage) {
+    const confirmed = window.confirm(
+      'Send this Qwen response to the Main Prompt box? This will replace the current Main Prompt text, but your Hook Prompts will remain unchanged.'
+    )
+    if (!confirmed) return
+
+    window.dispatchEvent(new CustomEvent('qwen-send-to-main-prompt', { detail: message.text }))
+  }
+
   async function copyCode(code: string, id: string) {
     try {
       await navigator.clipboard.writeText(code)
@@ -476,14 +485,23 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
                 : <p>{message.text}</p>}
             </div>
             {message.role === 'assistant' && (
-              <button
-                type="button"
-                className={`qwen-chat-copy ${copiedId === message.id ? 'copied' : ''}`}
-                onClick={() => void copyMessage(message)}
-                aria-label={copiedId === message.id ? 'Copied Qwen message' : 'Copy Qwen message'}
-              >
-                {copiedId === message.id ? '✓ Copied' : 'Copy'}
-              </button>
+              <div className="qwen-chat-response-actions">
+                <button
+                  type="button"
+                  className={`qwen-chat-copy ${copiedId === message.id ? 'copied' : ''}`}
+                  onClick={() => void copyMessage(message)}
+                  aria-label={copiedId === message.id ? 'Copied Qwen message' : 'Copy Qwen message'}
+                >
+                  {copiedId === message.id ? '✓ Copied' : 'Copy'}
+                </button>
+                <button
+                  type="button"
+                  className="qwen-chat-send-to-prompt"
+                  onClick={() => sendToMainPrompt(message)}
+                >
+                  Send to Prompt
+                </button>
+              </div>
             )}
           </article>
         ))}
