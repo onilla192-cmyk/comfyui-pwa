@@ -6115,7 +6115,6 @@ button:not(:disabled):focus-visible {
 .dataset-danger:active{transform:translateY(2px);box-shadow:0 0 0 #641010}
 .dataset-danger:disabled{opacity:.45;cursor:not-allowed}
 
-/* Final imported dataset gallery sizing */
 .dataset-page-content .dataset-record-grid{display:grid !important;grid-template-columns:repeat(5,minmax(0,1fr)) !important;gap:8px !important;align-items:start !important}
 .dataset-page-content .dataset-record{min-width:0 !important}
 @media (max-width:1100px){.dataset-page-content .dataset-record-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important}}
@@ -8483,7 +8482,6 @@ body:has(.dataset-page) .dataset-record-grid{
 }
 
 
-/* Dataset records — polished gallery cards */
 body:has(.dataset-page) .dataset-record{
   position:relative !important;
   overflow:hidden !important;
