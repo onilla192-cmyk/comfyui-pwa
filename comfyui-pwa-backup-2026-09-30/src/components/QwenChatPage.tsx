@@ -69,6 +69,8 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const [activeChatId, setActiveChatId] = useState('')
   const [loadingChats, setLoadingChats] = useState(true)
   const [chatListOpen, setChatListOpen] = useState(false)
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null)
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -132,6 +134,16 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   }, [activeChatId, messages])
 
   useEffect(() => {
+    if (!backgroundFile) {
+      setBackgroundUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(backgroundFile)
+    setBackgroundUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [backgroundFile])
+
+  useEffect(() => {
     if (!imageFile) {
       setImagePreview(null)
       return
@@ -149,6 +161,15 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
 
   function removeImage() {
     setImageFile(null)
+  }
+
+  function handleBackground(file?: File) {
+    if (!file) return
+    setBackgroundFile(file)
+  }
+
+  function removeBackground() {
+    setBackgroundFile(null)
   }
 
   function updateChat(chatId: string, updater: (chat: QwenChat) => QwenChat) {
@@ -304,7 +325,11 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <section className={`qwen-chat-page ${composerExpanded ? 'composer-expanded' : ''}`} aria-label="Qwen Chat">
+    <section
+      className={`qwen-chat-page ${composerExpanded ? 'composer-expanded' : ''}${backgroundUrl ? ' has-background' : ''}`}
+      aria-label="Qwen Chat"
+      style={backgroundUrl ? ({ '--qwen-chat-background': `url("${backgroundUrl}")` } as CSSProperties) : undefined}
+    >
       <header className="qwen-chat-header">
         <button
           type="button"
@@ -321,7 +346,24 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
           <h2>{activeChat?.title || 'Qwen Chat'}</h2>
           <span>Qwen3.5 4B · Hauhau · ComfyUI</span>
         </div>
-        <button type="button" className="close-btn" onClick={onClose} aria-label="Close Qwen Chat">×</button>
+        <div className="qwen-chat-header-actions">
+          <label className={`qwen-chat-background-btn${backgroundUrl ? ' active' : ''}`} title="Set chat background">
+            <span aria-hidden="true">▧</span>
+            <span className="qwen-chat-background-label">Background</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={(event) => {
+                handleBackground(event.target.files?.[0])
+                event.currentTarget.value = ''
+              }}
+            />
+          </label>
+          {backgroundUrl && (
+            <button type="button" className="qwen-chat-background-remove" onClick={removeBackground} aria-label="Remove chat background" title="Remove background">×</button>
+          )}
+          <button type="button" className="close-btn" onClick={onClose} aria-label="Close Qwen Chat">×</button>
+        </div>
       </header>
 
       {chatListOpen && (
