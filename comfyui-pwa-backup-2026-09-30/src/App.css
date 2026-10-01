@@ -10667,6 +10667,25 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   color: #f3f4f6;
   box-shadow: 0 20px 50px rgba(0,0,0,.45);
 }
+.preset-popup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.preset-import-btn {
+  border: 1px solid #3b414d;
+  border-radius: 9px;
+  padding: 7px 10px;
+  background: #20242d;
+  color: #f3f4f6;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.preset-import-btn:active {
+  transform: translateY(1px);
+  background: #293149;
+}
 .preset-popup-header {
   flex: 0 0 auto;
   display: flex;
