@@ -17,8 +17,10 @@ export type QwenChat = {
 const DB_NAME = 'qwen-chat-db-v1'
 const STORE_NAME = 'state'
 const BACKGROUND_STORE_NAME = 'background'
+const AVATAR_STORE_NAME = 'avatar'
 const STATE_KEY = 'singleton'
 const BACKGROUND_KEY = 'current'
+const QWEN_AVATAR_KEY = 'qwen'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -31,6 +33,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(BACKGROUND_STORE_NAME)) {
         db.createObjectStore(BACKGROUND_STORE_NAME)
+      }
+      if (!db.objectStoreNames.contains(AVATAR_STORE_NAME)) {
+        db.createObjectStore(AVATAR_STORE_NAME)
       }
     }
 
@@ -129,6 +134,64 @@ export async function clearQwenChatBackground(): Promise<void> {
 
     transaction.onerror = () => {
       const error = transaction.error || new Error('Could not remove the Qwen chat background.')
+      db.close()
+      reject(error)
+    }
+  })
+}
+
+
+export async function loadQwenAvatar(): Promise<Blob | null> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(AVATAR_STORE_NAME, 'readonly')
+    const request = transaction.objectStore(AVATAR_STORE_NAME).get(QWEN_AVATAR_KEY)
+
+    request.onsuccess = () => {
+      const value = request.result
+      resolve(value instanceof Blob ? value : null)
+      db.close()
+    }
+
+    request.onerror = () => {
+      reject(request.error || new Error('Could not read the Qwen avatar.'))
+      db.close()
+    }
+  })
+}
+
+export async function saveQwenAvatar(avatar: Blob): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(AVATAR_STORE_NAME, 'readwrite')
+    transaction.objectStore(AVATAR_STORE_NAME).put(avatar, QWEN_AVATAR_KEY)
+
+    transaction.oncomplete = () => {
+      db.close()
+      resolve()
+    }
+
+    transaction.onerror = () => {
+      const error = transaction.error || new Error('Could not save the Qwen avatar.')
+      db.close()
+      reject(error)
+    }
+  })
+}
+
+export async function clearQwenAvatar(): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(AVATAR_STORE_NAME, 'readwrite')
+    transaction.objectStore(AVATAR_STORE_NAME).delete(QWEN_AVATAR_KEY)
+
+    transaction.oncomplete = () => {
+      db.close()
+      resolve()
+    }
+
+    transaction.onerror = () => {
+      const error = transaction.error || new Error('Could not remove the Qwen avatar.')
       db.close()
       reject(error)
     }
