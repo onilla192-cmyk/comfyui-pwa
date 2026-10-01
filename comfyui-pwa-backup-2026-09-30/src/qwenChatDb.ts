@@ -18,13 +18,15 @@ const DB_NAME = 'qwen-chat-db-v1'
 const STORE_NAME = 'state'
 const BACKGROUND_STORE_NAME = 'background'
 const AVATAR_STORE_NAME = 'avatar'
+const USER_AVATAR_STORE_NAME = 'user-avatar'
 const STATE_KEY = 'singleton'
 const BACKGROUND_KEY = 'current'
 const QWEN_AVATAR_KEY = 'qwen'
+const USER_AVATAR_KEY = 'user'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 3)
+    const request = indexedDB.open(DB_NAME, 4)
 
     request.onupgradeneeded = () => {
       const db = request.result
@@ -36,6 +38,9 @@ function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(AVATAR_STORE_NAME)) {
         db.createObjectStore(AVATAR_STORE_NAME)
+      }
+      if (!db.objectStoreNames.contains(USER_AVATAR_STORE_NAME)) {
+        db.createObjectStore(USER_AVATAR_STORE_NAME)
       }
     }
 
@@ -192,6 +197,45 @@ export async function clearQwenAvatar(): Promise<void> {
 
     transaction.onerror = () => {
       const error = transaction.error || new Error('Could not remove the Qwen avatar.')
+      db.close()
+      reject(error)
+    }
+  })
+}
+
+
+export async function loadUserAvatar(): Promise<Blob | null> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(USER_AVATAR_STORE_NAME, 'readonly')
+    const request = transaction.objectStore(USER_AVATAR_STORE_NAME).get(USER_AVATAR_KEY)
+
+    request.onsuccess = () => {
+      const value = request.result
+      resolve(value instanceof Blob ? value : null)
+      db.close()
+    }
+
+    request.onerror = () => {
+      reject(request.error || new Error('Could not read the user avatar.'))
+      db.close()
+    }
+  })
+}
+
+export async function saveUserAvatar(avatar: Blob): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(USER_AVATAR_STORE_NAME, 'readwrite')
+    transaction.objectStore(USER_AVATAR_STORE_NAME).put(avatar, USER_AVATAR_KEY)
+
+    transaction.oncomplete = () => {
+      db.close()
+      resolve()
+    }
+
+    transaction.onerror = () => {
+      const error = transaction.error || new Error('Could not save the user avatar.')
       db.close()
       reject(error)
     }
