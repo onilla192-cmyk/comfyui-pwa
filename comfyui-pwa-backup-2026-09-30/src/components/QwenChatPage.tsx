@@ -27,6 +27,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [composerExpanded, setComposerExpanded] = useState(false)
   const endRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -118,7 +119,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <section className="qwen-chat-page" aria-label="Qwen Chat">
+    <section className={`qwen-chat-page ${composerExpanded ? 'composer-expanded' : ''}`} aria-label="Qwen Chat">
       <header className="qwen-chat-header">
         <div>
           <h2>Qwen Chat</h2>
@@ -201,6 +202,10 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
           disabled={sending}
           placeholder="Message Qwen…"
           rows={2}
+          onFocus={() => setComposerExpanded(true)}
+          onBlur={() => {
+            if (!text.trim()) setComposerExpanded(false)
+          }}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
