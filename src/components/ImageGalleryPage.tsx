@@ -621,6 +621,9 @@ export function ImageGalleryPage({
   const [presetManagerMode, setPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
   const [presetTitle, setPresetTitle] = useState('')
   const [presetPrompt, setPresetPrompt] = useState('')
+  const [recoveredPresets, setRecoveredPresets] = useState<GalleryPreset[]>([])
+  const [presetRecoveryScanning, setPresetRecoveryScanning] = useState(false)
+  const [presetRecoveryMessage, setPresetRecoveryMessage] = useState<string | null>(null)
   const feedbackTimer = useRef<number | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
@@ -732,6 +735,51 @@ export function ImageGalleryPage({
     const name = window.prompt('Rename folder', currentFolder.name)?.trim()
     if (!name || name === currentFolder.name) return
     setFolders((current) => current.map((folder) => folder.id === currentFolder.id ? { ...folder, name } : folder))
+  }
+
+  async function scanForLostPresets() {
+    setPresetRecoveryScanning(true)
+    setPresetRecoveryMessage(null)
+    try {
+      // Strictly read-only: scan same-origin storage and do not write anything.
+      let found = recoverPresetsFromLocalStorage([])
+      found = await recoverPresetsFromIndexedDb(found)
+      setRecoveredPresets(found)
+      setPresetRecoveryMessage(found.length
+        ? 'Found ' + found.length + ' recoverable preset' + (found.length === 1 ? '' : 's') + '.'
+        : 'No recoverable presets were found in this Cloudflare site storage.')
+    } catch (error) {
+      console.error('Preset recovery scan failed:', error)
+      setRecoveredPresets([])
+      setPresetRecoveryMessage('The recovery scan could not read this site storage.')
+    } finally {
+      setPresetRecoveryScanning(false)
+    }
+  }
+
+  async function restoreRecoveredPresets() {
+    if (!recoveredPresets.length) return
+    try {
+      const db = await openGalleryDb()
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(GALLERY_PRESET_STORE_NAME, 'readwrite')
+        const store = tx.objectStore(GALLERY_PRESET_STORE_NAME)
+        recoveredPresets.forEach((preset) => store.put(preset))
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+      })
+      setPresets((current) => {
+        const map = new Map(current.map((preset) => [preset.id, preset]))
+        recoveredPresets.forEach((preset) => map.set(preset.id, preset))
+        return Array.from(map.values()).sort((a, b) => a.createdAt - b.createdAt)
+      })
+      setPresetRecoveryMessage('Presets restored.')
+      setRecoveredPresets([])
+    } catch (error) {
+      console.error('Preset restore failed:', error)
+      setPresetRecoveryMessage('Could not restore the recovered presets.')
+    }
   }
 
   async function refreshGalleryPresetList() {
@@ -1027,6 +1075,17 @@ export function ImageGalleryPage({
                 <button type="button" onClick={openPresetCreator}>Create Preset</button>
                 <button type="button" onClick={() => openPresetManager('edit')} disabled={!presets.length}>Edit Preset</button>
                 <button type="button" onClick={() => openPresetManager('delete')} disabled={!presets.length}>Delete Preset</button>
+                <button type="button" onClick={scanForLostPresets} disabled={presetRecoveryScanning}>
+                  {presetRecoveryScanning ? 'Scanning Presets…' : 'Find Lost Presets'}
+                </button>
+                {recoveredPresets.length > 0 && (
+                  <button type="button" onClick={() => void restoreRecoveredPresets()}>
+                    Restore {recoveredPresets.length} Found Preset{recoveredPresets.length === 1 ? '' : 's'}
+                  </button>
+                )}
+                {presetRecoveryMessage && (
+                  <div className="gallery-sidebar-preset-recovery-status" role="status">{presetRecoveryMessage}</div>
+                )}
                 <div className="gallery-sidebar-preset-list" aria-label="Created presets">
                   {presets.length ? presets.map((preset) => (
                     <button
