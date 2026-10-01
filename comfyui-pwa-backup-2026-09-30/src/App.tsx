@@ -1388,7 +1388,17 @@ export default function App() {
                   <strong>IndexedDB</strong>
                 </span>
               </button>
-            </div>
+ 
+              
+              <button type="button" className={`main-sidebar-tool hook-prompts-sidebar-button${hookPromptsPageOpen ? ' active' : ''}`} onClick={() => { setMainSidebarOpen(false); setHookPromptsPageOpen(true); setFooterExpanded(false) }} aria-label="Open Hook Prompts">
+                <span className="main-sidebar-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1.5 4.5a5 5 0 0 1-11 0L5 8Z"/><path d="M8 8 9.5 5h5L16 8M7 17l-1 3h12l-1-3"/><path d="M12 11v4"/></svg></span>
+                <span className="main-sidebar-tool-copy"><strong>Hook Prompts</strong></span>
+              </button>
+
+              <button type="button" className={`main-sidebar-tool prompt-menu-sidebar-button${promptHeaderMenuOpen ? ' active' : ''}`} onClick={() => { setMainSidebarOpen(false); setPromptHeaderMenuOpen((open) => !open); setFooterExpanded(false) }} aria-label="Open Prompt Menu" aria-expanded={promptHeaderMenuOpen}>
+                <span className="main-sidebar-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
+                <span className="main-sidebar-tool-copy"><strong>Prompt Menu</strong></span>
+              </button>           </div>
           </div>
         </aside>
       </div>
@@ -2297,30 +2307,8 @@ export default function App() {
           <span className="footer-menu-chevron" aria-hidden="true" />
         </button>
         <div className="footer-actions">
-        <button
-          className={`icon-btn footer-hook-icon${hookPromptsPageOpen ? ' active' : ''}`}
-          type="button"
-          onClick={() => { setHookPromptsPageOpen(true); setFooterExpanded(false) }}
-          aria-label="Open Hook Prompts"
-          title="Hook Prompts"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.5 4.5a5 5 0 0 1-11 0L5 8Z"/><path d="M8 8 9.5 5h5L16 8M7 17l-1 3h12l-1-3"/><path d="M12 11v4"/></svg>
-        </button>
-        <button
-          className={`icon-btn footer-menu-icon${promptHeaderMenuOpen ? ' active' : ''}`}
-          type="button"
-          onClick={() => { setPromptHeaderMenuOpen((open) => !open); setFooterExpanded(false) }}
-          aria-label="Open prompt menu"
-          aria-expanded={promptHeaderMenuOpen}
-          title="Prompt menu"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
-        <button className="icon-btn logs-icon" type="button" onClick={() => setLogsOpen(true)} aria-label="Open launcher logs" title="Launcher logs">
+n className="icon-btn logs-icon" type="button" onClick={() => setLogsOpen(true)} aria-label="Open launcher logs" title="Launcher logs">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-        </button>
-        <button className="icon-btn settings-icon" type="button" onClick={() => setSettingsOpen(true)} aria-label="Open settings" title="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/><path d="m19.4 15 .1.06a1.8 1.8 0 0 1-2.47 2.47l-.06-.1a1.8 1.8 0 0 0-3.1 1.04l-.01.12a1.8 1.8 0 0 1-3.6 0l-.01-.12a1.8 1.8 0 0 0-3.1-1.04l-.06.1a1.8 1.8 0 0 1-2.47-2.47l.1-.06a1.8 1.8 0 0 0-1.04-3.1l-.12-.01a1.8 1.8 0 0 1 0-3.6l.12-.01a1.8 1.8 0 0 0 1.04-3.1l-.1-.06A1.8 1.8 0 0 1 7.09 2.65l.06.1a1.8 1.8 0 0 0 3.1-1.04l.01-.12a1.8 1.8 0 0 1 3.6 0l.01.12a1.8 1.8 0 0 0 3.1 1.04l.06-.1a1.8 1.8 0 0 1 2.47 2.47l-.1.06a1.8 1.8 0 0 0 1.04 3.1l.12.01a1.8 1.8 0 0 1 0 3.6l-.12.01A1.8 1.8 0 0 0 19.4 15Z"/></svg>
         </button>
         <button className="icon-btn gallery-icon" type="button" onClick={() => { setGalleryOpen(true); setFooterExpanded(false) }} aria-label="Open image gallery" title="Image Gallery">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 4"/></svg>
