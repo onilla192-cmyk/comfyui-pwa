@@ -294,6 +294,26 @@ export default function App() {
     })
   }
 
+  async function permanentlyDeleteIndexedDbStore(databaseName: string, storeName: string): Promise<void> {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(databaseName)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error || new Error('Could not open IndexedDB database.'))
+    })
+    await new Promise<void>((resolve, reject) => {
+      try {
+        const tx = db.transaction(storeName, 'readwrite')
+        tx.objectStore(storeName).clear()
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not permanently delete the records.')) }
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('Delete operation was aborted.')) }
+      } catch (error) {
+        db.close()
+        reject(error)
+      }
+    })
+  }
+
   async function inspectIndexedDbRecord(databaseName: string, storeName: string, key: IDBValidKey): Promise<unknown> {
     if (!('indexedDB' in window)) return null
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -2430,6 +2450,7 @@ function IndexedDbInspector({
   const [recordsError, setRecordsError] = useState('')
   const [selectedRecord, setSelectedRecord] = useState<{ key: string; value: unknown } | null>(null)
   const [recordLoading, setRecordLoading] = useState(false)
+  const [deletingStore, setDeletingStore] = useState(false)
   const [recordPreviewUrl, setRecordPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -2447,6 +2468,32 @@ function IndexedDbInspector({
       setError(e instanceof Error ? e.message : 'Could not inspect IndexedDB.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function permanentlyDeleteStore() {
+    if (!selectedStore || selectedStore.storeName !== 'imageData' || deletingStore) return
+    const confirmed = window.confirm(
+      `PERMANENTLY DELETE ALL ${selectedStore.count} IMAGE DATA RECORDS?\n\nThis will remove every record in imageData from IndexedDB. This cannot be undone.\n\nPress OK only if you are absolutely sure.`
+    )
+    if (!confirmed) return
+
+    setDeletingStore(true)
+    setRecordsError('')
+    try {
+      await permanentlyDeleteIndexedDbStore(selectedStore.databaseName, selectedStore.storeName)
+      if (recordPreviewUrl) {
+        URL.revokeObjectURL(recordPreviewUrl)
+        setRecordPreviewUrl(null)
+      }
+      setSelectedRecord(null)
+      setStoreKeys([])
+      setSelectedStore((current) => current ? { ...current, count: 0 } : null)
+      await load()
+    } catch (error) {
+      setRecordsError(error instanceof Error ? error.message : 'Could not permanently delete imageData.')
+    } finally {
+      setDeletingStore(false)
     }
   }
 
@@ -2549,7 +2596,19 @@ function IndexedDbInspector({
               </div>
             ) : (
               <>
-                <div className="indexeddb-records-note">{isImageRecord ? 'Tap an image record to view the image stored inside IndexedDB.' : 'Tap a record to inspect its contents.'}</div>
+                <div className="indexeddb-store-danger">
+              <button
+                type="button"
+                className="indexeddb-delete-all-btn"
+                onClick={() => void permanentlyDeleteStore()}
+                disabled={deletingStore || selectedStore.count === 0}
+              >
+                {deletingStore ? 'Permanently Deleting…' : 'Permanently Delete All'}
+              </button>
+              <span>This permanently removes every record in imageData.</span>
+            </div>
+
+            <div className="indexeddb-records-note">{isImageRecord ? 'Tap an image record to view the image stored inside IndexedDB.' : 'Tap a record to inspect its contents.'}</div>
                 {recordsLoading ? <div className="indexeddb-inspector-empty">Reading records…</div> : recordsError ? <div className="indexeddb-inspector-error">{recordsError}</div> : storeKeys.length ? (
                   <div className="indexeddb-record-list">
                     {storeKeys.map((record) => (
