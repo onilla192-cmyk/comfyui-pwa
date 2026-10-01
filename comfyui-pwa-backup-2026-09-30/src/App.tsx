@@ -1418,7 +1418,7 @@ export default function App() {
       </div>
     )}
 
-    <header className="app-empty-header">
+    <header className={`app-empty-header${presetsOpen ? ' app-empty-header-hidden' : ''}`}>
       <div className="main-header-left-actions">
         <button
           className={'header-power-btn ' + comfyPowerState}
