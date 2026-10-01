@@ -150,6 +150,29 @@
   box-shadow: 0 2px 8px rgba(0,0,0,.12);
 }
 
+.qwen-chat-copy {
+  margin-left: 8px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #8e8e93;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+
+.qwen-chat-copy:hover {
+  background: rgba(0,122,255,.09);
+  color: #007aff;
+}
+
+.qwen-chat-copy.copied {
+  color: #34c759;
+}
+
 .qwen-chat-thinking {
   color: #636366;
 }
@@ -346,6 +369,19 @@
 
   .qwen-chat-composer textarea::placeholder {
     color: #98989d;
+  }
+
+  .qwen-chat-copy {
+    color: #98989d;
+  }
+
+  .qwen-chat-copy:hover {
+    background: rgba(10,132,255,.14);
+    color: #0a84ff;
+  }
+
+  .qwen-chat-copy.copied {
+    color: #30d158;
   }
 
   .qwen-chat-thinking {
