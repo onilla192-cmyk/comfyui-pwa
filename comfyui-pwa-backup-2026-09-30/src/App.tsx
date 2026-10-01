@@ -1760,9 +1760,10 @@ export default function App() {
           )}
           <button className="preset-btn" type="button" onClick={() => { void refreshGalleryPresets(); setPresetsOpen(true) }} aria-label="Open created presets" title="Created presets">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="4" width="16" height="16" rx="2"/>
-              <path d="M7.5 15.5l3-3 2.5 2.5 2-2 1.5 1.5"/>
-              <circle cx="9" cy="9" r="1.2"/>
+              <path d="M9 18h6"/>
+              <path d="M10 21h4"/>
+              <path d="M8.7 15.2C7.6 14.3 7 13 7 11.5A5 5 0 0 1 17 11.5c0 1.5-.6 2.8-1.7 3.7-.8.7-1.3 1.5-1.3 2.8h-4c0-1.3-.5-2.1-1.3-2.8Z"/>
+              <path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4M22 12h-2"/>
             </svg>
           </button>
           <button className="results-btn" type="button" onClick={() => setResultsOpen(true)} aria-label="Open completed generations" title="Completed generations">
