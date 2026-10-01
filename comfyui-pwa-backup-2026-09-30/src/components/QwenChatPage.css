@@ -114,17 +114,17 @@
 
 /* Qwen conversation avatars */
 .qwen-avatar-upload-input{display:none}
-.qwen-chat-message-row{display:flex;align-items:flex-start;gap:9px;width:100%}
+.qwen-chat-message-row{display:flex;align-items:flex-end;gap:12px;width:100%}
 .qwen-chat-message.user .qwen-chat-message-row{flex-direction:row-reverse}
-.qwen-chat-message-content{min-width:0;max-width:calc(100% - 49px);display:flex;flex-direction:column;align-items:flex-start}
+.qwen-chat-message-content{min-width:0;max-width:calc(100% - 60px);display:flex;flex-direction:column;align-items:flex-start}
 .qwen-chat-message.user .qwen-chat-message-content{align-items:flex-end}
-.qwen-chat-avatar{flex:0 0 40px;width:40px;height:40px;margin-top:2px}
-.qwen-chat-avatar-button,.qwen-chat-avatar-user{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;overflow:hidden;box-sizing:border-box}
-.qwen-chat-avatar-button{padding:0;border:2px solid rgba(255,255,255,.72);background:linear-gradient(135deg,#007aff,#5856d6);color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.16);transition:transform .15s ease,box-shadow .15s ease}
+.qwen-chat-avatar{flex:0 0 52px;width:52px;height:52px;margin:0 0 2px}
+.qwen-chat-avatar-button,.qwen-chat-avatar-user{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;overflow:hidden;box-sizing:border-box}
+.qwen-chat-avatar-button{padding:0;border:0;background:linear-gradient(135deg,#007aff,#5856d6);color:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.16);transition:transform .15s ease,box-shadow .15s ease}
 .qwen-chat-avatar-button:hover{transform:scale(1.05);box-shadow:0 3px 12px rgba(0,0,0,.22)}
 .qwen-chat-avatar-button img{width:100%;height:100%;object-fit:cover}
-.qwen-chat-avatar-button span{font-size:16px;font-weight:800}
-.qwen-chat-avatar-user{background:#007aff;color:#fff;font-size:13px;font-weight:700;box-shadow:0 2px 7px rgba(0,0,0,.16)}
+.qwen-chat-avatar-button span{font-size:19px;font-weight:800}
+.qwen-chat-avatar-user{border:0;background:#007aff;color:#fff;font-size:15px;font-weight:700;box-shadow:0 2px 7px rgba(0,0,0,.16)}
 .qwen-chat-message.assistant .qwen-chat-message-bubble{max-width:100%}
 .qwen-chat-message.user .qwen-chat-message-bubble{max-width:100%}
 @media(max-width:600px){
@@ -133,7 +133,9 @@
   .qwen-chat-message-content{max-width:calc(100% - 41px)}
 }
 
-.qwen-chat-avatar-user-button{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px solid rgba(255,255,255,.72);background:#007aff;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 7px rgba(0,0,0,.16);transition:transform .15s ease,box-shadow .15s ease}
+.qwen-chat-avatar-user-button{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;overflow:hidden;box-sizing:border-box;border:0;background:#007aff;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 7px rgba(0,0,0,.16);transition:transform .15s ease,box-shadow .15s ease}
 .qwen-chat-avatar-user-button:hover{transform:scale(1.05);box-shadow:0 3px 12px rgba(0,0,0,.22)}
 .qwen-chat-avatar-user-button img{width:100%;height:100%;object-fit:cover}
-@media(max-width:600px){.qwen-chat-avatar-user-button{width:34px;height:34px}}
+@media(max-width:600px){.qwen-chat-avatar-user-button{width:44px;height:44px}}
+
+@media(max-width:600px){.qwen-chat-avatar{flex-basis:44px;width:44px;height:44px}.qwen-chat-avatar-button,.qwen-chat-avatar-user{width:44px;height:44px}.qwen-chat-message-content{max-width:calc(100% - 52px)}}
