@@ -742,7 +742,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
                 </label>
               </div>
               <div className="qwen-chat-message-content">
-            <div className="qwen-chat-message-bubble">
+            <div className="qwen-chat-message-bubble qwen-chat-thinking-bubble">
               <span className="qwen-chat-message-role">Qwen</span>
               <p className="qwen-chat-thinking">Thinking…</p>
             </div>
