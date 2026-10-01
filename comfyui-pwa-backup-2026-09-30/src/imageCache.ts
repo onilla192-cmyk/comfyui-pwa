@@ -25,6 +25,48 @@ export interface BackupImage {
   data: string
 }
 
+export interface HistoryMetadata {
+  id: string
+  type: 'history'
+  prompt: string
+  promptId: string
+  negativePrompt?: string
+  cfg?: number
+  steps?: number
+  megapixels?: number
+  width?: number
+  height?: number
+  createdAt?: number
+}
+
+export async function syncHistoryMetadata(
+  results: HistoryMetadata[],
+  trash: HistoryMetadata[],
+): Promise<void> {
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction([ITEMS_STORE, ARCHIVED_STORE], 'readwrite')
+    const syncStore = (storeName: string, desired: HistoryMetadata[]) => {
+      const store = tx.objectStore(storeName)
+      const desiredIds = new Set(desired.map((item) => item.id))
+      const cursorRequest = store.openCursor()
+      cursorRequest.onsuccess = () => {
+        const cursor = cursorRequest.result
+        if (!cursor) return
+        if (!desiredIds.has(String(cursor.key))) cursor.delete()
+        cursor.continue()
+      }
+      for (const item of desired) store.put(item)
+    }
+    syncStore(ITEMS_STORE, results)
+    syncStore(ARCHIVED_STORE, trash)
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save history metadata.')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('History metadata save was aborted.')) }
+  })
+}
+
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
