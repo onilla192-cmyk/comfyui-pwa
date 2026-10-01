@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { getPromptVaultImage, importPromptVaultItems, readPromptVault, savePromptVaultItems, deletePromptVaultImages } from '../promptVaultDb'
+import { getPromptVaultImage, putPromptVaultImage, importPromptVaultItems, readPromptVault, savePromptVaultItems, deletePromptVaultImages } from '../promptVaultDb'
 import type { PromptVaultImageRef, PromptVaultItem } from '../promptVaultDb'
 export type { PromptVaultImageRef, PromptVaultItem } from '../promptVaultDb'
 
@@ -287,14 +287,7 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     let imageRef: PromptVaultImageRef | undefined
     if (newImage) {
       const cacheKey = `prompt-vault-${id}`
-      await importPromptVaultItems([{
-        id,
-        name,
-        prompt: newPrompt,
-        image: cacheKey,
-        images: [cacheKey],
-        imageRefs: [{ id: `${id}-image`, filename: newImage.name, mimeType: newImage.type || 'image/*', cacheKey }],
-      }])
+      await putPromptVaultImage(cacheKey, newImage)
       imageRef = { id: `${id}-image`, filename: newImage.name, mimeType: newImage.type || 'image/*', cacheKey }
     }
     const item: PromptVaultItem = { id, name, prompt: newPrompt, image: imageRef?.cacheKey || '', images: imageRef ? [imageRef.cacheKey] : [], imageRefs: imageRef ? [imageRef] : [] }
