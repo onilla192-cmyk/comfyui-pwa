@@ -204,7 +204,7 @@ export default function App() {
   const [settingsOptionsLoading, setSettingsOptionsLoading] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [footerExpanded, setFooterExpanded] = useState(false)
-  const [mainFooterVisible, setMainFooterVisible] = useState(true)
+  const [mainFooterVisible, setMainFooterVisible] = useState(false)
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
@@ -1398,6 +1398,20 @@ export default function App() {
               <button type="button" className={`main-sidebar-tool prompt-menu-sidebar-button${promptHeaderMenuOpen ? ' active' : ''}`} onClick={() => { setMainSidebarOpen(false); setPromptHeaderMenuOpen((open) => !open); setFooterExpanded(false) }} aria-label="Open Prompt Menu" aria-expanded={promptHeaderMenuOpen}>
                 <span className="main-sidebar-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
                 <span className="main-sidebar-tool-copy"><strong>Prompt Menu</strong></span>
+              </button>
+
+              <button type="button" className="main-sidebar-tool logs-sidebar-button" onClick={() => { setMainSidebarOpen(false); setLogsOpen(true); setFooterExpanded(false) }} aria-label="Open Launcher Logs">
+                <span className="main-sidebar-tool-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                </span>
+                <span className="main-sidebar-tool-copy"><strong>Launcher Logs</strong></span>
+              </button>
+
+              <button type="button" className={`main-sidebar-tool gallery-sidebar-button${galleryOpen ? ' active' : ''}`} onClick={() => { setMainSidebarOpen(false); setGalleryOpen(true); setFooterExpanded(false) }} aria-label="Open Image Gallery">
+                <span className="main-sidebar-tool-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 4"/></svg>
+                </span>
+                <span className="main-sidebar-tool-copy"><strong>Image Gallery</strong></span>
               </button>           </div>
           </div>
         </aside>
@@ -2307,14 +2321,7 @@ export default function App() {
           <span className="footer-menu-chevron" aria-hidden="true" />
         </button>
         <div className="footer-actions">
-        <button className="icon-btn logs-icon" type="button" onClick={() => setLogsOpen(true)} aria-label="Open launcher logs" title="Launcher logs">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-        </button>
-        <button className="icon-btn gallery-icon" type="button" onClick={() => { setGalleryOpen(true); setFooterExpanded(false) }} aria-label="Open image gallery" title="Image Gallery">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 4"/></svg>
-        </button>
-
-        </div>
+  </div>
         <div className="app-version">ComfyUI PWA {APP_VERSION}</div>
       </div>
     </footer>
