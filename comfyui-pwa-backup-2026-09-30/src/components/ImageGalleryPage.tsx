@@ -675,6 +675,35 @@ export function ImageGalleryPage({
     showFeedback('Preset Saved')
   }
 
+
+  function exportCreatedPresets() {
+    if (!presets.length) {
+      showFeedback('No presets to export')
+      return
+    }
+    const payload = {
+      format: 'comfyui-pwa-created-presets',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      presets: presets.map((preset) => ({
+        id: preset.id,
+        title: preset.title,
+        prompt: preset.prompt,
+        createdAt: preset.createdAt,
+      })),
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'comfyui-created-presets.json'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
+    showFeedback(`Exported ${presets.length} preset${presets.length === 1 ? '' : 's'}`)
+  }
+
   function openPresetCreator() {
     setSelectedPresetId(null)
     setPresetTitle('')
@@ -936,6 +965,7 @@ export function ImageGalleryPage({
                 <button type="button" onClick={openPresetCreator}>Create Preset</button>
                 <button type="button" onClick={() => openPresetManager('edit')} disabled={!presets.length}>Edit Preset</button>
                 <button type="button" onClick={() => openPresetManager('delete')} disabled={!presets.length}>Delete Preset</button>
+                <button type="button" onClick={exportCreatedPresets} disabled={!presets.length}>Export Presets</button>
                 <div className="gallery-sidebar-preset-list" aria-label="Created presets">
                   {presets.length ? presets.map((preset) => (
                     <button
