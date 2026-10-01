@@ -257,14 +257,21 @@ function recoverPresetsFromLocalStorage(existing: GalleryPreset[]): GalleryPrese
 async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<GalleryPreset[]> {
   const byId = new Map(existing.map((preset) => [preset.id, preset]))
   const databases: string[] = []
+
   try {
     if (typeof indexedDB.databases === 'function') {
       const entries = await indexedDB.databases()
-      for (const entry of entries) if (entry.name && !databases.includes(entry.name)) databases.push(entry.name)
+      for (const entry of entries) {
+        if (entry.name && !databases.includes(entry.name)) databases.push(entry.name)
+      }
     }
   } catch {}
+
   if (!databases.includes(GALLERY_DB_NAME)) databases.push(GALLERY_DB_NAME)
 
+  // Read-only recovery. Scan every same-origin store except the two stores
+  // that can contain large image blobs. Some of the user's older preset data
+  // may have been stored under a non-obvious store name.
   for (const databaseName of databases) {
     let db: IDBDatabase
     try {
@@ -273,30 +280,50 @@ async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<G
         request.onsuccess = () => resolve(request.result)
         request.onerror = () => reject(request.error || new Error('Could not open IndexedDB database'))
       })
-    } catch { continue }
+    } catch {
+      continue
+    }
 
     try {
-      const storeNames = Array.from(db.objectStoreNames).filter((name) => {
-        const lower = name.toLowerCase()
-        return lower.includes('preset') || lower.includes('prompt') || lower === GALLERY_PRESET_STORE_NAME
-      })
+      const storeNames = Array.from(db.objectStoreNames).filter((name) =>
+        name !== GALLERY_IMAGE_DATA_STORE_NAME &&
+        name !== 'imageData' &&
+        name !== 'thumbnails'
+      )
       if (!storeNames.length) continue
+
       await new Promise<void>((resolve) => {
         let remaining = storeNames.length
-        const finish = () => { remaining -= 1; if (remaining <= 0) resolve() }
+        const finish = () => {
+          remaining -= 1
+          if (remaining <= 0) resolve()
+        }
+
         let tx: IDBTransaction
-        try { tx = db.transaction(storeNames, 'readonly') } catch { resolve(); return }
+        try {
+          tx = db.transaction(storeNames, 'readonly')
+        } catch {
+          resolve()
+          return
+        }
+
         for (const storeName of storeNames) {
           const request = tx.objectStore(storeName).openCursor()
+
           request.onsuccess = () => {
             const cursor = request.result
-            if (!cursor) { finish(); return }
+            if (!cursor) {
+              finish()
+              return
+            }
+
             const value = cursor.value
             if (looksLikeGalleryPreset(value)) {
               const item = value as Partial<GalleryPreset>
               const id = typeof item.id === 'string' && item.id
                 ? item.id
                 : 'preset-recovered-' + Date.now() + '-' + Math.random().toString(36).slice(2)
+
               if (!byId.has(id)) {
                 byId.set(id, {
                   id,
@@ -306,18 +333,25 @@ async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<G
                 })
               }
             }
+
             cursor.continue()
           }
+
           request.onerror = () => finish()
         }
+
         tx.oncomplete = () => resolve()
         tx.onerror = () => resolve()
         tx.onabort = () => resolve()
       })
-    } finally { db.close() }
+    } finally {
+      db.close()
+    }
   }
+
   return Array.from(byId.values()).sort((a, b) => a.createdAt - b.createdAt)
 }
+
 async function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<GalleryFolder[]> {
   const byId = new Map(existing.map((folder) => [folder.id, folder]))
   const databases: string[] = []
@@ -486,6 +520,20 @@ async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: 
     recoveredPresets = recoverPresetsFromLocalStorage(recoveredPresets)
     recoveredPresets = await recoverPresetsFromIndexedDb(recoveredPresets)
   } catch {}
+
+  if (recoveredPresets.length > stored.presets.length) {
+    try {
+      const db = await openGalleryDb()
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(GALLERY_PRESET_STORE_NAME, 'readwrite')
+        const store = tx.objectStore(GALLERY_PRESET_STORE_NAME)
+        recoveredPresets.forEach((preset) => store.put(preset))
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not restore recovered presets')) }
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not restore recovered presets')) }
+      })
+    } catch {}
+  }
 
   const recoveredFolders = ensureKnownGalleryFolders(await recoverFoldersFromIndexedDb(stored.folders))
   const recoveredItems = await recoverGalleryItemsFromIndexedDb(stored.items)
