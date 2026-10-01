@@ -537,6 +537,10 @@ export function ImageGalleryPage({
   const suppressTap = useRef(false)
 
   useEffect(() => {
+    void refreshGalleryPresetList()
+  }, [])
+
+  useEffect(() => {
     let active = true
     void migrateLegacyGallery().then((stored) => {
       if (!active) return
@@ -637,6 +641,15 @@ export function ImageGalleryPage({
     const name = window.prompt('Rename folder', currentFolder.name)?.trim()
     if (!name || name === currentFolder.name) return
     setFolders((current) => current.map((folder) => folder.id === currentFolder.id ? { ...folder, name } : folder))
+  }
+
+  async function refreshGalleryPresetList() {
+    try {
+      const recovered = await readGalleryPresets()
+      setPresets(recovered)
+    } catch {
+      // Never replace existing preset state with an empty array.
+    }
   }
 
   function createPreset() {
@@ -907,7 +920,11 @@ export function ImageGalleryPage({
             <button
               type="button"
               className={'gallery-sidebar-action' + (presetMenuExpanded ? ' active' : '')}
-              onClick={() => setPresetMenuExpanded((open) => !open)}
+              onClick={() => {
+                const next = !presetMenuExpanded
+                setPresetMenuExpanded(next)
+                if (next) void refreshGalleryPresetList()
+              }}
               aria-expanded={presetMenuExpanded}
             >
               <span className="gallery-sidebar-action-icon">✦</span>
@@ -919,6 +936,28 @@ export function ImageGalleryPage({
                 <button type="button" onClick={openPresetCreator}>Create Preset</button>
                 <button type="button" onClick={() => openPresetManager('edit')} disabled={!presets.length}>Edit Preset</button>
                 <button type="button" onClick={() => openPresetManager('delete')} disabled={!presets.length}>Delete Preset</button>
+                <div className="gallery-sidebar-preset-list" aria-label="Created presets">
+                  {presets.length ? presets.map((preset) => (
+                    <button
+                      type="button"
+                      className="gallery-sidebar-preset-item"
+                      key={preset.id}
+                      onClick={() => {
+                        setSelectedPresetId(preset.id)
+                        setPresetTitle(preset.title)
+                        setPresetPrompt(preset.prompt)
+                        setPresetCreatorOpen(true)
+                        setPresetMenuExpanded(false)
+                        setSidebarOpen(false)
+                      }}
+                    >
+                      <strong>{preset.title}</strong>
+                      <span>{preset.prompt}</span>
+                    </button>
+                  )) : (
+                    <div className="gallery-sidebar-preset-empty">No created presets.</div>
+                  )}
+                </div>
               </div>
             )}
             <button type="button" className="gallery-sidebar-action" onClick={addFolder}>
