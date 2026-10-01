@@ -57,7 +57,7 @@ export function buildQwenChatWorkflow(inputs: QwenChatWorkflowInputs): WorkflowP
         temperature: 0.7,
         repeat_penalty: 1,
         frequency_penalty: 0,
-        present_penalty: 0,
+        presence_penalty: 0,
         mirostat_mode: 0,
         mirostat_eta: 0.1,
         mirostat_tau: 5,
