@@ -285,11 +285,10 @@ async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<G
     }
 
     try {
-      const storeNames = Array.from(db.objectStoreNames).filter((name) =>
-        name !== GALLERY_IMAGE_DATA_STORE_NAME &&
-        name !== 'imageData' &&
-        name !== 'thumbnails'
-      )
+      // Preset recovery must inspect every object store. Older versions of the app
+      // may have stored presets under a different store name. We only retain
+      // records that actually look like presets, so this remains non-destructive.
+      const storeNames = Array.from(db.objectStoreNames)
       if (!storeNames.length) continue
 
       await new Promise<void>((resolve) => {
@@ -631,7 +630,28 @@ export function ImageGalleryPage({
   const suppressTap = useRef(false)
 
   useEffect(() => {
+    // Automatically attempt recovery on every gallery open. This never clears
+    // or replaces browser preset data with an empty result.
     void refreshGalleryPresetList()
+    void (async () => {
+      try {
+        const recovered = await recoverPresetsFromIndexedDb([])
+        if (recovered.length) {
+          const db = await openGalleryDb()
+          await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(GALLERY_PRESET_STORE_NAME, 'readwrite')
+            const store = tx.objectStore(GALLERY_PRESET_STORE_NAME)
+            recovered.forEach((preset) => store.put(preset))
+            tx.oncomplete = () => { db.close(); resolve() }
+            tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+            tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+          })
+          setPresets(recovered)
+        }
+      } catch {
+        // Recovery is best-effort and never writes an empty preset set.
+      }
+    })()
   }, [])
 
   useEffect(() => {
@@ -742,12 +762,30 @@ export function ImageGalleryPage({
     setPresetRecoveryMessage(null)
     try {
       // Strictly read-only: scan same-origin storage and do not write anything.
-      let found = recoverPresetsFromLocalStorage([])
+      // Start from the currently stored presets, then search every same-origin
+      // browser storage location. The scan is strictly read-only.
+      const current = await readGalleryDb().catch(() => ({ items: [], folders: [], presets: [] }))
+      let found = recoverPresetsFromLocalStorage(current.presets)
       found = await recoverPresetsFromIndexedDb(found)
       setRecoveredPresets(found)
-      setPresetRecoveryMessage(found.length
-        ? 'Found ' + found.length + ' recoverable preset' + (found.length === 1 ? '' : 's') + '.'
-        : 'No recoverable presets were found in this Cloudflare site storage.')
+      if (found.length) {
+        // Restore immediately so the user does not have to perform a second action.
+        const db = await openGalleryDb()
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction(GALLERY_PRESET_STORE_NAME, 'readwrite')
+          const store = tx.objectStore(GALLERY_PRESET_STORE_NAME)
+          found.forEach((preset) => store.put(preset))
+          tx.oncomplete = () => { db.close(); resolve() }
+          tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+          tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+        })
+        setPresets(found)
+        setRecoveredPresets([])
+        setPresetRecoveryMessage('Recovered ' + found.length + ' preset' + (found.length === 1 ? '' : 's') + ' from browser storage.')
+      } else {
+        setRecoveredPresets([])
+        setPresetRecoveryMessage('No recoverable presets were found in this browser storage.')
+      }
     } catch (error) {
       console.error('Preset recovery scan failed:', error)
       setRecoveredPresets([])
