@@ -10676,27 +10676,34 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   background: #f2c000 !important;
   box-shadow: 0 2px 0 #9b7200, 0 4px 8px rgba(255, 210, 26, .18) !important;
 }
+html:has(.preset-popup-backdrop),
+body:has(.preset-popup-backdrop) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
 .preset-popup-backdrop {
   position: fixed;
   inset: 0;
   z-index: 120;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(0,0,0,.68);
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  background: #111318;
 }
 .preset-popup {
-  width: min(100%, 620px);
-  max-height: min(82vh, 720px);
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #30343d;
-  border-radius: 16px;
+  border: 0;
+  border-radius: 0;
   background: #171a20;
   color: #f3f4f6;
-  box-shadow: 0 20px 50px rgba(0,0,0,.45);
+  box-shadow: none;
 }
 .preset-popup-header-actions {
   display: flex;
@@ -10722,8 +10729,10 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 16px 18px calc(16px + env(safe-area-inset-top));
   border-bottom: 1px solid #2a2e37;
+  background: #171a20;
 }
 .preset-popup-header h2 {
   margin: 0;
@@ -10736,10 +10745,12 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
   font-size: 12px;
 }
 .preset-popup-list {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 12px;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
 }
 .preset-popup-item {
   width: 100%;
