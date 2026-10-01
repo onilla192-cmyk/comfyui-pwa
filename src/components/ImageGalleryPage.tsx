@@ -408,7 +408,9 @@ export function ImageGalleryPage({
   onSetFigure: (which: Figure, item: GalleryItem, presetPrompt?: string) => void
 }) {
   const [items, setItems] = useState<GalleryItem[]>([])
-  const [folders, setFolders] = useState<GalleryFolder[]>([])
+  // Render the known recovered folders immediately. This keeps the folder UI
+  // visible even if IndexedDB recovery is still pending or fails.
+  const [folders, setFolders] = useState<GalleryFolder[]>(() => ensureKnownGalleryFolders([]))
   const [presets, setPresets] = useState<GalleryPreset[]>([])
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
