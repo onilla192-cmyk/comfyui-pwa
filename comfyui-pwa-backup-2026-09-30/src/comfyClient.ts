@@ -222,9 +222,34 @@ export async function startComfyFromPhone(): Promise<void> {
     throw new Error('Remote launcher returned an invalid response.')
   }
 
-  if (data.ok !== true || data.comfyui !== 'running') {
-    throw new Error('ComfyUI did not reach the running state.')
+  if (data.ok !== true) {
+    throw new Error('Remote launcher rejected the start request.')
   }
+
+  // The remote launcher may acknowledge the request while ComfyUI is still
+  // booting. Poll its status instead of requiring an immediate "running".
+  if (data.comfyui === 'running') return
+
+  const started = Date.now()
+  const timeoutMs = 120000
+
+  while (Date.now() - started < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    try {
+      const statusResponse = await fetch(`${REMOTE_CONTROL_URL}/status`, {
+        cache: 'no-store',
+      })
+      if (!statusResponse.ok) continue
+
+      const status = await statusResponse.json() as { ok?: boolean; comfyui?: string }
+      if (status.ok === true && status.comfyui === 'running') return
+    } catch {
+      // Keep polling while the launcher/ComfyUI is coming online.
+    }
+  }
+
+  throw new Error('ComfyUI did not finish starting within 120 seconds.')
 }
 
 
