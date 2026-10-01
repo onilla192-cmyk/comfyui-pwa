@@ -2,7 +2,7 @@ import './QwenChatPage.css'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { buildQwenChatWorkflow } from '../qwenChatWorkflow'
 import { queuePrompt, uploadImage, waitForTextOutput } from '../comfyClient'
-import { clearQwenChatBackground, loadQwenChatBackground, loadQwenChats, saveQwenChatBackground, saveQwenChats, type QwenChat, type QwenChatMessage } from '../qwenChatDb'
+import { clearQwenChatBackground, loadQwenChatBackground, loadQwenAvatar, loadQwenChats, saveQwenChatBackground, saveQwenAvatar, saveQwenChats, type QwenChat, type QwenChatMessage } from '../qwenChatDb'
 
 type MessagePart =
   | { type: 'text'; value: string }
@@ -186,6 +186,8 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const [chatListOpen, setChatListOpen] = useState(false)
   const [backgroundBlob, setBackgroundBlob] = useState<Blob | null>(null)
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null)
+  const [qwenAvatarBlob, setQwenAvatarBlob] = useState<Blob | null>(null)
+  const [qwenAvatarUrl, setQwenAvatarUrl] = useState<string | null>(null)
   const [dynamicTheme, setDynamicTheme] = useState<QwenDynamicTheme | null>(null)
   const [text, setText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -290,6 +292,28 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   }, [backgroundUrl])
 
   useEffect(() => {
+    let cancelled = false
+    void loadQwenAvatar()
+      .then((blob) => {
+        if (!cancelled) setQwenAvatarBlob(blob)
+      })
+      .catch(() => {
+        if (!cancelled) setQwenAvatarBlob(null)
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (!qwenAvatarBlob) {
+      setQwenAvatarUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(qwenAvatarBlob)
+    setQwenAvatarUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [qwenAvatarBlob])
+
+  useEffect(() => {
     if (!imageFile) {
       setImagePreview(null)
       return
@@ -307,6 +331,16 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
 
   function removeImage() {
     setImageFile(null)
+  }
+
+  async function handleQwenAvatar(file?: File) {
+    if (!file) return
+    try {
+      await saveQwenAvatar(file)
+      setQwenAvatarBlob(file)
+    } catch {
+      setError('Could not save the Qwen avatar.')
+    }
   }
 
   async function handleBackground(file?: File) {
@@ -502,6 +536,16 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
         '--qwen-chat-accent': dynamicTheme?.accent,
       } as CSSProperties) : undefined}
     >
+      <input
+        id="qwen-avatar-upload"
+        className="qwen-avatar-upload-input"
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        onChange={(event) => {
+          void handleQwenAvatar(event.target.files?.[0])
+          event.currentTarget.value = ''
+        }}
+      />
       <header className="qwen-chat-header">
         <button
           type="button"
@@ -581,6 +625,17 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
 
         {messages.map((message) => (
           <article key={message.id} className={`qwen-chat-message ${message.role}`}>
+            <div className="qwen-chat-message-row">
+              <div className={`qwen-chat-avatar qwen-chat-avatar-${message.role}`}>
+                {message.role === 'assistant' ? (
+                  <label className="qwen-chat-avatar-button" htmlFor="qwen-avatar-upload" title="Customize Qwen avatar" aria-label="Customize Qwen avatar">
+                    {qwenAvatarUrl ? <img src={qwenAvatarUrl} alt="Qwen avatar" /> : <span>Q</span>}
+                  </label>
+                ) : (
+                  <span className="qwen-chat-avatar-user" aria-label="You">Y</span>
+                )}
+              </div>
+              <div className="qwen-chat-message-content">
             {message.imageUrl && (
               <img className="qwen-chat-message-image" src={message.imageUrl} alt="Attached image" />
             )}
@@ -607,6 +662,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
                     )
                   )
                 : <p>{message.text}</p>}
+              </div>
             </div>
             {message.role === 'assistant' && (
               <div className="qwen-chat-response-actions">
@@ -632,9 +688,18 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
 
         {sending && (
           <article className="qwen-chat-message assistant">
+            <div className="qwen-chat-message-row">
+              <div className="qwen-chat-avatar qwen-chat-avatar-assistant">
+                <label className="qwen-chat-avatar-button" htmlFor="qwen-avatar-upload" title="Customize Qwen avatar" aria-label="Customize Qwen avatar">
+                  {qwenAvatarUrl ? <img src={qwenAvatarUrl} alt="Qwen avatar" /> : <span>Q</span>}
+                </label>
+              </div>
+              <div className="qwen-chat-message-content">
             <div className="qwen-chat-message-bubble">
               <span className="qwen-chat-message-role">Qwen</span>
               <p className="qwen-chat-thinking">Thinking…</p>
+            </div>
+              </div>
             </div>
           </article>
         )}
