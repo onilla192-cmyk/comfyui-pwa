@@ -2040,10 +2040,78 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
   const [expanded, setExpanded] = useState(false)
   const [prompt, setPrompt] = useState(img.prompt || '')
   const [promptOpen, setPromptOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     setPrompt(img.prompt || '')
   }, [img.prompt])
+
+  async function exportHistoryItem() {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const response = await fetch(img.url)
+      if (!response.ok) throw new Error('Could not load the history image.')
+      const blob = await response.blob()
+
+      const imageData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          if (typeof reader.result === 'string') resolve(reader.result)
+          else reject(new Error('Could not convert the image.'))
+        }
+        reader.onerror = () => reject(reader.error || new Error('Could not read the image.'))
+        reader.readAsDataURL(blob)
+      })
+
+      const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
+      const safeName = (img.id || 'history-image').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'history-image'
+      const payload = {
+        format: 'comfyui-pwa-history-image',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        image: {
+          filename: safeName + '.' + extension,
+          mimeType: blob.type || 'image/jpeg',
+          data: imageData,
+        },
+        prompt: prompt || '',
+        metadata: {
+          id: img.id,
+          createdAt: img.createdAt || null,
+          promptId: img.promptId || null,
+        },
+      }
+
+      const file = new File(
+        [JSON.stringify(payload, null, 2)],
+        safeName + '.json',
+        { type: 'application/json' }
+      )
+
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({
+          title: safeName,
+          text: 'ComfyUI PWA image and prompt',
+          files: [file],
+        })
+      } else {
+        const url = URL.createObjectURL(file)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = file.name
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      window.alert(error instanceof Error ? error.message : 'Could not export this history item.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const handleCardTap = () => {
     setExpanded((current) => !current)
@@ -2079,6 +2147,11 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
           readOnly
         />
         <div className="history-expanded-actions">
+          {section === 'history' && (
+            <button className="history-export-btn" type="button" onClick={(e) => { e.stopPropagation(); void exportHistoryItem() }} disabled={exporting}>
+              {exporting ? 'Preparing…' : 'Export JSON'}
+            </button>
+          )}
           {section === 'history'
             ? <button className="history-delete-btn" type="button" onClick={(e) => { e.stopPropagation(); onTrash() }}>Trash</button>
             : <>
@@ -2166,4 +2239,3 @@ function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: 
     </div>
   )
 }
-
