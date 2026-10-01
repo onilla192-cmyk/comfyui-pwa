@@ -180,11 +180,29 @@ async function makeThumbnail(src: string, maxSize = 360): Promise<string> {
   })
 }
 
-export async function readGalleryPresets(): Promise<GalleryPreset[]> {
-  // Use the same non-destructive recovery path as the Gallery itself so the
-  // Main Page and Gallery Menu always see the same Created Presets.
+export async function recoverAndStoreGalleryPresets(): Promise<{ presets: GalleryPreset[]; recovered: number }> {
+  // Read-only discovery first. Never clear, replace, or delete the preset store.
   const stored = await readGalleryDb()
-  return recoverPresetsFromIndexedDb(stored.presets)
+  const localRecovered = recoverPresetsFromLocalStorage(stored.presets)
+  const recovered = await recoverPresetsFromIndexedDb(localRecovered)
+  const newPresets = recovered.filter((preset) => !stored.presets.some((existing) => existing.id === preset.id))
+  if (newPresets.length) {
+    const db = await openGalleryDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(GALLERY_PRESET_STORE_NAME, 'readwrite')
+      const store = tx.objectStore(GALLERY_PRESET_STORE_NAME)
+      newPresets.forEach((preset) => store.put(preset))
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+      tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not restore presets')) }
+    })
+  }
+  return { presets: recovered, recovered: newPresets.length }
+}
+
+export async function readGalleryPresets(): Promise<GalleryPreset[]> {
+  const stored = await readGalleryDb()
+  return recoverPresetsFromIndexedDb(recoverPresetsFromLocalStorage(stored.presets))
 }
 
 async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], presets: GalleryPreset[]): Promise<void> {
