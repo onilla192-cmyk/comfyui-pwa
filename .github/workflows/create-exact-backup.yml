@@ -1,0 +1,28 @@
+name: Create exact repository backup
+
+on:
+  push:
+    branches:
+      - backup-2026-09-30
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact pre-workflow commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.before }}
+          fetch-depth: 1
+
+      - name: Create ZIP
+        run: |
+          git archive --format=zip --output=comfyui-pwa-backup-2026-09-30.zip HEAD
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: comfyui-pwa-backup-2026-09-30
+          path: comfyui-pwa-backup-2026-09-30.zip
