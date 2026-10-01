@@ -395,8 +395,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
         </div>
         <div className="qwen-chat-header-actions">
           <label className={`qwen-chat-background-btn${backgroundUrl ? ' active' : ''}`} title="Set chat background">
-            <span aria-hidden="true">▧</span>
-            <span className="qwen-chat-background-label">Background</span>
+            <span className="qwen-chat-background-icon" aria-hidden="true">▧</span>
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
