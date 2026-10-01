@@ -435,20 +435,21 @@ export default function App() {
 
   useEffect(() => {
     void refreshCreatedPresets()
-    const timer = window.setInterval(() => void refreshCreatedPresets(), 1000)
-    return () => window.clearInterval(timer)
   }, [])
 
   async function saveCreatedPresetFromPage() {
     if (!createdPresetEditor) return
     try {
       if (createdPresetEditor.mode === 'create') {
-        await createCreatedPreset(createdPresetEditor.title, createdPresetEditor.prompt)
+        const created = await createCreatedPreset(createdPresetEditor.title, createdPresetEditor.prompt)
+        setCreatedPresets((current) => [...current, created].sort((a, b) => a.createdAt - b.createdAt))
       } else if (createdPresetEditor.id) {
-        await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt)
+        const updated = await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt)
+        setCreatedPresets((current) => current.map((preset) => preset.id === updated.id ? updated : preset))
+      } else {
+        throw new Error('No preset was selected for editing.')
       }
       setCreatedPresetEditor(null)
-      await refreshCreatedPresets()
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Could not save preset.')
     }
