@@ -1320,7 +1320,31 @@ export default function App() {
       <div className="main-sidebar-backdrop" onClick={() => setMainSidebarOpen(false)}>
         <aside className="main-sidebar" onClick={(event) => event.stopPropagation()} aria-label="Main menu">
           <button type="button" className="main-sidebar-close" onClick={() => setMainSidebarOpen(false)} aria-label="Close menu">×</button>
-          <div className="main-sidebar-content" />
+          <div className="main-sidebar-content">
+            <button
+              type="button"
+              className="main-sidebar-tool indexeddb-sidebar-button"
+              onClick={() => {
+                setMainSidebarOpen(false)
+                setIndexedDbInspectorOpen(true)
+                setFooterExpanded(false)
+                setMainFooterVisible(false)
+              }}
+              aria-label="Open IndexedDB Inspector"
+            >
+              <span className="main-sidebar-tool-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 5h16v14H4z"/>
+                  <path d="M8 9h8M8 12h8M8 15h5"/>
+                </svg>
+              </span>
+              <span className="main-sidebar-tool-copy">
+                <strong>IndexedDB Inspector</strong>
+                <small>Browser storage</small>
+              </span>
+              <span className="main-sidebar-tool-chevron" aria-hidden="true">›</span>
+            </button>
+          </div>
         </aside>
       </div>
     )}
@@ -2120,7 +2144,7 @@ export default function App() {
         </section>
       </div>}
 
-      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => { setIndexedDbInspectorOpen(false); setMainFooterVisible(true) }} inspect={inspectIndexedDb} inspectKeys={inspectIndexedDbKeys} inspectRecord={inspectIndexedDbRecord} permanentlyDelete={permanentlyDeleteIndexedDbStore} />}
+      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => { setIndexedDbInspectorOpen(false); setMainFooterVisible(true); setMainSidebarOpen(false) }} inspect={inspectIndexedDb} inspectKeys={inspectIndexedDbKeys} inspectRecord={inspectIndexedDbRecord} permanentlyDelete={permanentlyDeleteIndexedDbStore} />}
 
       {historyOpen && <div className="history-backdrop" onClick={() => setHistoryOpen(false)}>
         <section className="history-panel" onClick={(e) => e.stopPropagation()}>
@@ -2170,7 +2194,7 @@ export default function App() {
 
       </main>
     )}
-    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || logsOpen || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen || galleryOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
+    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || logsOpen || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen || galleryOpen || mainSidebarOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <button
           className={`footer-menu-toggle ${footerExpanded ? 'expanded' : 'collapsed'}`}
@@ -2252,15 +2276,6 @@ export default function App() {
         </button>
 
         </div>
-        <button
-          className="icon-btn indexeddb-inspector-btn"
-          type="button"
-          onClick={() => { setIndexedDbInspectorOpen(true); setFooterExpanded(false); setMainFooterVisible(false) }}
-          aria-label="Open IndexedDB Inspector"
-          title="IndexedDB Inspector"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>
-        </button>
         <div className="app-version">ComfyUI PWA {APP_VERSION}</div>
       </div>
     </footer>
