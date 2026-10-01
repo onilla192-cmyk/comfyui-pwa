@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs, getNodeObjectInfo, getRemoteControlStatus, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
-import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage } from './imageCache'
+import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage, ensureImageCacheDb } from './imageCache'
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
@@ -669,6 +669,7 @@ export default function App() {
       if (!cancelled) setSelectedImagesRestored(true)
     })
     void requestPersistentStorage()
+    void ensureImageCacheDb()
     return () => { cancelled = true }
   }, [])
 
