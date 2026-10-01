@@ -137,7 +137,18 @@ export async function readPromptVault(): Promise<{ items: PromptVaultItem[]; arc
     let archived: PromptVaultItem[] = []
     itemsRequest.onsuccess = () => { items = itemsRequest.result as PromptVaultItem[] }
     archivedRequest.onsuccess = () => { archived = archivedRequest.result as PromptVaultItem[] }
-    tx.oncomplete = () => { db.close(); resolve({ items, archived }) }
+    tx.oncomplete = () => {
+      db.close()
+      // If a legacy migration was incomplete, keep the legacy records as a
+      // read-only fallback until every legacy image can be copied safely.
+      const legacyItems = readLegacyList(KEY)
+      const legacyArchived = readLegacyList(ARCHIVE_KEY)
+      const merge = (stored: PromptVaultItem[], legacy: PromptVaultItem[]) => {
+        const seen = new Set(stored.map((item) => item.id))
+        return [...stored, ...legacy.filter((item) => !seen.has(item.id))]
+      }
+      resolve({ items: merge(items, legacyItems), archived: merge(archived, legacyArchived) })
+    }
     tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not read Prompt Vault.')) }
   })
 }
@@ -148,8 +159,22 @@ export async function savePromptVaultItems(items: PromptVaultItem[], archived: P
     const tx = db.transaction([ITEMS_STORE, ARCHIVED_STORE], 'readwrite')
     const itemStore = tx.objectStore(ITEMS_STORE)
     const archivedStore = tx.objectStore(ARCHIVED_STORE)
-    itemStore.clear()
-    archivedStore.clear()
+    const desiredItems = new Set(items.map((item) => item.id))
+    const desiredArchived = new Set(archived.map((item) => item.id))
+    const itemCursor = itemStore.openCursor()
+    itemCursor.onsuccess = () => {
+      const cursor = itemCursor.result
+      if (!cursor) return
+      if (!desiredItems.has(String(cursor.key))) cursor.delete()
+      cursor.continue()
+    }
+    const archivedCursor = archivedStore.openCursor()
+    archivedCursor.onsuccess = () => {
+      const cursor = archivedCursor.result
+      if (!cursor) return
+      if (!desiredArchived.has(String(cursor.key))) cursor.delete()
+      cursor.continue()
+    }
     for (const item of items) itemStore.put(item)
     for (const item of archived) archivedStore.put(item)
     tx.oncomplete = () => { db.close(); resolve() }
