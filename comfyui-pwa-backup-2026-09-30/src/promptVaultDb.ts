@@ -183,6 +183,10 @@ export async function savePromptVaultItems(items: PromptVaultItem[], archived: P
   })
 }
 
+export async function putPromptVaultImage(cacheKey: string, blob: Blob): Promise<void> {
+  await putImage(cacheKey, blob)
+}
+
 export async function getPromptVaultImage(cacheKey: string): Promise<Blob | null> {
   try { return (await getRecord<Blob>(IMAGES_STORE, cacheKey)) ?? null } catch { return null }
 }
