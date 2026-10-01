@@ -592,7 +592,6 @@ export function ImageGalleryPage({
   const [presetMenuOpen, setPresetMenuOpen] = useState(false)
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
   const [presetCreatorOpen, setPresetCreatorOpen] = useState(false)
-  const [presetMenuExpanded, setPresetMenuExpanded] = useState(false)
   const [presetManagerMode, setPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
   const [presetTitle, setPresetTitle] = useState('')
   const [presetPrompt, setPresetPrompt] = useState('')
@@ -788,7 +787,6 @@ export function ImageGalleryPage({
     setPresetPrompt('')
     setPresetCreatorOpen(true)
     setPresetManagerMode(null)
-    setPresetMenuExpanded(false)
     setSidebarOpen(false)
   }
 
