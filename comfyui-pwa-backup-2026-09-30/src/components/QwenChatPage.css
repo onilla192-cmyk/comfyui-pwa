@@ -53,7 +53,7 @@
 .qwen-chat-page.has-background{background:#000}
 .qwen-chat-page.has-background::before{content:"";position:absolute;inset:0;z-index:0;background-image:var(--qwen-chat-background);background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none}
 .qwen-chat-page.has-background::after{content:"";position:absolute;inset:0;z-index:0;background:rgba(0,0,0,.18);pointer-events:none}
-.qwen-chat-page.has-background>*{position:relative;z-index:1}
+.qwen-chat-page.has-background>*{position:relative;z-index:1}.qwen-chat-page.has-background .qwen-chat-list-backdrop{z-index:124}.qwen-chat-page.has-background .qwen-chat-list{z-index:130}
 .qwen-chat-page.has-background .qwen-chat-messages{background:rgba(0,0,0,.04)}
 .qwen-chat-page.has-background .qwen-chat-header{background:rgba(255,255,255,.72)}
 .qwen-chat-page.has-background .qwen-chat-composer{background:transparent}
