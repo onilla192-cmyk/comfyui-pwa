@@ -141,7 +141,7 @@
 @media(max-width:600px){.qwen-chat-avatar{flex-basis:44px;width:44px;height:44px}.qwen-chat-avatar-button,.qwen-chat-avatar-user{width:44px;height:44px}.qwen-chat-message-content{max-width:calc(100% - 52px)}}
 
 
-/* Vibrant animated RGB border for the active Qwen thinking bubble */
+/* Vibrant animated RGB border — color stays strictly outside the bubble */
 @property --qwen-rgb-angle {
   syntax: "<angle>";
   inherits: false;
@@ -150,51 +150,35 @@
 
 .qwen-chat-thinking-bubble {
   position: relative;
-  isolation: isolate;
+  z-index: 0;
   border: 3px solid transparent;
-  background:
-    linear-gradient(var(--qwen-assistant-bubble,#e9e9eb),var(--qwen-assistant-bubble,#e9e9eb)) padding-box,
-    conic-gradient(
-      from var(--qwen-rgb-angle),
-      #ff003c 0deg,
-      #ff00a8 45deg,
-      #7a00ff 90deg,
-      #0066ff 135deg,
-      #00eaff 180deg,
-      #00ff66 225deg,
-      #dfff00 270deg,
-      #ff7a00 315deg,
-      #ff003c 360deg
-    ) border-box;
+  background: var(--qwen-assistant-bubble,#e9e9eb);
+  background-clip: padding-box;
   animation: qwen-rgb-border-spin 1.15s linear infinite;
-  box-shadow:
-    0 0 5px rgba(255,0,72,.9),
-    0 0 10px rgba(0,234,255,.85),
-    0 0 18px rgba(122,0,255,.7),
-    0 0 30px rgba(255,0,168,.45);
 }
 
-.qwen-chat-thinking-bubble::after {
+.qwen-chat-thinking-bubble::before {
   content: "";
   position: absolute;
-  inset: -4px;
+  inset: -3px;
   z-index: -1;
   border-radius: inherit;
   background: conic-gradient(
     from var(--qwen-rgb-angle),
-    #ff003c,
-    #ff00a8,
-    #7a00ff,
-    #0066ff,
-    #00eaff,
-    #00ff66,
-    #dfff00,
-    #ff7a00,
-    #ff003c
+    #ff003c 0deg,
+    #ff00a8 45deg,
+    #7a00ff 90deg,
+    #0066ff 135deg,
+    #00eaff 180deg,
+    #00ff66 225deg,
+    #dfff00 270deg,
+    #ff7a00 315deg,
+    #ff003c 360deg
   );
-  filter: blur(7px);
-  opacity: .9;
-  animation: qwen-rgb-border-spin 1.15s linear infinite;
+  filter: drop-shadow(0 0 5px #ff003c)
+          drop-shadow(0 0 8px #00eaff)
+          drop-shadow(0 0 10px #7a00ff);
+  pointer-events: none;
 }
 
 @keyframes qwen-rgb-border-spin {
@@ -205,26 +189,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .qwen-chat-thinking-bubble,
-  .qwen-chat-thinking-bubble::after {
+  .qwen-chat-thinking-bubble::before {
     animation: none;
   }
 }
 
 @media (prefers-color-scheme: dark) {
   .qwen-chat-thinking-bubble {
-    background:
-      linear-gradient(var(--qwen-assistant-bubble,#2c2c2e),var(--qwen-assistant-bubble,#2c2c2e)) padding-box,
-      conic-gradient(
-        from var(--qwen-rgb-angle),
-        #ff003c 0deg,
-        #ff00a8 45deg,
-        #7a00ff 90deg,
-        #0066ff 135deg,
-        #00eaff 180deg,
-        #00ff66 225deg,
-        #dfff00 270deg,
-        #ff7a00 315deg,
-        #ff003c 360deg
-      ) border-box;
+    background: var(--qwen-assistant-bubble,#2c2c2e);
+    background-clip: padding-box;
   }
 }
