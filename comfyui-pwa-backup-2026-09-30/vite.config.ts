@@ -7,7 +7,6 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
         name: 'ComfyUI Console',
         short_name: 'ComfyUI',
@@ -18,11 +17,6 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
-        icons: [
-          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
-        ]
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
