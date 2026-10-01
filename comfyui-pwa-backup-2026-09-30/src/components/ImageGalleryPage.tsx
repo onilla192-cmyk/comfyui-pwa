@@ -28,13 +28,6 @@ interface GalleryFolder {
   createdAt: number
 }
 
-export interface GalleryPreset {
-  id: string
-  title: string
-  prompt: string
-  createdAt: number
-}
-
 type Figure = 'one' | 'two'
 
 const GALLERY_STORAGE_KEY = 'comfyui-pwa-gallery-v1'
@@ -43,7 +36,6 @@ const GALLERY_DB_VERSION = 8
 const GALLERY_STORE_NAME = 'images'
 const GALLERY_IMAGE_DATA_STORE_NAME = 'imageData'
 const GALLERY_FOLDER_STORE_NAME = 'folders'
-const GALLERY_PRESET_STORE_NAME = 'presets'
 
 function loadGallery(): GalleryItem[] {
   try {
@@ -66,7 +58,6 @@ function openGalleryDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(GALLERY_STORE_NAME)) db.createObjectStore(GALLERY_STORE_NAME, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(GALLERY_IMAGE_DATA_STORE_NAME)) db.createObjectStore(GALLERY_IMAGE_DATA_STORE_NAME, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(GALLERY_FOLDER_STORE_NAME)) db.createObjectStore(GALLERY_FOLDER_STORE_NAME, { keyPath: 'id' })
-      if (!db.objectStoreNames.contains(GALLERY_PRESET_STORE_NAME)) db.createObjectStore(GALLERY_PRESET_STORE_NAME, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Could not open gallery storage'))
@@ -74,13 +65,12 @@ function openGalleryDb(): Promise<IDBDatabase> {
   })
 }
 
-async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
+async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[] }> {
   const db = await openGalleryDb()
   return new Promise((resolve, reject) => {
-    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME, GALLERY_PRESET_STORE_NAME], 'readonly')
+    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME], 'readonly')
     const imageRequest = tx.objectStore(GALLERY_STORE_NAME).getAll()
     const folderRequest = tx.objectStore(GALLERY_FOLDER_STORE_NAME).getAll()
-    const presetRequest = tx.objectStore(GALLERY_PRESET_STORE_NAME).getAll()
     tx.oncomplete = () => {
       db.close()
       const items = (imageRequest.result || []).map((item: GalleryStoredItem & { src?: string }) => ({
@@ -249,17 +239,13 @@ export async function readGalleryPresets(): Promise<GalleryPreset[]> {
   return recoverPresetsFromIndexedDb(stored.presets)
 }
 
-async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], presets: GalleryPreset[]): Promise<void> {
+async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[]): Promise<void> {
   const db = await openGalleryDb()
   return new Promise((resolve, reject) => {
-    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME, GALLERY_PRESET_STORE_NAME], 'readwrite')
+    const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME], 'readwrite')
     const imageStore = tx.objectStore(GALLERY_STORE_NAME)
     const folderStore = tx.objectStore(GALLERY_FOLDER_STORE_NAME)
-    const presetStore = tx.objectStore(GALLERY_PRESET_STORE_NAME)
     imageStore.clear()
-    // Never clear folders during an automatic gallery save. Folder records are user data.
-    // Never clear the preset store during an automatic gallery save. Presets are user data.
-    // Keeping this store append/merge-only prevents an incomplete React state from deleting presets.
     items.forEach((item) => imageStore.put({
       id: item.id,
       name: item.name,
@@ -268,84 +254,13 @@ async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], pr
       folderId: item.folderId ?? null,
     } satisfies GalleryStoredItem))
     folders.forEach((folder) => folderStore.put(folder))
-    // Presets are intentionally merge-only here. Explicit preset deletion is handled separately.
-    presets.forEach((preset) => presetStore.put(preset))
     tx.oncomplete = () => { db.close(); resolve() }
     tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save gallery')) }
     tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not save gallery')) }
   })
 }
 
-
-function looksLikeGalleryPreset(value: unknown): value is GalleryPreset {
-  if (!value || typeof value !== 'object') return false
-  const item = value as Record<string, unknown>
-  return typeof item.title === 'string' && typeof item.prompt === 'string'
-}
-
-async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<GalleryPreset[]> {
-  const byId = new Map(existing.map((preset) => [preset.id, preset]))
-  const databases: string[] = []
-  try {
-    if (typeof indexedDB.databases === 'function') {
-      const entries = await indexedDB.databases()
-      for (const entry of entries) if (entry.name && !databases.includes(entry.name)) databases.push(entry.name)
-    }
-  } catch {}
-  if (!databases.includes(GALLERY_DB_NAME)) databases.push(GALLERY_DB_NAME)
-
-  for (const databaseName of databases) {
-    let db: IDBDatabase
-    try {
-      db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(databaseName)
-        request.onsuccess = () => resolve(request.result)
-        request.onerror = () => reject(request.error || new Error('Could not open IndexedDB database'))
-      })
-    } catch { continue }
-
-    try {
-      const storeNames = Array.from(db.objectStoreNames)
-      if (!storeNames.length) continue
-      await new Promise<void>((resolve) => {
-        let remaining = storeNames.length
-        const finish = () => { remaining -= 1; if (remaining <= 0) resolve() }
-        let tx: IDBTransaction
-        try { tx = db.transaction(storeNames, 'readonly') } catch { resolve(); return }
-        for (const storeName of storeNames) {
-          const request = tx.objectStore(storeName).openCursor()
-          request.onsuccess = () => {
-            const cursor = request.result
-            if (!cursor) { finish(); return }
-            const value = cursor.value
-            if (looksLikeGalleryPreset(value)) {
-              const item = value as Partial<GalleryPreset>
-              const id = typeof item.id === 'string' && item.id
-                ? item.id
-                : 'preset-recovered-' + Date.now() + '-' + Math.random().toString(36).slice(2)
-              if (!byId.has(id)) {
-                byId.set(id, {
-                  id,
-                  title: item.title!,
-                  prompt: item.prompt!,
-                  createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
-                })
-              }
-            }
-            cursor.continue()
-          }
-          request.onerror = () => finish()
-        }
-        tx.oncomplete = () => resolve()
-        tx.onerror = () => resolve()
-        tx.onabort = () => resolve()
-      })
-    } finally { db.close() }
-  }
-  return Array.from(byId.values()).sort((a, b) => a.createdAt - b.createdAt)
-}
-
-async function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<GalleryFolder[]> {
+function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<GalleryFolder[]> {
   const byId = new Map(existing.map((folder) => [folder.id, folder]))
   const databases: string[] = []
   try {
@@ -575,7 +490,7 @@ export function ImageGalleryPage({
   // Render the known recovered folders immediately. This keeps the folder UI
   // visible even if IndexedDB recovery is still pending or fails.
   const [folders, setFolders] = useState<GalleryFolder[]>(() => ensureKnownGalleryFolders([]))
-  const [presets, setPresets] = useState<GalleryPreset[]>([])
+
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [armedId, setArmedId] = useState<string | null>(null)
@@ -590,11 +505,6 @@ export function ImageGalleryPage({
   const [sendFolderOpen, setSendFolderOpen] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
   const [presetMenuOpen, setPresetMenuOpen] = useState(false)
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
-  const [presetCreatorOpen, setPresetCreatorOpen] = useState(false)
-  const [presetManagerMode, setPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
-  const [presetTitle, setPresetTitle] = useState('')
-  const [presetPrompt, setPresetPrompt] = useState('')
   const feedbackTimer = useRef<number | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
@@ -602,28 +512,11 @@ export function ImageGalleryPage({
   const suppressTap = useRef(false)
 
   useEffect(() => {
-    if (!presetAction) return
-    if (presetAction === 'edit' || presetAction === 'delete' || presetAction === 'export') {
-      if (!presets.length) return
-    }
-    if (presetAction === 'create') openPresetCreator()
-    else if (presetAction === 'edit') openPresetManager('edit')
-    else if (presetAction === 'delete') openPresetManager('delete')
-    else exportCreatedPresets()
-    onPresetActionHandled?.()
-  }, [presetAction, presets.length])
-
-  useEffect(() => {
-    void refreshGalleryPresetList()
-  }, [])
-
-  useEffect(() => {
     let active = true
     void migrateLegacyGallery().then((stored) => {
       if (!active) return
       setItems(stored.items)
       setFolders(stored.folders)
-      setPresets(stored.presets)
       setStorageReady(true)
     }).catch(async () => {
       if (!active) return
@@ -632,15 +525,9 @@ export function ImageGalleryPage({
       // automatic save of empty state. Keep the user's existing IndexedDB
       // records untouched while still showing the recovered folder names.
       const fallbackFolders = ensureKnownGalleryFolders([])
-      let fallbackPresets: GalleryPreset[] = []
-      try {
-        fallbackPresets = await recoverPresetsFromIndexedDb([])
-      } catch {}
-
       if (!active) return
       setItems(loadGallery())
       setFolders(fallbackFolders)
-      setPresets(fallbackPresets)
 
       // Do not enable the automatic writer after a failed migration. This
       // prevents writeGalleryDb() from clearing existing image metadata.
@@ -651,8 +538,8 @@ export function ImageGalleryPage({
 
   useEffect(() => {
     if (!storageReady) return
-    void writeGalleryDb(items, folders, presets)
-  }, [items, folders, presets, storageReady])
+    void writeGalleryDb(items, folders)
+  }, [items, folders, storageReady])
 
   useEffect(() => {
     if (!selectedId) {
@@ -686,7 +573,6 @@ export function ImageGalleryPage({
   const visibleItems = items.filter((item) => (item.folderId ?? null) === currentFolderId)
   const visibleFolders = currentFolderId === null ? folders : []
   const selected = items.find((item) => item.id === selectedId) || null
-  const selectedPreset = presets.find((preset) => preset.id === selectedPresetId) || null
 
   async function addImages(files: FileList | null) {
     if (!files?.length) return
@@ -752,80 +638,6 @@ export function ImageGalleryPage({
     showFeedback('Preset Saved')
   }
 
-
-  function exportCreatedPresets() {
-    if (!presets.length) {
-      showFeedback('No presets to export')
-      return
-    }
-    const payload = {
-      format: 'comfyui-pwa-created-presets',
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      presets: presets.map((preset) => ({
-        id: preset.id,
-        title: preset.title,
-        prompt: preset.prompt,
-        createdAt: preset.createdAt,
-      })),
-    }
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'comfyui-created-presets.json'
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 0)
-    showFeedback(`Exported ${presets.length} preset${presets.length === 1 ? '' : 's'}`)
-  }
-
-  function openPresetCreator() {
-    setSelectedPresetId(null)
-    setPresetTitle('')
-    setPresetPrompt('')
-    setPresetCreatorOpen(true)
-    setPresetManagerMode(null)
-    setSidebarOpen(false)
-  }
-
-  function openPresetManager(mode: 'edit' | 'delete') {
-    setPresetManagerMode(mode)
-    setPresetMenuExpanded(false)
-    setPresetCreatorOpen(false)
-    setSidebarOpen(false)
-  }
-
-  function editPreset(preset: GalleryPreset) {
-    setPresetTitle(preset.title)
-    setPresetPrompt(preset.prompt)
-    setSelectedPresetId(preset.id)
-    setPresetCreatorOpen(true)
-    setPresetManagerMode(null)
-  }
-
-  function saveEditedPreset() {
-    const title = presetTitle.trim()
-    const prompt = presetPrompt.trim()
-    if (!title || !prompt || !selectedPresetId) return
-    if (presets.some((preset) => preset.id !== selectedPresetId && preset.title.toLowerCase() === title.toLowerCase())) {
-      window.alert('A preset with that title already exists.')
-      return
-    }
-    setPresets((current) => current.map((preset) => preset.id === selectedPresetId ? { ...preset, title, prompt } : preset))
-    setPresetTitle('')
-    setPresetPrompt('')
-    setPresetCreatorOpen(false)
-    setSelectedPresetId(selectedPresetId)
-    showFeedback('Preset Updated')
-  }
-
-  function deletePreset(presetId: string) {
-    setPresets((current) => current.filter((preset) => preset.id !== presetId))
-    if (selectedPresetId === presetId) setSelectedPresetId(null)
-    showFeedback('Preset Deleted')
-  }
 
   function addFolder() {
     const name = window.prompt('Name this folder', 'New Folder')?.trim()
@@ -1039,59 +851,6 @@ export function ImageGalleryPage({
               </div>
             )}
           </aside>
-        </div>
-      )}
-
-      {presetCreatorOpen && (
-        <div className="gallery-preset-modal-backdrop" onClick={() => setPresetCreatorOpen(false)}>
-          <section className="gallery-preset-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="gallery-preset-modal-header">
-              <div>
-                <h2>{selectedPresetId && presets.some((preset) => preset.id === selectedPresetId && preset.title === presetTitle) ? 'Edit Preset' : 'Create Preset'}</h2>
-                <span>{selectedPresetId ? 'Update the selected preset title and prompt.' : 'Save a title and prompt for the gallery preset picker.'}</span>
-              </div>
-              <button type="button" onClick={() => { setPresetCreatorOpen(false); setSelectedPresetId(null) }} aria-label="Close preset editor">×</button>
-            </div>
-            <label className="gallery-preset-field">
-              <span>Preset Title</span>
-              <input value={presetTitle} onChange={(e) => setPresetTitle(e.target.value)} placeholder="Preset title" autoFocus />
-            </label>
-            <label className="gallery-preset-field">
-              <span>Prompt</span>
-              <textarea value={presetPrompt} onChange={(e) => setPresetPrompt(e.target.value)} placeholder="Enter the prompt for this preset..." rows={7} />
-            </label>
-            <div className="gallery-preset-modal-actions">
-              <button type="button" onClick={() => { setPresetCreatorOpen(false); setSelectedPresetId(null) }}>Cancel</button>
-              <button type="button" className="primary" disabled={!presetTitle.trim() || !presetPrompt.trim()} onClick={selectedPresetId ? saveEditedPreset : createPreset}>{selectedPresetId ? 'Save Changes' : 'Save Preset'}</button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {presetManagerMode && (
-        <div className="gallery-preset-modal-backdrop" onClick={() => setPresetManagerMode(null)}>
-          <section className="gallery-preset-modal gallery-preset-manager" onClick={(e) => e.stopPropagation()}>
-            <div className="gallery-preset-modal-header">
-              <div>
-                <h2>{presetManagerMode === 'edit' ? 'Edit Preset' : 'Delete Preset'}</h2>
-                <span>{presetManagerMode === 'edit' ? 'Choose a preset to edit.' : 'Choose a preset to delete.'}</span>
-              </div>
-              <button type="button" onClick={() => setPresetManagerMode(null)} aria-label="Close preset manager">×</button>
-            </div>
-            <div className="gallery-preset-management-list">
-              {presets.map((preset) => (
-                <button
-                  type="button"
-                  key={preset.id}
-                  className={presetManagerMode === 'edit' ? 'gallery-preset-management-option' : 'gallery-preset-management-option delete'}
-                  onClick={() => presetManagerMode === 'edit' ? editPreset(preset) : deletePreset(preset.id)}
-                >
-                  <span>{preset.title}</span>
-                  <span>{presetManagerMode === 'edit' ? 'Edit' : 'Delete'}</span>
-                </button>
-              ))}
-            </div>
-          </section>
         </div>
       )}
 
