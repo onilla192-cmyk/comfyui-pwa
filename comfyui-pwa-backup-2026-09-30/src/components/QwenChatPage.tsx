@@ -111,6 +111,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
 
     setSending(true)
     setError('')
+    setComposerExpanded(false)
 
     const userId = crypto.randomUUID()
     const userMessage: ChatMessage = {
