@@ -12,6 +12,35 @@ type ChatMessage = {
 
 const STORAGE_KEY = 'qwen3.5-hauhau-chat-v1'
 
+type MessagePart =
+  | { type: 'text'; value: string }
+  | { type: 'code'; value: string; language: string }
+
+function splitMessageParts(text: string): MessagePart[] {
+  const parts: MessagePart[] = []
+  const fence = /\`\`\`([^\n`]*)\n([\s\S]*?)\n?\`\`\`/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = fence.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', value: text.slice(lastIndex, match.index) })
+    }
+    parts.push({
+      type: 'code',
+      language: match[1].trim(),
+      value: match[2].replace(/\n$/, ''),
+    })
+    lastIndex = match.index + match[0].length
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', value: text.slice(lastIndex) })
+  }
+
+  return parts.length ? parts : [{ type: 'text', value: text }]
+}
+
 export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
@@ -63,6 +92,16 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
       window.setTimeout(() => setCopiedId((current) => current === message.id ? null : current), 1400)
     } catch {
       setError('Could not copy Qwen message.')
+    }
+  }
+
+  async function copyCode(code: string, id: string) {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopiedId(id)
+      window.setTimeout(() => setCopiedId((current) => current === id ? null : current), 1400)
+    } catch {
+      setError('Could not copy code.')
     }
   }
 
@@ -143,7 +182,27 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
             )}
             <div className="qwen-chat-message-bubble">
               <span className="qwen-chat-message-role">{message.role === 'user' ? 'You' : 'Qwen'}</span>
-              <p>{message.text}</p>
+              {message.role === 'assistant'
+                ? splitMessageParts(message.text).map((part, index) =>
+                    part.type === 'code' ? (
+                      <div className="qwen-code-block" key={index}>
+                        <div className="qwen-code-header">
+                          <span>{part.language || 'code'}</span>
+                          <button
+                            type="button"
+                            className={`qwen-code-copy ${copiedId === `${message.id}-${index}` ? 'copied' : ''}`}
+                            onClick={() => void copyCode(part.value, `${message.id}-${index}`)}
+                          >
+                            {copiedId === `${message.id}-${index}` ? '✓ Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <pre><code>{part.value}</code></pre>
+                      </div>
+                    ) : (
+                      <p key={index}>{part.value}</p>
+                    )
+                  )
+                : <p>{message.text}</p>}
             </div>
             {message.role === 'assistant' && (
               <button
