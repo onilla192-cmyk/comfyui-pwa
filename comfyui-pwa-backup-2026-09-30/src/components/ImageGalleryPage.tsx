@@ -196,7 +196,7 @@ export async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolde
   })
 }
 
-function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<GalleryFolder[]> {
+async function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<GalleryFolder[]> {
   const byId = new Map(existing.map((folder) => [folder.id, folder]))
   const databases: string[] = []
   try {
