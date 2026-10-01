@@ -117,7 +117,12 @@ export async function updateCreatedPreset(id: string, title: string, prompt: str
   if (!current) throw new Error('Preset not found.')
   const updated = { ...current, title: cleanTitle, prompt: cleanPrompt }
   await putCreatedPreset(updated)
-  return updated
+  const saved = await readCreatedPresetsInternal()
+  const verified = saved.find((preset) => preset.id === id)
+  if (!verified || verified.title !== cleanTitle || verified.prompt !== cleanPrompt) {
+    throw new Error('Preset changes could not be verified after saving.')
+  }
+  return verified
 }
 
 async function putCreatedPreset(preset: CreatedPreset): Promise<void> {
