@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { readCreatedPresets, type GalleryPreset } from '../createdPresetsDb'
 
 interface GalleryItem {
   id: string
@@ -79,8 +80,7 @@ async function readGalleryDb(): Promise<{ items: GalleryItem[]; folders: Gallery
         folderId: item.folderId ?? null,
       })).sort((a: GalleryItem, b: GalleryItem) => b.createdAt - a.createdAt)
       const folders = (folderRequest.result || []).sort((a: GalleryFolder, b: GalleryFolder) => a.createdAt - b.createdAt)
-      const presets = (presetRequest.result || []).sort((a: GalleryPreset, b: GalleryPreset) => a.createdAt - b.createdAt)
-      resolve({ items, folders, presets })
+      resolve({ items, folders })
     }
     tx.onerror = () => {
       db.close()
@@ -175,71 +175,7 @@ async function makeThumbnail(src: string, maxSize = 360): Promise<string> {
   })
 }
 
-export async function importGalleryPresets(file: File): Promise<number> {
-  const text = await file.text()
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(text)
-  } catch {
-    throw new Error('The selected file is not valid JSON.')
-  }
-
-  const source = Array.isArray(parsed)
-    ? parsed
-    : parsed && typeof parsed === 'object' && Array.isArray((parsed as { presets?: unknown }).presets)
-      ? (parsed as { presets: unknown[] }).presets
-      : null
-
-  if (!source) throw new Error('This file does not contain a presets list.')
-
-  const imported: GalleryPreset[] = source
-    .filter((value): value is Record<string, unknown> => !!value && typeof value === 'object')
-    .filter((value) => typeof value.title === 'string' && value.title.trim() && typeof value.prompt === 'string' && value.prompt.trim())
-    .map((value, index) => ({
-      id: typeof value.id === 'string' && value.id.trim()
-        ? value.id
-        : 'preset-imported-' + Date.now() + '-' + index + '-' + Math.random().toString(36).slice(2),
-      title: (value.title as string).trim(),
-      prompt: (value.prompt as string).trim(),
-      createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
-    }))
-
-  if (!imported.length) throw new Error('No valid presets were found in the selected file.')
-
-  const existing = await readGalleryPresets()
-  const byId = new Map(existing.map((preset) => [preset.id, preset]))
-  const byTitle = new Set(existing.map((preset) => preset.title.trim().toLowerCase()))
-  const toAdd = imported.filter((preset) => {
-    const titleKey = preset.title.toLowerCase()
-    if (byId.has(preset.id) || byTitle.has(titleKey)) return false
-    byId.set(preset.id, preset)
-    byTitle.add(titleKey)
-    return true
-  })
-
-  if (!toAdd.length) return 0
-
-  const db = await openGalleryDb()
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(GALLERY_PRESET_STORE_NAME, 'readwrite')
-    const store = tx.objectStore(GALLERY_PRESET_STORE_NAME)
-    toAdd.forEach((preset) => store.put(preset))
-    tx.oncomplete = () => { db.close(); resolve() }
-    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not import presets')) }
-    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not import presets')) }
-  })
-
-  return toAdd.length
-}
-
-export async function readGalleryPresets(): Promise<GalleryPreset[]> {
-  // Use the same non-destructive recovery path as the Gallery itself so the
-  // Main Page and Gallery Menu always see the same Created Presets.
-  const stored = await readGalleryDb()
-  return recoverPresetsFromIndexedDb(stored.presets)
-}
-
-async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[]): Promise<void> {
+export async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[]): Promise<void> {
   const db = await openGalleryDb()
   return new Promise((resolve, reject) => {
     const tx = db.transaction([GALLERY_STORE_NAME, GALLERY_FOLDER_STORE_NAME], 'readwrite')
@@ -506,6 +442,10 @@ export function ImageGalleryPage({
   const armTimer = useRef<number | null>(null)
   const pointerStart = useRef<{ id: string; x: number; y: number } | null>(null)
   const suppressTap = useRef(false)
+
+  useEffect(() => {
+    void readCreatedPresets().then(setPresets).catch(() => setPresets([]))
+  }, [])
 
   useEffect(() => {
     let active = true
