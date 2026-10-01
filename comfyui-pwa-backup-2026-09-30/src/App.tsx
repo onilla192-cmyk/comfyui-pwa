@@ -6,6 +6,7 @@ import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
+import { importPromptVaultItems } from './promptVaultDb'
 import { ImageGalleryPage, readGalleryPresets, importGalleryPresets, type GalleryPreset } from './components/ImageGalleryPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
@@ -501,19 +502,9 @@ export default function App() {
     })
   }
 
-  function moveItemsToPromptVault(items: PromptVaultItem[]) {
+  async function moveItemsToPromptVault(items: PromptVaultItem[]) {
     if (!items.length) return
-    const key = 'comfyui-console-prompt-vault-v1'
-    let current: PromptVaultItem[] = []
-    try {
-      const parsed = JSON.parse(localStorage.getItem(key) || '[]')
-      current = Array.isArray(parsed) ? parsed : []
-    } catch {
-      current = []
-    }
-    const existing = new Set(current.map((item) => item.id))
-    const next = [...current, ...items.filter((item) => !existing.has(item.id))]
-    localStorage.setItem(key, JSON.stringify(next))
+    await importPromptVaultItems(items)
     window.dispatchEvent(new Event('prompt-vault-updated'))
   }
 
