@@ -1,0 +1,26 @@
+name: Create Repo Backup ZIP
+
+on:
+  push:
+    branches:
+      - temp-repo-backup-2026-09-30
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target commit
+        uses: actions/checkout@v4
+        with:
+          ref: 6e62b87e1c007fb7c4fa50c099afeaa7358ed28d
+
+      - name: Create ZIP
+        run: |
+          zip -r comfyui-pwa-current-6e62b87.zip . -x ".git/*"
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: comfyui-pwa-current-6e62b87
+          path: comfyui-pwa-current-6e62b87.zip
+          retention-days: 90
