@@ -6535,6 +6535,13 @@ body:has(.history-backdrop) .history-export-btn {
   font-weight: 700 !important;
 }
 
+body:has(.history-backdrop) .history-import-btn {
+  background: #303030 !important;
+  color: #fff !important;
+  border: 1px solid #666 !important;
+  font-weight: 700 !important;
+}
+
 @media (max-width: 700px) {
   body:has(.history-backdrop) .history-grid .history-item-expanded .history-details {
     padding: 9px !important;
