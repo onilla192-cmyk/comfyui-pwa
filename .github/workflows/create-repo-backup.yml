@@ -1,0 +1,23 @@
+name: Create Repository Backup ZIP
+
+on:
+  push:
+    paths:
+      - ".github/workflows/create-repo-backup.yml"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create exact pre-workflow repository ZIP
+        run: git archive --format=zip --output="comfyui-pwa-current-backup.zip" "${{ github.event.before }}"
+      - name: Upload backup ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: comfyui-pwa-current-backup
+          path: comfyui-pwa-current-backup.zip
+          retention-days: 90
