@@ -181,8 +181,10 @@ async function makeThumbnail(src: string, maxSize = 360): Promise<string> {
 }
 
 export async function readGalleryPresets(): Promise<GalleryPreset[]> {
+  // Use the same non-destructive recovery path as the Gallery itself so the
+  // Main Page and Gallery Menu always see the same Created Presets.
   const stored = await readGalleryDb()
-  return stored.presets
+  return recoverPresetsFromIndexedDb(stored.presets)
 }
 
 async function writeGalleryDb(items: GalleryItem[], folders: GalleryFolder[], presets: GalleryPreset[]): Promise<void> {
