@@ -56,7 +56,11 @@ function loadGallery(): GalleryItem[] {
 
 function openGalleryDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(GALLERY_DB_NAME, GALLERY_DB_VERSION)
+    // Do not request a fixed lower version here. A user's browser may already
+    // have this database at a newer schema version from a previous deployment.
+    // Opening without a version lets IndexedDB use the existing version and
+    // avoids the "lower version than the existing version" error.
+    const request = indexedDB.open(GALLERY_DB_NAME)
     request.onupgradeneeded = () => {
       const db = request.result
       if (!db.objectStoreNames.contains(GALLERY_STORE_NAME)) db.createObjectStore(GALLERY_STORE_NAME, { keyPath: 'id' })
@@ -66,6 +70,7 @@ function openGalleryDb(): Promise<IDBDatabase> {
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Could not open gallery storage'))
+    request.onblocked = () => reject(new Error('Gallery storage is busy. Close other tabs or windows using this app and try again.'))
   })
 }
 
