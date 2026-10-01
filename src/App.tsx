@@ -6,7 +6,7 @@ import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
-import { ImageGalleryPage, readGalleryPresets, type GalleryPreset } from './components/ImageGalleryPage'
+import { ImageGalleryPage, readGalleryPresets, recoverAndStoreGalleryPresets, type GalleryPreset } from './components/ImageGalleryPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -160,6 +160,8 @@ export default function App() {
   const [resultsOpen, setResultsOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
   const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
+  const [presetRecoveryBusy, setPresetRecoveryBusy] = useState(false)
+  const [presetRecoveryMessage, setPresetRecoveryMessage] = useState('')
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
   const [completedImageVisible, setCompletedImageVisible] = useState(true)
   const completedTapTimer = useRef<number | null>(null)
@@ -274,8 +276,29 @@ export default function App() {
     }
   }
 
+  const recoverMainPagePresets = async () => {
+    if (presetRecoveryBusy) return
+    setPresetRecoveryBusy(true)
+    setPresetRecoveryMessage('Scanning this browser for saved presets…')
+    try {
+      const result = await recoverAndStoreGalleryPresets()
+      setGalleryPresets(result.presets)
+      setPresetRecoveryMessage(
+        result.recovered
+          ? `Recovered ${result.recovered} preset${result.recovered === 1 ? '' : 's'} from this browser.`
+          : result.presets.length
+            ? `Found ${result.presets.length} saved preset${result.presets.length === 1 ? '' : 's'}.`
+            : 'No saved presets were found in this browser storage.'
+      )
+    } catch {
+      setPresetRecoveryMessage('Browser storage could not be scanned.')
+    } finally {
+      setPresetRecoveryBusy(false)
+    }
+  }
+
   useEffect(() => {
-    void refreshGalleryPresets()
+    void recoverMainPagePresets()
     const timer = window.setInterval(() => void refreshGalleryPresets(), 1000)
     return () => window.clearInterval(timer)
   }, [])
@@ -1704,8 +1727,14 @@ export default function App() {
                 <h2>Created Presets</h2>
                 <span>{galleryPresets.length} preset{galleryPresets.length === 1 ? '' : 's'}</span>
               </div>
-              <button type="button" className="close-btn" onClick={() => setPresetsOpen(false)} aria-label="Close presets">×</button>
+              <div className="preset-popup-header-actions">
+                <button type="button" className="preset-recover-btn" onClick={() => void recoverMainPagePresets()} disabled={presetRecoveryBusy}>
+                  {presetRecoveryBusy ? 'Recovering…' : 'Recover Presets'}
+                </button>
+                <button type="button" className="close-btn" onClick={() => setPresetsOpen(false)} aria-label="Close presets">×</button>
+              </div>
             </div>
+            {presetRecoveryMessage && <div className="preset-recovery-message" role="status">{presetRecoveryMessage}</div>}
             <div className="preset-popup-list">
               {galleryPresets.length ? galleryPresets.map((preset) => (
                 <button
