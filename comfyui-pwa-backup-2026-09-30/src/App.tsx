@@ -1758,7 +1758,7 @@ export default function App() {
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
-          <button className="preset-btn" type="button" onClick={() => { void refreshGalleryPresets(); setPresetsOpen(true) }} aria-label="Open created presets" title="Created presets">
+          <button className="results-btn" type="button" onClick={() => { void refreshGalleryPresets(); setPresetsOpen(true) }} aria-label="Open created presets" title="Created presets">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 18h6"/>
               <path d="M10 21h4"/>
