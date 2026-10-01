@@ -3,22 +3,6 @@ import { getPromptVaultImage, putPromptVaultImage, importPromptVaultItems, readP
 import type { PromptVaultImageRef, PromptVaultItem } from '../promptVaultDb'
 export type { PromptVaultImageRef, PromptVaultItem } from '../promptVaultDb'
 
-export interface PromptVaultImageRef {
-  id: string
-  filename: string
-  mimeType: string
-  cacheKey: string
-}
-
-export interface PromptVaultItem {
-  id: string
-  name: string
-  prompt: string
-  image: string
-  images: string[]
-  imageRefs: PromptVaultImageRef[]
-}
-
 function useImagePalette(cacheKey?: string) {
   const [palette, setPalette] = useState({ base: '#343a43', edge: '#59616c', glow: '#68717c' })
   useEffect(() => {
