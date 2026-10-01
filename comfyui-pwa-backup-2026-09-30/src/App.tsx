@@ -173,6 +173,8 @@ export default function App() {
   const [ideasOpen, setIdeasOpen] = useState(false)
   const [resultsOpen, setResultsOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
+  const [presetActionsExpanded, setPresetActionsExpanded] = useState(false)
+  const [pendingPresetAction, setPendingPresetAction] = useState<'create' | 'edit' | 'delete' | 'export' | null>(null)
   const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
   const presetImportInputRef = useRef<HTMLInputElement | null>(null)
   const historyImportInputRef = useRef<HTMLInputElement | null>(null)
@@ -1594,7 +1596,12 @@ export default function App() {
     )}
 
     {galleryOpen ? (
-      <ImageGalleryPage onClose={() => setGalleryOpen(false)} onSetFigure={(which, item, presetPrompt) => { void setGalleryImage(which, item, presetPrompt) }} />
+      <ImageGalleryPage
+        onClose={() => { setGalleryOpen(false); setPendingPresetAction(null) }}
+        onSetFigure={(which, item, presetPrompt) => { void setGalleryImage(which, item, presetPrompt) }}
+        presetAction={pendingPresetAction}
+        onPresetActionHandled={() => setPendingPresetAction(null)}
+      />
     ) : (
       <main className="app-main">
       {isBusy && progress && (
@@ -2083,20 +2090,38 @@ export default function App() {
                 <span>{galleryPresets.length} preset{galleryPresets.length === 1 ? '' : 's'}</span>
               </div>
               <div className="preset-popup-header-actions">
-                <button type="button" className="preset-import-btn" onClick={() => presetImportInputRef.current?.click()} aria-label="Import created presets">Import JSON</button>
-                <input
-                  ref={presetImportInputRef}
-                  type="file"
-                  accept="application/json,.json,text/json"
-                  hidden
-                  onChange={(event) => {
-                    const file = event.target.files?.[0]
-                    void handlePresetImport(file)
-                    event.currentTarget.value = ''
-                  }}
-                />
-                <button type="button" className="close-btn" onClick={() => setPresetsOpen(false)} aria-label="Close presets">×</button>
+                <button
+                  type="button"
+                  className={'preset-actions-chevron' + (presetActionsExpanded ? ' active' : '')}
+                  onClick={() => setPresetActionsExpanded((open) => !open)}
+                  aria-label={presetActionsExpanded ? 'Collapse preset actions' : 'Expand preset actions'}
+                  aria-expanded={presetActionsExpanded}
+                >
+                  <span>Preset Actions</span>
+                  <span aria-hidden="true">{presetActionsExpanded ? '⌃' : '⌄'}</span>
+                </button>
+                <button type="button" className="close-btn" onClick={() => { setPresetsOpen(false); setPresetActionsExpanded(false) }} aria-label="Close presets">×</button>
               </div>
+              {presetActionsExpanded && (
+                <div className="preset-actions-panel">
+                  <button type="button" onClick={() => { setPendingPresetAction('create'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }}>Create Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setPendingPresetAction('edit'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }} disabled={!galleryPresets.length}>Edit Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setPendingPresetAction('delete'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }} disabled={!galleryPresets.length}>Delete Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setPendingPresetAction('export'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }} disabled={!galleryPresets.length}>Export Presets</button>
+                  <input
+                    ref={presetImportInputRef}
+                    type="file"
+                    accept="application/json,.json,text/json"
+                    hidden
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      void handlePresetImport(file)
+                      event.currentTarget.value = ''
+                    }}
+                  />
+                  <button type="button" onClick={() => presetImportInputRef.current?.click()}>Import JSON</button>
+                </div>
+              )}
             </div>
             <div className="preset-popup-list">
               {galleryPresets.length ? galleryPresets.map((preset) => (
