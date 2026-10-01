@@ -7,6 +7,8 @@ export interface CreatedPreset {
 
 const DB_NAME = 'comfyui-pwa-created-presets'
 const PRESET_STORE = 'presets'
+const LEGACY_PRESETS_KEY = 'comfyui-pwa-created-presets'
+const LEGACY_PRESETS_ARCHIVE_KEY = 'comfyui-pwa-created-presets-archive'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -137,6 +139,7 @@ async function putCreatedPreset(preset: CreatedPreset): Promise<void> {
 }
 
 export async function deleteCreatedPreset(id: string): Promise<void> {
+  // Delete from the current preset store first.
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(PRESET_STORE, 'readwrite')
@@ -145,6 +148,55 @@ export async function deleteCreatedPreset(id: string): Promise<void> {
     tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not delete preset')) }
     tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not delete preset')) }
   })
+
+  // Also remove legacy localStorage copies. Otherwise readCreatedPresets()
+  // can merge the deleted record back into the current list.
+  for (const key of [LEGACY_PRESETS_KEY, LEGACY_PRESETS_ARCHIVE_KEY]) {
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || '[]')
+      if (!Array.isArray(value)) continue
+      const filtered = value.filter((item) => !item || typeof item !== 'object' || (item as { id?: unknown }).id !== id)
+      if (filtered.length !== value.length) {
+        localStorage.setItem(key, JSON.stringify(filtered))
+      }
+    } catch {}
+  }
+
+  // If an older IndexedDB database still contains the preset, remove that
+  // copy as well so the legacy importer cannot resurrect it.
+  if (typeof indexedDB.databases === 'function') {
+    try {
+      const databases = await indexedDB.databases()
+      for (const entry of databases) {
+        const databaseName = entry.name
+        if (!databaseName || databaseName === DB_NAME) continue
+        try {
+          const legacyDb = await new Promise<IDBDatabase>((resolve, reject) => {
+            const request = indexedDB.open(databaseName)
+            request.onsuccess = () => resolve(request.result)
+            request.onerror = () => reject(request.error || request.error)
+          })
+          if (!legacyDb.objectStoreNames.contains(PRESET_STORE)) {
+            legacyDb.close()
+            continue
+          }
+          await new Promise<void>((resolve, reject) => {
+            const tx = legacyDb.transaction(PRESET_STORE, 'readwrite')
+            tx.objectStore(PRESET_STORE).delete(id)
+            tx.oncomplete = () => { legacyDb.close(); resolve() }
+            tx.onerror = () => { legacyDb.close(); reject(tx.error) }
+            tx.onabort = () => { legacyDb.close(); reject(tx.error) }
+          })
+        } catch {}
+      }
+    } catch {}
+  }
+
+  // Read back the current store and verify the deleted id is truly gone.
+  const remaining = await readCreatedPresetsInternal()
+  if (remaining.some((preset) => preset.id === id)) {
+    throw new Error('Preset could not be verified as deleted.')
+  }
 }
 
 export function exportCreatedPresets(presets: CreatedPreset[]): void {
