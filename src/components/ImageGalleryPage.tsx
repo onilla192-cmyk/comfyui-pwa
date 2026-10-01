@@ -397,7 +397,7 @@ async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: 
     }
     return { items: sourceItems.map((item) => ({ ...item, src: '' })), folders: recoveredFolders, presets: recoveredPresets }
   }
-  return { items: legacyItems, folders: stored.folders, presets: recoveredPresets }
+  return { items: legacyItems, folders: recoveredFolders, presets: recoveredPresets }
 }
 
 export function ImageGalleryPage({
