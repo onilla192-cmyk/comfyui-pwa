@@ -6528,6 +6528,13 @@ body:has(.history-backdrop) .history-delete-btn {
   border: 1px solid #b53a3a !important;
 }
 
+body:has(.history-backdrop) .history-export-btn {
+  background: #d7a900 !important;
+  color: #111 !important;
+  border: 1px solid #f0c000 !important;
+  font-weight: 700 !important;
+}
+
 @media (max-width: 700px) {
   body:has(.history-backdrop) .history-grid .history-item-expanded .history-details {
     padding: 9px !important;
