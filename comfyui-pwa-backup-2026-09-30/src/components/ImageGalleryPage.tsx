@@ -563,9 +563,13 @@ async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: 
 export function ImageGalleryPage({
   onClose,
   onSetFigure,
+  presetAction,
+  onPresetActionHandled,
 }: {
   onClose: () => void
   onSetFigure: (which: Figure, item: GalleryItem, presetPrompt?: string) => void
+  presetAction?: 'create' | 'edit' | 'delete' | 'export' | null
+  onPresetActionHandled?: () => void
 }) {
   const [items, setItems] = useState<GalleryItem[]>([])
   // Render the known recovered folders immediately. This keeps the folder UI
@@ -597,6 +601,18 @@ export function ImageGalleryPage({
   const armTimer = useRef<number | null>(null)
   const pointerStart = useRef<{ id: string; x: number; y: number } | null>(null)
   const suppressTap = useRef(false)
+
+  useEffect(() => {
+    if (!presetAction) return
+    if (presetAction === 'edit' || presetAction === 'delete' || presetAction === 'export') {
+      if (!presets.length) return
+    }
+    if (presetAction === 'create') openPresetCreator()
+    else if (presetAction === 'edit') openPresetManager('edit')
+    else if (presetAction === 'delete') openPresetManager('delete')
+    else exportCreatedPresets()
+    onPresetActionHandled?.()
+  }, [presetAction, presets.length])
 
   useEffect(() => {
     void refreshGalleryPresetList()
@@ -1008,50 +1024,6 @@ export function ImageGalleryPage({
               <h2>Gallery Menu</h2>
               <button type="button" className="gallery-sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close gallery menu">×</button>
             </div>
-            <button
-              type="button"
-              className={'gallery-sidebar-action' + (presetMenuExpanded ? ' active' : '')}
-              onClick={() => {
-                const next = !presetMenuExpanded
-                setPresetMenuExpanded(next)
-                if (next) void refreshGalleryPresetList()
-              }}
-              aria-expanded={presetMenuExpanded}
-            >
-              <span className="gallery-sidebar-action-icon">✦</span>
-              <span>Presets</span>
-              <span className="gallery-preset-menu-chevron">{presetMenuExpanded ? '⌃' : '⌄'}</span>
-            </button>
-            {presetMenuExpanded && (
-              <div className="gallery-sidebar-submenu">
-                <button type="button" onClick={openPresetCreator}>Create Preset</button>
-                <button type="button" onClick={() => openPresetManager('edit')} disabled={!presets.length}>Edit Preset</button>
-                <button type="button" onClick={() => openPresetManager('delete')} disabled={!presets.length}>Delete Preset</button>
-                <button type="button" onClick={exportCreatedPresets} disabled={!presets.length}>Export Presets</button>
-                <div className="gallery-sidebar-preset-list" aria-label="Created presets">
-                  {presets.length ? presets.map((preset) => (
-                    <button
-                      type="button"
-                      className="gallery-sidebar-preset-item"
-                      key={preset.id}
-                      onClick={() => {
-                        setSelectedPresetId(preset.id)
-                        setPresetTitle(preset.title)
-                        setPresetPrompt(preset.prompt)
-                        setPresetCreatorOpen(true)
-                        setPresetMenuExpanded(false)
-                        setSidebarOpen(false)
-                      }}
-                    >
-                      <strong>{preset.title}</strong>
-                      <span>{preset.prompt}</span>
-                    </button>
-                  )) : (
-                    <div className="gallery-sidebar-preset-empty">No created presets.</div>
-                  )}
-                </div>
-              </div>
-            )}
             <button type="button" className="gallery-sidebar-action" onClick={addFolder}>
               <span className="gallery-sidebar-action-icon">+</span>
               <span>Add Folder</span>
