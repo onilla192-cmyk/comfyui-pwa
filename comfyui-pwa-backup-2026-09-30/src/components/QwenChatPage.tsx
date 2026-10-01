@@ -1,3 +1,4 @@
+import './QwenChatPage.css'
 import { useEffect, useRef, useState } from 'react'
 import { buildQwenChatWorkflow } from '../qwenChatWorkflow'
 import { queuePrompt, uploadImage, waitForTextOutput } from '../comfyClient'
