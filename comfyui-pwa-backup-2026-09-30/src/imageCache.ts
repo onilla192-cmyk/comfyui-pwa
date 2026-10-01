@@ -4,6 +4,11 @@ const ITEMS_STORE = 'items'
 const ARCHIVED_STORE = 'archived'
 const DB_VERSION = 2
 
+export async function ensureImageCacheDb(): Promise<void> {
+  const db = await openDb()
+  db.close()
+}
+
 export async function requestPersistentStorage(): Promise<boolean> {
   try {
     if (!navigator.storage?.persist) return false
