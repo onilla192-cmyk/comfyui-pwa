@@ -1,5 +1,5 @@
 import './QwenChatPage.css'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { buildQwenChatWorkflow } from '../qwenChatWorkflow'
 import { queuePrompt, uploadImage, waitForTextOutput } from '../comfyClient'
 import { loadQwenChats, saveQwenChats, type QwenChat, type QwenChatMessage } from '../qwenChatDb'
