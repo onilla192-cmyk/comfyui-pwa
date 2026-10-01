@@ -195,6 +195,7 @@ export default function App() {
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
+  const [indexedDbInspectorOpen, setIndexedDbInspectorOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
   const [comfyPowerState, setComfyPowerState] = useState<'off' | 'starting' | 'active'>('off')
   const [powerProgress, setPowerProgress] = useState(0)
@@ -211,6 +212,48 @@ export default function App() {
     const entry: ErrorLogEntry = { id: `error-${Date.now()}-${Math.random().toString(36).slice(2)}`, timestamp: Date.now(), message }
     setErrorLogs((current) => [...current, entry].slice(-100))
     return message
+  }
+
+
+  async function inspectIndexedDb() {
+    if (!('indexedDB' in window)) return []
+    const databaseList = typeof indexedDB.databases === 'function' ? await indexedDB.databases() : []
+    const names = databaseList.map((item) => item.name).filter((name): name is string => typeof name === 'string')
+    const output: Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }> = []
+    for (const name of names) {
+      await new Promise<void>((resolve) => {
+        const request = indexedDB.open(name)
+        request.onsuccess = () => {
+          const db = request.result
+          const stores = Array.from(db.objectStoreNames).map((storeName) => {
+            try {
+              const tx = db.transaction(storeName, 'readonly')
+              const store = tx.objectStore(storeName)
+              const countRequest = store.count()
+              const countPromise = new Promise<number>((done) => {
+                countRequest.onsuccess = () => done(countRequest.result)
+                countRequest.onerror = () => done(-1)
+              })
+              return countPromise.then((count) => ({
+                name: storeName,
+                count,
+                keyPath: store.keyPath,
+                autoIncrement: store.autoIncrement,
+              }))
+            } catch {
+              return Promise.resolve({ name: storeName, count: -1, keyPath: null, autoIncrement: false })
+            }
+          })
+          Promise.all(stores).then((resolved) => {
+            output.push({ name, version: db.version, stores: resolved })
+            db.close()
+            resolve()
+          })
+        }
+        request.onerror = () => resolve()
+      })
+    }
+    return output
   }
 
   const isBusy = status === 'queued' || status === 'running' || status === 'cancelling'
@@ -1941,6 +1984,8 @@ export default function App() {
         </section>
       </div>}
 
+      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => setIndexedDbInspectorOpen(false)} inspect={inspectIndexedDb} />}
+
       {historyOpen && <div className="history-backdrop" onClick={() => setHistoryOpen(false)}>
         <section className="history-panel" onClick={(e) => e.stopPropagation()}>
           <div className="history-header">
@@ -2071,6 +2116,15 @@ export default function App() {
         </button>
 
         </div>
+        <button
+          className="icon-btn indexeddb-inspector-btn"
+          type="button"
+          onClick={() => { setIndexedDbInspectorOpen(true); setFooterExpanded(false) }}
+          aria-label="Open IndexedDB Inspector"
+          title="IndexedDB Inspector"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>
+        </button>
         <div className="app-version">ComfyUI PWA {APP_VERSION}</div>
       </div>
     </footer>
@@ -2287,4 +2341,36 @@ function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: 
       {image && <div className="image-picker-name">{image.fileName}</div>}
     </div>
   )
+}
+
+function IndexedDbInspector({ onClose, inspect }: { onClose: () => void; inspect: () => Promise<Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }>> }) {
+  const [loading, setLoading] = useState(true)
+  const [databases, setDatabases] = useState<Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }>>([])
+  const [error, setError] = useState('')
+  const load = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      setDatabases(await inspect())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not inspect IndexedDB.')
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => { void load() }, [])
+  return <div className="indexeddb-inspector-backdrop" onClick={onClose}>
+    <section className="indexeddb-inspector" onClick={(e) => e.stopPropagation()}>
+      <header className="indexeddb-inspector-header">
+        <div><h2>IndexedDB Inspector</h2><span>Read-only browser storage view</span></div>
+        <div className="indexeddb-inspector-actions"><button type="button" onClick={() => void load()} disabled={loading}>{loading ? 'Reading…' : 'Refresh'}</button><button type="button" onClick={onClose} aria-label="Close">×</button></div>
+      </header>
+      <div className="indexeddb-inspector-body">
+        {loading ? <div className="indexeddb-inspector-empty">Reading IndexedDB…</div> : error ? <div className="indexeddb-inspector-error">{error}</div> : databases.length ? databases.map((db) => <article className="indexeddb-db" key={db.name}>
+          <div className="indexeddb-db-title"><strong>{db.name}</strong><span>Version {db.version}</span></div>
+          {db.stores.length ? <div className="indexeddb-store-list">{db.stores.map((store) => <div className="indexeddb-store" key={store.name}><span>{store.name}</span><b>{store.count < 0 ? '—' : store.count}</b></div>)}</div> : <div className="indexeddb-no-stores">No object stores.</div>}
+        </article>) : <div className="indexeddb-inspector-empty">No IndexedDB databases were found.</div>}
+      </div>
+    </section>
+  </div>
 }
