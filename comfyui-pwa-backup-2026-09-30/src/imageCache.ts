@@ -1,6 +1,8 @@
 const DB_NAME = 'comfyui-console-images'
 const STORE_NAME = 'images'
-const DB_VERSION = 1
+const ITEMS_STORE = 'items'
+const ARCHIVED_STORE = 'archived'
+const DB_VERSION = 2
 
 export async function requestPersistentStorage(): Promise<boolean> {
   try {
@@ -22,9 +24,10 @@ function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE_NAME)) {
-        request.result.createObjectStore(STORE_NAME)
-      }
+      const db = request.result
+      if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME)
+      if (!db.objectStoreNames.contains(ITEMS_STORE)) db.createObjectStore(ITEMS_STORE, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(ARCHIVED_STORE)) db.createObjectStore(ARCHIVED_STORE, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
