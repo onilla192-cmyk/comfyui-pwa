@@ -6,7 +6,7 @@ import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
-import { ImageGalleryPage, readGalleryPresets, type GalleryPreset } from './components/ImageGalleryPage'
+import { ImageGalleryPage, readGalleryPresets, importGalleryPresets, type GalleryPreset } from './components/ImageGalleryPage'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -160,6 +160,7 @@ export default function App() {
   const [resultsOpen, setResultsOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
   const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
+  const presetImportInputRef = useRef<HTMLInputElement | null>(null)
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
   const [completedImageVisible, setCompletedImageVisible] = useState(true)
   const completedTapTimer = useRef<number | null>(null)
@@ -264,6 +265,22 @@ export default function App() {
       window.clearInterval(timer)
     }
   }, [])
+
+  async function handlePresetImport(file: File | undefined) {
+    if (!file) return
+    try {
+      const importedCount = await importGalleryPresets(file)
+      await refreshGalleryPresets()
+      if (!importedCount) {
+        window.alert('Those presets are already in your Created Presets.')
+        return
+      }
+      window.alert(`Imported ${importedCount} preset${importedCount === 1 ? '' : 's'}.`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not import presets.'
+      window.alert(message)
+    }
+  }
 
   const refreshGalleryPresets = async () => {
     try {
@@ -1704,7 +1721,21 @@ export default function App() {
                 <h2>Created Presets</h2>
                 <span>{galleryPresets.length} preset{galleryPresets.length === 1 ? '' : 's'}</span>
               </div>
-              <button type="button" className="close-btn" onClick={() => setPresetsOpen(false)} aria-label="Close presets">×</button>
+              <div className="preset-popup-header-actions">
+                <button type="button" className="preset-import-btn" onClick={() => presetImportInputRef.current?.click()} aria-label="Import created presets">Import JSON</button>
+                <input
+                  ref={presetImportInputRef}
+                  type="file"
+                  accept="application/json,.json,text/json"
+                  hidden
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    void handlePresetImport(file)
+                    event.currentTarget.value = ''
+                  }}
+                />
+                <button type="button" className="close-btn" onClick={() => setPresetsOpen(false)} aria-label="Close presets">×</button>
+              </div>
             </div>
             <div className="preset-popup-list">
               {galleryPresets.length ? galleryPresets.map((preset) => (
