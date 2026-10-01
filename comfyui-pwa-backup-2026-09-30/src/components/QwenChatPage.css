@@ -86,3 +86,22 @@
 .qwen-chat-background-btn{width:36px;height:36px}
 .qwen-chat-header .close-btn{width:36px;height:36px}
 }
+
+/* Final compact Qwen header overrides */
+.qwen-chat-header{grid-template-columns:42px minmax(0,1fr) auto;gap:10px}
+.qwen-chat-header-title{text-align:center;min-width:0}
+.qwen-chat-header-title h2{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qwen-chat-header-title span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qwen-chat-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.qwen-chat-background-btn{width:40px;height:40px;padding:0;border-radius:50%;font-size:0}
+.qwen-chat-background-icon{display:block;font-size:17px;line-height:1}
+.qwen-chat-background-label{display:none!important}
+.qwen-chat-background-remove{display:grid;place-items:center;width:40px;height:40px;margin:0;padding:0;border-radius:50%}
+.qwen-chat-header .close-btn{width:40px;height:40px;margin:0}
+@media(max-width:600px){
+.qwen-chat-header{grid-template-columns:42px minmax(0,1fr) auto;gap:7px;padding-left:10px;padding-right:10px}
+.qwen-chat-header-title h2{font-size:16px}
+.qwen-chat-header-title span{font-size:10px}
+.qwen-chat-header-actions{gap:5px}
+.qwen-chat-background-btn,.qwen-chat-background-remove,.qwen-chat-header .close-btn{width:36px;height:36px}
+}
