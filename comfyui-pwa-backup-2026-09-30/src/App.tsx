@@ -426,22 +426,6 @@ export default function App() {
     }
   }, [])
 
-  async function handlePresetImport(file: File | undefined) {
-    if (!file) return
-    try {
-      const importedCount = await importGalleryPresets(file)
-      await refreshGalleryPresets()
-      if (!importedCount) {
-        window.alert('Those presets are already in your Created Presets.')
-        return
-      }
-      window.alert(`Imported ${importedCount} preset${importedCount === 1 ? '' : 's'}.`)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not import presets.'
-      window.alert(message)
-    }
-  }
-
   const refreshGalleryPresets = async () => {
     try {
       const presets = await readGalleryPresets()
