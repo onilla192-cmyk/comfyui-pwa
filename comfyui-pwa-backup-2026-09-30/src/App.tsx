@@ -1315,6 +1315,7 @@ export default function App() {
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
   return <div className="app">
+    <header className="app-empty-header" aria-hidden="true" />
     {logsOpen && <div className="logs-backdrop" onClick={() => setLogsOpen(false)}>
       <section className="logs-panel" onClick={(e) => e.stopPropagation()}>
         <div className="logs-header">
