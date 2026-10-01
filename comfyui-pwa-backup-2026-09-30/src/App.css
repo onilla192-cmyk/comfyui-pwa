@@ -10705,6 +10705,7 @@ body:has(.preset-popup-backdrop) {
   color: #f3f4f6;
   box-shadow: none;
 }
+.preset-actions-chevron{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 14px;border:1px solid #8b826f;border-radius:10px;background:#1b1d22;color:#f3f1e9;font:inherit;font-size:14px;font-weight:600;cursor:pointer}.preset-actions-chevron span:last-child{font-size:22px;line-height:1;color:#cfc8b8}.preset-actions-chevron.active{background:#24272d;border-color:#b2a78e}.preset-actions-panel{display:flex;flex-direction:column;gap:8px;padding:0 18px 14px;background:#171a20;border-bottom:1px solid #2a2e37}.preset-actions-panel button{width:100%;min-height:46px;padding:10px 14px;border:1px solid #5e594e;border-radius:9px;background:#202228;color:#eeeae1;font:inherit;font-size:14px;text-align:left;cursor:pointer}.preset-actions-panel button:active:not(:disabled){background:#2a2d34}.preset-actions-panel button:disabled{opacity:.42;cursor:default}.preset-actions-panel button:last-child{border-color:#8b826f;background:#24262b}.preset-actions-panel button:last-child:active{background:#30333a}
 .preset-popup-header-actions {
   display: flex;
   align-items: center;
