@@ -24,7 +24,7 @@ const QWEN_AVATAR_KEY = 'qwen'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 2)
+    const request = indexedDB.open(DB_NAME, 3)
 
     request.onupgradeneeded = () => {
       const db = request.result
