@@ -2399,7 +2399,6 @@ export default function App() {
       </div>}
 
       </main>
-    )}
     <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || logsOpen || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen || mainSidebarOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <button
