@@ -64,6 +64,109 @@ function makeChat(existing: QwenChat[] = [], title = 'New Chat'): QwenChat {
   }
 }
 
+type QwenDynamicTheme = {
+  userBg: string
+  userText: string
+  assistantBg: string
+  assistantText: string
+  accent: string
+}
+
+function rgbToCss(r: number, g: number, b: number): string {
+  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+}
+
+function mixRgb(a: [number, number, number], b: [number, number, number], amount: number): [number, number, number] {
+  return [
+    a[0] + (b[0] - a[0]) * amount,
+    a[1] + (b[1] - a[1]) * amount,
+    a[2] + (b[2] - a[2]) * amount,
+  ]
+}
+
+function contrastText(rgb: [number, number, number]): string {
+  const luminance = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255
+  return luminance > 0.58 ? '#111114' : '#ffffff'
+}
+
+function extractQwenTheme(url: string): Promise<QwenDynamicTheme | null> {
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        const size = 48
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
+        if (!ctx) {
+          resolve(null)
+          return
+        }
+
+        ctx.drawImage(image, 0, 0, size, size)
+        const data = ctx.getImageData(0, 0, size, size).data
+
+        let weightedR = 0
+        let weightedG = 0
+        let weightedB = 0
+        let weightTotal = 0
+        let allR = 0
+        let allG = 0
+        let allB = 0
+        let allCount = 0
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i]
+          const g = data[i + 1]
+          const b = data[i + 2]
+          const max = Math.max(r, g, b)
+          const min = Math.min(r, g, b)
+          const saturation = max === 0 ? 0 : (max - min) / max
+          const brightness = (r + g + b) / (255 * 3)
+
+          allR += r
+          allG += g
+          allB += b
+          allCount += 1
+
+          if (saturation > 0.18 && brightness > 0.08 && brightness < 0.94) {
+            const weight = saturation * (0.35 + Math.min(brightness, 0.75))
+            weightedR += r * weight
+            weightedG += g * weight
+            weightedB += b * weight
+            weightTotal += weight
+          }
+        }
+
+        const base: [number, number, number] = weightTotal > 0
+          ? [weightedR / weightTotal, weightedG / weightTotal, weightedB / weightTotal]
+          : [allR / allCount, allG / allCount, allB / allCount]
+
+        const baseLuminance = (0.2126 * base[0] + 0.7152 * base[1] + 0.0722 * base[2]) / 255
+        const userBase = baseLuminance > 0.62
+          ? mixRgb(base, [0, 0, 0], 0.28)
+          : mixRgb(base, [255, 255, 255], 0.10)
+        const assistantBase = baseLuminance > 0.62
+          ? mixRgb(base, [255, 255, 255], 0.72)
+          : mixRgb(base, [0, 0, 0], 0.42)
+
+        resolve({
+          userBg: rgbToCss(...userBase),
+          userText: contrastText(userBase),
+          assistantBg: rgbToCss(...assistantBase),
+          assistantText: contrastText(assistantBase),
+          accent: rgbToCss(...userBase),
+        })
+      } catch {
+        resolve(null)
+      }
+    }
+    image.onerror = () => resolve(null)
+    image.src = url
+  })
+}
+
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -83,6 +186,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const [chatListOpen, setChatListOpen] = useState(false)
   const [backgroundBlob, setBackgroundBlob] = useState<Blob | null>(null)
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null)
+  const [dynamicTheme, setDynamicTheme] = useState<QwenDynamicTheme | null>(null)
   const [text, setText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -170,6 +274,20 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
     setBackgroundUrl(url)
     return () => URL.revokeObjectURL(url)
   }, [backgroundBlob])
+
+  useEffect(() => {
+    if (!backgroundUrl) {
+      setDynamicTheme(null)
+      return
+    }
+
+    let cancelled = false
+    void extractQwenTheme(backgroundUrl).then((theme) => {
+      if (!cancelled) setDynamicTheme(theme)
+    })
+
+    return () => { cancelled = true }
+  }, [backgroundUrl])
 
   useEffect(() => {
     if (!imageFile) {
@@ -375,7 +493,14 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
     <section
       className={`qwen-chat-page ${composerExpanded ? 'composer-expanded' : ''}${backgroundUrl ? ' has-background' : ''}`}
       aria-label="Qwen Chat"
-      style={backgroundUrl ? ({ '--qwen-chat-background': `url("${backgroundUrl}")` } as CSSProperties) : undefined}
+      style={backgroundUrl ? ({
+        '--qwen-chat-background': `url("${backgroundUrl}")`,
+        '--qwen-user-bubble': dynamicTheme?.userBg,
+        '--qwen-user-text': dynamicTheme?.userText,
+        '--qwen-assistant-bubble': dynamicTheme?.assistantBg,
+        '--qwen-assistant-text': dynamicTheme?.assistantText,
+        '--qwen-chat-accent': dynamicTheme?.accent,
+      } as CSSProperties) : undefined}
     >
       <header className="qwen-chat-header">
         <button
