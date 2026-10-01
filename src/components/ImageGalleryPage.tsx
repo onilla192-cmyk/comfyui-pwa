@@ -444,12 +444,26 @@ export function ImageGalleryPage({
       setFolders(stored.folders)
       setPresets(stored.presets)
       setStorageReady(true)
-    }).catch(() => {
+    }).catch(async () => {
+      if (!active) return
+
+      // Fail closed: a gallery migration/read failure must NEVER turn into an
+      // automatic save of empty state. Keep the user's existing IndexedDB
+      // records untouched while still showing the recovered folder names.
+      const fallbackFolders = ensureKnownGalleryFolders([])
+      let fallbackPresets: GalleryPreset[] = []
+      try {
+        fallbackPresets = await recoverPresetsFromIndexedDb([])
+      } catch {}
+
       if (!active) return
       setItems(loadGallery())
-      setFolders([])
-      setPresets([])
-      setStorageReady(true)
+      setFolders(fallbackFolders)
+      setPresets(fallbackPresets)
+
+      // Do not enable the automatic writer after a failed migration. This
+      // prevents writeGalleryDb() from clearing existing image metadata.
+      setStorageReady(false)
     })
     return () => { active = false }
   }, [])
