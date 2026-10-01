@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs, getNodeObjectInfo, getRemoteControlStatus, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
-import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage, ensureImageCacheDb } from './imageCache'
+import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile, requestPersistentStorage, ensureImageCacheDb, syncHistoryMetadata } from './imageCache'
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
@@ -97,6 +97,19 @@ export default function App() {
     const isReload = nav?.type === 'reload' || (nav?.type == null && performance.navigation?.type === 1)
     return isReload ? (saved.prompt ?? '') : ''
   })
+  useEffect(() => {
+    const handleHistoryStorageUpdated = () => {
+      try {
+        const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+        setResults(withHistoryIds(Array.isArray(current.results) ? current.results : []))
+        setTrash(withHistoryIds(Array.isArray(current.trash) ? current.trash : []))
+        setHistoryPage(1)
+      } catch {}
+    }
+    window.addEventListener('history-storage-updated', handleHistoryStorageUpdated)
+    return () => window.removeEventListener('history-storage-updated', handleHistoryStorageUpdated)
+  }, [])
+
   useEffect(() => {
     const handleHistorySendToMainPrompt = (event: Event) => {
       const customEvent = event as CustomEvent<string>
@@ -296,6 +309,15 @@ export default function App() {
   }
 
   async function permanentlyDeleteIndexedDbStore(databaseName: string, storeName: string): Promise<void> {
+    if (databaseName === 'comfyui-console-images' && (storeName === 'items' || storeName === 'archived')) {
+      try {
+        const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+        if (storeName === 'items') current.results = []
+        if (storeName === 'archived') current.trash = []
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(current))
+        window.dispatchEvent(new Event('history-storage-updated'))
+      } catch {}
+    }
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(databaseName)
       request.onsuccess = () => resolve(request.result)
@@ -672,6 +694,24 @@ export default function App() {
     void ensureImageCacheDb()
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    if (!selectedImagesRestored) return
+    const metadata = (items: ResultImage[]) => items.map((item) => ({
+      id: item.id,
+      type: 'history' as const,
+      prompt: item.prompt || '',
+      promptId: item.promptId || '',
+      negativePrompt: item.negativePrompt,
+      cfg: item.cfg,
+      steps: item.steps,
+      megapixels: item.megapixels,
+      width: item.width,
+      height: item.height,
+      createdAt: item.createdAt,
+    }))
+    void syncHistoryMetadata(metadata(results), metadata(trash))
+  }, [selectedImagesRestored, results, trash])
 
   useEffect(() => {
     if (!selectedImagesRestored) return
