@@ -10770,3 +10770,25 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
 .gallery-sidebar-preset-list {
   display: none !important;
 }
+
+/* Read-only IndexedDB inspector */
+.indexeddb-inspector-btn { color: #f2c94c !important; }
+.indexeddb-inspector-backdrop { position: fixed; inset: 0; z-index: 240; display: flex; align-items: center; justify-content: center; padding: 14px; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.indexeddb-inspector { width: min(100%, 680px); max-height: min(86vh, 760px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #30343d; border-radius: 14px; background: #171a20; color: #f3f4f6; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.indexeddb-inspector-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid #2a2e37; }
+.indexeddb-inspector-header h2 { margin:0; font-size:19px; }
+.indexeddb-inspector-header span { display:block; margin-top:3px; color:#7f8795; font-size:11px; }
+.indexeddb-inspector-actions { display:flex; align-items:center; gap:6px; }
+.indexeddb-inspector-actions button { min-height:38px; border:1px solid #353a45; border-radius:8px; background:#20242d; color:#f3f4f6; padding:0 11px; cursor:pointer; }
+.indexeddb-inspector-actions button:last-child { width:38px; padding:0; font-size:25px; line-height:1; }
+.indexeddb-inspector-actions button:disabled { opacity:.5; cursor:default; }
+.indexeddb-inspector-body { overflow:auto; padding:12px; -webkit-overflow-scrolling:touch; }
+.indexeddb-db { margin-bottom:10px; padding:12px; border:1px solid #30343d; border-radius:10px; background:#111318; }
+.indexeddb-db-title { display:flex; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.indexeddb-db-title strong { overflow-wrap:anywhere; font-size:13px; }
+.indexeddb-db-title span { color:#7f8795; font-size:11px; white-space:nowrap; }
+.indexeddb-store-list { display:grid; gap:6px; }
+.indexeddb-store { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:7px; background:#1b1f27; color:#cfd3da; font-size:12px; }
+.indexeddb-store b { color:#f2c94c; }
+.indexeddb-no-stores,.indexeddb-inspector-empty { padding:24px 10px; color:#7f8795; text-align:center; font-size:13px; }
+.indexeddb-inspector-error { padding:18px; color:#ff8d8d; }
