@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { cacheFile, deleteCachedFiles, getCachedFile } from '../imageCache'
+import { getPromptVaultImage, importPromptVaultItems, readPromptVault, savePromptVaultItems, deletePromptVaultImages } from '../promptVaultDb'
+import type { PromptVaultImageRef, PromptVaultItem } from '../promptVaultDb'
+export type { PromptVaultImageRef, PromptVaultItem } from '../promptVaultDb'
 
 export interface PromptVaultImageRef {
   id: string
@@ -17,26 +19,13 @@ export interface PromptVaultItem {
   imageRefs: PromptVaultImageRef[]
 }
 
-const KEY = 'comfyui-console-prompt-vault-v1'
-const ARCHIVE_KEY = 'comfyui-console-prompt-vault-archive-v1'
-const TAP_DELAY = 650
-
-function readList(key: string): PromptVaultItem[] {
-  try {
-    const value = JSON.parse(localStorage.getItem(key) || '[]')
-    return Array.isArray(value) ? value : []
-  } catch {
-    return []
-  }
-}
-
 function useImagePalette(cacheKey?: string) {
   const [palette, setPalette] = useState({ base: '#343a43', edge: '#59616c', glow: '#68717c' })
   useEffect(() => {
     let live = true
     let objectUrl = ''
     if (!cacheKey) return
-    void getCachedFile(cacheKey).then((blob) => {
+    void getPromptVaultImage(cacheKey).then((blob) => {
       if (!live || !blob) return
       objectUrl = URL.createObjectURL(blob)
       const img = new Image()
@@ -126,7 +115,7 @@ function VaultImage({ cacheKey }: { cacheKey: string }) {
   useEffect(() => {
     let objectUrl = ''
     let live = true
-    void getCachedFile(cacheKey).then((blob) => {
+    void getPromptVaultImage(cacheKey).then((blob) => {
       if (live && blob) {
         objectUrl = URL.createObjectURL(blob)
         setUrl(objectUrl)
@@ -160,8 +149,9 @@ function PromptVaultCard({ item, selected, armed, onCardClick, onToggleSelected 
 }
 
 export function PromptVaultPage({ onClose }: { onClose: () => void }) {
-  const [items, setItems] = useState<PromptVaultItem[]>(() => readList(KEY))
-  const [archived, setArchived] = useState<PromptVaultItem[]>(() => readList(ARCHIVE_KEY))
+  const [items, setItems] = useState<PromptVaultItem[]>([])
+  const [archived, setArchived] = useState<PromptVaultItem[]>([])
+  const [storageReady, setStorageReady] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [armedId, setArmedId] = useState<string | null>(null)
@@ -176,12 +166,32 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
   const visibleItems = showArchived ? archived : items
 
   useEffect(() => {
+    let live = true
+    void readPromptVault().then(({ items: storedItems, archived: storedArchived }) => {
+      if (!live) return
+      setItems(storedItems)
+      setArchived(storedArchived)
+      setStorageReady(true)
+    }).catch(() => {
+      if (live) setStorageReady(true)
+    })
+    return () => { live = false }
+  }, [])
+
+  useEffect(() => {
+    if (!storageReady) return
+    void savePromptVaultItems(items, archived)
+  }, [items, archived, storageReady])
+
+  useEffect(() => {
     const save = () => {
-      setItems(readList(KEY))
-      setArchived(readList(ARCHIVE_KEY))
-      setSelected(new Set())
-      setArmedId(null)
-      setEditing(null)
+      void readPromptVault().then(({ items: nextItems, archived: nextArchived }) => {
+        setItems(nextItems)
+        setArchived(nextArchived)
+        setSelected(new Set())
+        setArmedId(null)
+        setEditing(null)
+      }).catch(() => {})
       if (armedTimerRef.current) window.clearTimeout(armedTimerRef.current)
     }
     window.addEventListener('prompt-vault-updated', save)
@@ -190,9 +200,6 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
       if (armedTimerRef.current) window.clearTimeout(armedTimerRef.current)
     }
   }, [])
-
-  useEffect(() => { localStorage.setItem(KEY, JSON.stringify(items)) }, [items])
-  useEffect(() => { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(archived)) }, [archived])
 
   useEffect(() => {
     return () => {
@@ -235,7 +242,7 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
 
   const deleteItem = async (item: PromptVaultItem, fromArchive: boolean) => {
     if (!window.confirm(`Delete “${item.name}” permanently? This also removes its cached thumbnail.`)) return
-    await deleteCachedFiles(item.imageRefs.map((ref) => ref.cacheKey))
+    await deletePromptVaultImages(item.imageRefs.map((ref) => ref.cacheKey))
     if (fromArchive) setArchived((current) => current.filter((entry) => entry.id !== item.id))
     else setItems((current) => current.filter((entry) => entry.id !== item.id))
     setEditing(null)
@@ -263,7 +270,7 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     const chosen = visibleItems.filter((item) => selected.has(item.id))
     if (!chosen.length) return
     if (!window.confirm(`Delete ${chosen.length} selected card${chosen.length === 1 ? '' : 's'} permanently? This also removes cached thumbnails.`)) return
-    await deleteCachedFiles(chosen.flatMap((item) => item.imageRefs.map((ref) => ref.cacheKey)))
+    await deletePromptVaultImages(chosen.flatMap((item) => item.imageRefs.map((ref) => ref.cacheKey)))
     const ids = new Set(chosen.map((item) => item.id))
     if (showArchived) setArchived((current) => current.filter((item) => !ids.has(item.id)))
     else setItems((current) => current.filter((item) => !ids.has(item.id)))
@@ -280,10 +287,17 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     let imageRef: PromptVaultImageRef | undefined
     if (newImage) {
       const cacheKey = `prompt-vault-${id}`
-      await cacheFile(cacheKey, newImage)
+      await importPromptVaultItems([{
+        id,
+        name,
+        prompt: newPrompt,
+        image: cacheKey,
+        images: [cacheKey],
+        imageRefs: [{ id: `${id}-image`, filename: newImage.name, mimeType: newImage.type || 'image/*', cacheKey }],
+      }])
       imageRef = { id: `${id}-image`, filename: newImage.name, mimeType: newImage.type || 'image/*', cacheKey }
     }
-    const item: PromptVaultItem = { id, name, prompt: newPrompt, image: '', images: [], imageRefs: imageRef ? [imageRef] : [] }
+    const item: PromptVaultItem = { id, name, prompt: newPrompt, image: imageRef?.cacheKey || '', images: imageRef ? [imageRef.cacheKey] : [], imageRefs: imageRef ? [imageRef] : [] }
     setItems((current) => [item, ...current])
     setCreating(false)
     setNewName('')
