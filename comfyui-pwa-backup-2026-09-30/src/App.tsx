@@ -7,8 +7,7 @@ import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 import { importPromptVaultItems } from './promptVaultDb'
-import { ImageGalleryPage } from './components/ImageGalleryPage'
-import { readCreatedPresets, createCreatedPreset, updateCreatedPreset, deleteCreatedPreset, exportCreatedPresets, importCreatedPresets, type GalleryPreset } from './createdPresetsDb'
+import { readCreatedPresets, createCreatedPreset, updateCreatedPreset, deleteCreatedPreset, exportCreatedPresets, importCreatedPresets, type CreatedPreset } from './createdPresetsDb'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -178,7 +177,7 @@ export default function App() {
   const [createdPresetEditor, setCreatedPresetEditor] = useState<{ mode: 'create' | 'edit'; id: string | null; title: string; prompt: string } | null>(null)
   const [createdPresetDeleteId, setCreatedPresetDeleteId] = useState<string | null>(null)
   const [createdPresetManagerMode, setCreatedPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
-  const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
+  const [createdPresets, setCreatedPresets] = useState<CreatedPreset[]>([])
   const presetImportInputRef = useRef<HTMLInputElement | null>(null)
   const historyImportInputRef = useRef<HTMLInputElement | null>(null)
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
@@ -213,7 +212,6 @@ export default function App() {
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
-  const [galleryOpen, setGalleryOpen] = useState(false)
   const [indexedDbInspectorOpen, setIndexedDbInspectorOpen] = useState(false)
   const [mainSidebarOpen, setMainSidebarOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
@@ -426,18 +424,18 @@ export default function App() {
     }
   }, [])
 
-  const refreshGalleryPresets = async () => {
+  const refreshCreatedPresets = async () => {
     try {
       const presets = await readCreatedPresets()
-      setGalleryPresets(presets)
+      setCreatedPresets(presets)
     } catch {
-      setGalleryPresets([])
+      setCreatedPresets([])
     }
   }
 
   useEffect(() => {
-    void refreshGalleryPresets()
-    const timer = window.setInterval(() => void refreshGalleryPresets(), 1000)
+    void refreshCreatedPresets()
+    const timer = window.setInterval(() => void refreshCreatedPresets(), 1000)
     return () => window.clearInterval(timer)
   }, [])
 
@@ -450,7 +448,7 @@ export default function App() {
         await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt)
       }
       setCreatedPresetEditor(null)
-      await refreshGalleryPresets()
+      await refreshCreatedPresets()
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Could not save preset.')
     }
@@ -461,7 +459,7 @@ export default function App() {
     try {
       await deleteCreatedPreset(createdPresetDeleteId)
       setCreatedPresetDeleteId(null)
-      await refreshGalleryPresets()
+      await refreshCreatedPresets()
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Could not delete preset.')
     }
@@ -833,20 +831,7 @@ export default function App() {
     }
   }
 
-  async function setGalleryImage(which: 'one' | 'two', item: { src: string; name: string }, presetPrompt?: string) {
-    try {
-      const response = await fetch(item.src)
-      if (!response.ok) throw new Error(`Could not read gallery image (${response.status})`)
-      const blob = await response.blob()
-      const file = new File([blob], item.name || 'Gallery image', { type: blob.type || 'image/png' })
-      await handleImageChange(which, file)
-      if (presetPrompt?.trim()) {
-        setPrompt(addImagePrompt(presetPrompt.trim(), IMAGE_PROMPTS[which]))
-      }
-    } catch (err) {
-      setErrorMsg(recordErrorLog(err))
-    }
-  }
+
 
   async function handleImageChange(which: 'one' | 'two', file?: File) {
     if (!file) return
@@ -1422,12 +1407,7 @@ export default function App() {
                 <span className="main-sidebar-tool-copy"><strong>Launcher Logs</strong></span>
               </button>
 
-              <button type="button" className={`main-sidebar-tool gallery-sidebar-button${galleryOpen ? ' active' : ''}`} onClick={() => { setMainSidebarOpen(false); setGalleryOpen(true); setFooterExpanded(false) }} aria-label="Open Image Gallery">
-                <span className="main-sidebar-tool-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 4-4 3 3 2-2 5 4"/></svg>
-                </span>
-                <span className="main-sidebar-tool-copy"><strong>Image Gallery</strong></span>
-              </button>           </div>
+                         </div>
           </div>
         </aside>
       </div>
@@ -1608,13 +1588,7 @@ export default function App() {
       />
     )}
 
-    {galleryOpen ? (
-      <ImageGalleryPage
-        onClose={() => setGalleryOpen(false)}
-        onSetFigure={(which, item, presetPrompt) => { void setGalleryImage(which, item, presetPrompt) }}
-      />
-    ) : (
-      <main className="app-main">
+    {<main className="app-main">
       {isBusy && progress && (
         <div className="progress-wrap" aria-label="Generation progress">
           <div className="progress-bar">
@@ -1776,7 +1750,7 @@ export default function App() {
               {isUploading ? 'Uploading images...' : 'Generate'}
             </button>
           )}
-          <button className="results-btn preset-btn" type="button" onClick={() => { void refreshGalleryPresets(); setPresetsOpen(true) }} aria-label="Open created presets" title="Created presets">
+          <button className="results-btn preset-btn" type="button" onClick={() => { void refreshCreatedPresets(); setPresetsOpen(true) }} aria-label="Open created presets" title="Created presets">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 18h6"/>
               <path d="M10 21h4"/>
@@ -2098,7 +2072,7 @@ export default function App() {
             <div className="preset-popup-header">
               <div>
                 <h2>Created Presets</h2>
-                <span>{galleryPresets.length} preset{galleryPresets.length === 1 ? '' : 's'}</span>
+                <span>{createdPresets.length} preset{createdPresets.length === 1 ? '' : 's'}</span>
               </div>
               <div className="preset-popup-header-actions">
                 <button
@@ -2116,9 +2090,9 @@ export default function App() {
               {presetActionsExpanded && (
                 <div className="preset-actions-panel">
                   <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '' }); setPresetActionsExpanded(false) }}>Create Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; const p = galleryPresets[0]; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Edit Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Delete Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; exportCreatedPresets(galleryPresets); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Export Presets</button>
+                  <button type="button" onClick={() => { if (!createdPresets.length) return; const p = createdPresets[0]; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Edit Preset</button>
+                  <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Delete Preset</button>
+                  <button type="button" onClick={() => { if (!createdPresets.length) return; exportCreatedPresets(createdPresets); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Export Presets</button>
                   <input
                     ref={presetImportInputRef}
                     type="file"
@@ -2126,7 +2100,7 @@ export default function App() {
                     hidden
                     onChange={(event) => {
                       const file = event.target.files?.[0]
-                      void (async () => { try { const count = await importCreatedPresets(file); await refreshGalleryPresets(); window.alert(count ? `Imported ${count} preset${count === 1 ? '' : 's'}.` : 'Those presets are already in your Created Presets.') } catch (error) { window.alert(error instanceof Error ? error.message : 'Could not import presets.') } })()
+                      void (async () => { try { const count = await importCreatedPresets(file); await refreshCreatedPresets(); window.alert(count ? `Imported ${count} preset${count === 1 ? '' : 's'}.` : 'Those presets are already in your Created Presets.') } catch (error) { window.alert(error instanceof Error ? error.message : 'Could not import presets.') } })()
                       event.currentTarget.value = ''
                     }}
                   />
@@ -2135,7 +2109,7 @@ export default function App() {
               )}
             </div>
             <div className="preset-popup-list">
-              {galleryPresets.length ? galleryPresets.map((preset) => (
+              {createdPresets.length ? createdPresets.map((preset) => (
                 <button
                   type="button"
                   className="preset-popup-item"
@@ -2150,7 +2124,7 @@ export default function App() {
                   <span>{preset.prompt}</span>
                 </button>
               )) : (
-                <div className="preset-popup-empty">No created presets. Create one from Gallery Menu.</div>
+                <div className="preset-popup-empty">No created presets. Create one from the Preset Actions menu.</div>
               )}
             </div>
           </section>
@@ -2196,7 +2170,7 @@ export default function App() {
               <button type="button" className="close-btn" onClick={() => setCreatedPresetManagerMode(null)} aria-label="Close preset manager">×</button>
             </div>
             <div className="preset-management-list">
-              {galleryPresets.map((preset) => (
+              {createdPresets.map((preset) => (
                 <button
                   key={preset.id}
                   type="button"
@@ -2426,7 +2400,7 @@ export default function App() {
 
       </main>
     )}
-    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || logsOpen || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen || galleryOpen || mainSidebarOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
+    <footer className={`app-footer${footerExpanded ? ' footer-expanded' : ''}${!mainFooterVisible || logsOpen || resultsOpen || ideasOpen || settingsOpen || promptBuilderPageOpen || masterPromptsPageOpen || promptExpanded || datasetOpen || promptVaultOpen || mainSidebarOpen ? ' app-footer-hidden' : ''}`} aria-label="ComfyUI navigation">
       <div className="footer-dock">
         <button
           className={`footer-menu-toggle ${footerExpanded ? 'expanded' : 'collapsed'}`}
