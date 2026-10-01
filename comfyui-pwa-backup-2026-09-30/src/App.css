@@ -10792,3 +10792,29 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
 .indexeddb-store b { color:#f2c94c; }
 .indexeddb-no-stores,.indexeddb-inspector-empty { padding:24px 10px; color:#7f8795; text-align:center; font-size:13px; }
 .indexeddb-inspector-error { padding:18px; color:#ff8d8d; }
+
+.indexeddb-store-button { width:100%; border:0; cursor:pointer; text-align:left; }
+.indexeddb-store-button i { margin-left:8px; color:#7f8795; font-style:normal; font-size:18px; line-height:1; }
+.indexeddb-records-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #2a2e37; }
+.indexeddb-records-header > div { min-width:0; }
+.indexeddb-records-header strong,.indexeddb-records-header span { display:block; overflow-wrap:anywhere; }
+.indexeddb-records-header strong { font-size:13px; }
+.indexeddb-records-header span { margin-top:3px; color:#7f8795; font-size:11px; }
+.indexeddb-back-btn { border:1px solid #353a45; border-radius:8px; background:#20242d; color:#f3f4f6; padding:8px 10px; cursor:pointer; white-space:nowrap; }
+.indexeddb-records-note { margin-bottom:8px; color:#7f8795; font-size:11px; }
+.indexeddb-record-list { display:grid; gap:5px; }
+.indexeddb-record-row { width:100%; display:flex; align-items:center; gap:9px; min-height:48px; border:1px solid #292e37; border-radius:8px; background:#1b1f27; color:#d9dde5; padding:7px 9px; cursor:pointer; text-align:left; }
+.indexeddb-record-row:active { background:#242934; }
+.indexeddb-record-thumb { width:38px; height:38px; flex:0 0 38px; display:flex; align-items:center; justify-content:center; border-radius:6px; background:#252a34; color:#f2c94c; font-size:9px; font-weight:700; }
+.indexeddb-record-generic { width:38px; height:38px; flex:0 0 38px; display:flex; align-items:center; justify-content:center; border-radius:6px; background:#252a34; color:#7f8795; font-size:9px; font-weight:700; }
+.indexeddb-record-key { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
+.indexeddb-record-chevron { color:#7f8795; font-size:20px; }
+.indexeddb-record-detail { display:flex; flex-direction:column; gap:10px; }
+.indexeddb-record-title { overflow-wrap:anywhere; padding:10px 12px; border-radius:8px; background:#111318; color:#f2c94c; font-size:11px; }
+.indexeddb-image-preview { display:flex; flex-direction:column; gap:9px; }
+.indexeddb-image-preview img { display:block; width:100%; max-height:58vh; object-fit:contain; border:1px solid #30343d; border-radius:8px; background:#0c0e12; }
+.indexeddb-image-meta { padding:10px 12px; border-radius:8px; background:#111318; }
+.indexeddb-image-meta span,.indexeddb-image-meta small { display:block; }
+.indexeddb-image-meta span { font-size:12px; color:#f3f4f6; }
+.indexeddb-image-meta small { margin-top:3px; color:#7f8795; font-size:10px; }
+.indexeddb-record-json { max-height:58vh; overflow:auto; margin:0; padding:12px; border-radius:8px; background:#0d0f13; color:#cfd3da; font-size:10px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; }
