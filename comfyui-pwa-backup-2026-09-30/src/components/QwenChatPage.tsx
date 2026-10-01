@@ -35,9 +35,21 @@ function splitMessageParts(text: string): MessagePart[] {
 
 function makeStateUid(existing: QwenChat[] = []): number {
   const used = new Set(existing.map((chat) => chat.stateUid))
-  let value = 100000 + Math.floor(Math.random() * 900000000)
-  while (used.has(value)) value = 100000 + Math.floor(Math.random() * 900000000)
+  let value = 100000 + Math.floor(Math.random() * 900000)
+  while (used.has(value)) value = 100000 + Math.floor(Math.random() * 900000)
   return value
+}
+
+function repairStateUids(chats: QwenChat[]): QwenChat[] {
+  const used = new Set<number>()
+
+  return chats.map((chat) => {
+    const valid = Number.isInteger(chat.stateUid) && chat.stateUid >= 0 && chat.stateUid <= 999999 && !used.has(chat.stateUid)
+    const stateUid = valid ? chat.stateUid : makeStateUid(Array.from(used).map((uid) => ({ stateUid: uid } as QwenChat)))
+    used.add(stateUid)
+
+    return valid ? chat : { ...chat, stateUid }
+  })
 }
 
 function makeChat(existing: QwenChat[] = [], title = 'New Chat'): QwenChat {
@@ -105,6 +117,8 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
         }
 
         if (!loaded.length) loaded = [makeChat([])]
+
+        loaded = repairStateUids(loaded)
 
         if (!cancelled) {
           setChats(loaded)
