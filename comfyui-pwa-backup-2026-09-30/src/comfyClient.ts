@@ -258,3 +258,50 @@ export async function getRemoteControlStatus(): Promise<any> {
   if (!response.ok) throw new Error(`Remote control returned ${response.status}`)
   return response.json()
 }
+
+
+export async function waitForTextOutput(promptId: string, timeoutMs = 180000): Promise<string> {
+  const started = Date.now()
+
+  while (Date.now() - started < timeoutMs) {
+    const history = await getHistory(promptId) as Record<string, any>
+    const entry = history?.[promptId]
+
+    if (entry?.status?.status_str === 'error' || entry?.status?.status_str === 'failed') {
+      const message = entry?.status?.messages?.map((item: unknown) => JSON.stringify(item)).join('\n')
+      throw new Error(message || 'ComfyUI chat workflow failed.')
+    }
+
+    if (entry?.outputs) {
+      const preferred = ['5', '2']
+      for (const nodeId of preferred) {
+        const output = entry.outputs[nodeId]
+        const textValues = output?.text
+        if (Array.isArray(textValues) && typeof textValues[0] === 'string') {
+          return textValues[0]
+        }
+        if (typeof textValues === 'string') return textValues
+        const resultValues = output?.result
+        if (Array.isArray(resultValues) && typeof resultValues[0] === 'string') {
+          return resultValues[0]
+        }
+      }
+
+      for (const output of Object.values(entry.outputs) as any[]) {
+        const textValues = output?.text
+        if (Array.isArray(textValues) && typeof textValues[0] === 'string') {
+          return textValues[0]
+        }
+        if (typeof textValues === 'string') return textValues
+      }
+    }
+
+    if (entry?.status?.completed === true) {
+      throw new Error('Qwen completed, but no text output was returned.')
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 700))
+  }
+
+  throw new Error('Qwen did not finish within 180 seconds.')
+}
