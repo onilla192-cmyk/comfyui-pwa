@@ -177,6 +177,7 @@ export default function App() {
   const [presetActionsExpanded, setPresetActionsExpanded] = useState(false)
   const [createdPresetEditor, setCreatedPresetEditor] = useState<{ mode: 'create' | 'edit'; id: string | null; title: string; prompt: string } | null>(null)
   const [createdPresetDeleteId, setCreatedPresetDeleteId] = useState<string | null>(null)
+  const [createdPresetManagerMode, setCreatedPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
   const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
   const presetImportInputRef = useRef<HTMLInputElement | null>(null)
   const historyImportInputRef = useRef<HTMLInputElement | null>(null)
@@ -2131,8 +2132,8 @@ export default function App() {
               {presetActionsExpanded && (
                 <div className="preset-actions-panel">
                   <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '' }); setPresetActionsExpanded(false) }}>Create Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; const p = galleryPresets[0]; setCreatedPresetEditor({ mode: 'edit', id: p.id, title: p.title, prompt: p.prompt }); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Edit Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setCreatedPresetDeleteId(galleryPresets[0].id); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Delete Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; const p = galleryPresets[0]; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Edit Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Delete Preset</button>
                   <button type="button" onClick={() => { if (!galleryPresets.length) return; exportCreatedPresets(galleryPresets); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Export Presets</button>
                   <input
                     ref={presetImportInputRef}
@@ -2167,6 +2168,87 @@ export default function App() {
               )) : (
                 <div className="preset-popup-empty">No created presets. Create one from Gallery Menu.</div>
               )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {createdPresetEditor && (
+        <div className="preset-management-backdrop" onClick={() => setCreatedPresetEditor(null)}>
+          <section className="preset-management-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="preset-management-header">
+              <div>
+                <h2>{createdPresetEditor.mode === 'create' ? 'Create Preset' : 'Edit Preset'}</h2>
+                <span>Save changes directly to Created Presets.</span>
+              </div>
+              <button type="button" className="close-btn" onClick={() => setCreatedPresetEditor(null)} aria-label="Close preset editor">×</button>
+            </div>
+            <label className="preset-management-field">
+              <span>Title</span>
+              <input value={createdPresetEditor.title} onChange={(event) => setCreatedPresetEditor((current) => current ? { ...current, title: event.target.value } : current)} placeholder="Preset title" />
+            </label>
+            <label className="preset-management-field">
+              <span>Prompt</span>
+              <textarea value={createdPresetEditor.prompt} onChange={(event) => setCreatedPresetEditor((current) => current ? { ...current, prompt: event.target.value } : current)} placeholder="Enter the prompt for this preset..." rows={8} />
+            </label>
+            <div className="preset-management-actions">
+              <button type="button" onClick={() => setCreatedPresetEditor(null)}>Cancel</button>
+              <button type="button" className="primary" disabled={!createdPresetEditor.title.trim() || !createdPresetEditor.prompt.trim()} onClick={() => void saveCreatedPresetFromPage()}>
+                {createdPresetEditor.mode === 'create' ? 'Save Preset' : 'Save Changes'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {createdPresetManagerMode && (
+        <div className="preset-management-backdrop" onClick={() => setCreatedPresetManagerMode(null)}>
+          <section className="preset-management-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="preset-management-header">
+              <div>
+                <h2>{createdPresetManagerMode === 'edit' ? 'Edit Preset' : 'Delete Preset'}</h2>
+                <span>Select a preset from Created Presets.</span>
+              </div>
+              <button type="button" className="close-btn" onClick={() => setCreatedPresetManagerMode(null)} aria-label="Close preset manager">×</button>
+            </div>
+            <div className="preset-management-list">
+              {galleryPresets.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={createdPresetManagerMode === 'delete' ? 'preset-management-option delete' : 'preset-management-option'}
+                  onClick={() => {
+                    if (createdPresetManagerMode === 'edit') {
+                      setCreatedPresetEditor({ mode: 'edit', id: preset.id, title: preset.title, prompt: preset.prompt })
+                      setCreatedPresetManagerMode(null)
+                    } else {
+                      setCreatedPresetDeleteId(preset.id)
+                      setCreatedPresetManagerMode(null)
+                    }
+                  }}
+                >
+                  <span>{preset.title}</span>
+                  <span>{createdPresetManagerMode === 'edit' ? 'Edit' : 'Delete'}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {createdPresetDeleteId && (
+        <div className="preset-management-backdrop" onClick={() => setCreatedPresetDeleteId(null)}>
+          <section className="preset-management-panel preset-delete-confirm" onClick={(event) => event.stopPropagation()}>
+            <div className="preset-management-header">
+              <div>
+                <h2>Delete Preset?</h2>
+                <span>This permanently removes the selected preset.</span>
+              </div>
+              <button type="button" className="close-btn" onClick={() => setCreatedPresetDeleteId(null)} aria-label="Close delete confirmation">×</button>
+            </div>
+            <div className="preset-management-actions">
+              <button type="button" onClick={() => setCreatedPresetDeleteId(null)}>Cancel</button>
+              <button type="button" className="primary danger" onClick={() => void deleteCreatedPresetFromPage()}>Delete Preset</button>
             </div>
           </section>
         </div>
