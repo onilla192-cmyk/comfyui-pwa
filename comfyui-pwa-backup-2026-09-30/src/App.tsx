@@ -1321,27 +1321,75 @@ export default function App() {
         <aside className="main-sidebar" onClick={(event) => event.stopPropagation()} aria-label="Main menu">
           <button type="button" className="main-sidebar-close" onClick={() => setMainSidebarOpen(false)} aria-label="Close menu">×</button>
           <div className="main-sidebar-content">
-            <button
-              type="button"
-              className="main-sidebar-tool indexeddb-sidebar-button"
-              onClick={() => {
-                setMainSidebarOpen(false)
-                setIndexedDbInspectorOpen(true)
-                setFooterExpanded(false)
-                setMainFooterVisible(false)
-              }}
-              aria-label="Open IndexedDB Inspector"
-            >
-              <span className="main-sidebar-tool-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path d="M4 5h16v14H4z"/>
-                  <path d="M8 9h8M8 12h8M8 15h5"/>
-                </svg>
-              </span>
-              <span className="main-sidebar-tool-copy">
-                <strong>IndexedDB</strong>
-              </span>
-            </button>
+            <div className="main-sidebar-tool-list">
+              <button
+                type="button"
+                className="main-sidebar-tool history-sidebar-button"
+                onClick={() => {
+                  setMainSidebarOpen(false)
+                  openHistory()
+                  setFooterExpanded(false)
+                  setMainFooterVisible(false)
+                }}
+                aria-label="Open History"
+              >
+                <span className="main-sidebar-tool-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M6 4.5A2.5 2.5 0 0 1 8.5 2H20v17.5A2.5 2.5 0 0 0 17.5 17H6z"/>
+                    <path d="M6 4.5v15A2.5 2.5 0 0 0 8.5 22H20"/>
+                    <path d="M10 6h7M10 10h7"/>
+                  </svg>
+                </span>
+                <span className="main-sidebar-tool-copy">
+                  <strong>History</strong>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="main-sidebar-tool datasets-sidebar-button"
+                onClick={() => {
+                  setMainSidebarOpen(false)
+                  setDatasetOpen(true)
+                  setFooterExpanded(false)
+                  setMainFooterVisible(false)
+                }}
+                aria-label="Open Datasets"
+              >
+                <span className="main-sidebar-tool-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <ellipse cx="12" cy="5" rx="7" ry="3"/>
+                    <path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/>
+                    <path d="M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/>
+                  </svg>
+                </span>
+                <span className="main-sidebar-tool-copy">
+                  <strong>Datasets</strong>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="main-sidebar-tool indexeddb-sidebar-button"
+                onClick={() => {
+                  setMainSidebarOpen(false)
+                  setIndexedDbInspectorOpen(true)
+                  setFooterExpanded(false)
+                  setMainFooterVisible(false)
+                }}
+                aria-label="Open IndexedDB"
+              >
+                <span className="main-sidebar-tool-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 5h16v14H4z"/>
+                    <path d="M8 9h8M8 12h8M8 15h5"/>
+                  </svg>
+                </span>
+                <span className="main-sidebar-tool-copy">
+                  <strong>IndexedDB</strong>
+                </span>
+              </button>
+            </div>
           </div>
         </aside>
       </div>
