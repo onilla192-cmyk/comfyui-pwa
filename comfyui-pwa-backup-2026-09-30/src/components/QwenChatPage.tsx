@@ -791,12 +791,6 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
             if (!text.trim()) setComposerExpanded(false)
           }}
           onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault()
-              void sendMessage()
-            }
-          }}
         />
 
         <button
