@@ -2,13 +2,14 @@ import type { WorkflowPrompt } from './comfyClient'
 
 const MODEL_NAME = 'Qwen3.5-4B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf'
 const MMPROJ_NAME = 'mmproj-Qwen3.5-4B-Uncensored-HauhauCS-Aggressive-BF16.gguf'
-const CHAT_STATE_UID = 42001
+const DEFAULT_CHAT_STATE_UID = 42001
 
 export interface QwenChatWorkflowInputs {
   prompt: string
   imageName?: string
   seed?: number
   systemPrompt?: string
+  stateUid?: number
 }
 
 export function buildQwenChatWorkflow(inputs: QwenChatWorkflowInputs): WorkflowPrompt {
@@ -61,7 +62,7 @@ export function buildQwenChatWorkflow(inputs: QwenChatWorkflowInputs): WorkflowP
         mirostat_mode: 0,
         mirostat_eta: 0.1,
         mirostat_tau: 5,
-        state_uid: CHAT_STATE_UID,
+        state_uid: inputs.stateUid ?? DEFAULT_CHAT_STATE_UID,
       },
       class_type: 'llama_cpp_parameters',
       _meta: { title: 'Qwen Chat Parameters' },
