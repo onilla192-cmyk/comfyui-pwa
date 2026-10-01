@@ -10818,3 +10818,11 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
 .indexeddb-image-meta span { font-size:12px; color:#f3f4f6; }
 .indexeddb-image-meta small { margin-top:3px; color:#7f8795; font-size:10px; }
 .indexeddb-record-json { max-height:58vh; overflow:auto; margin:0; padding:12px; border-radius:8px; background:#0d0f13; color:#cfd3da; font-size:10px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; }
+
+.indexeddb-store-danger { display:flex; align-items:center; gap:9px; margin-bottom:10px; padding:9px; border:1px solid #5a3030; border-radius:8px; background:#241517; }
+.indexeddb-delete-all-btn { border:1px solid #8b3f3f; border-radius:7px; background:#4a2020; color:#ffb5b5; padding:9px 11px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.indexeddb-delete-all-btn:disabled { opacity:.45; cursor:default; }
+.indexeddb-store-danger span { color:#9d8585; font-size:10px; line-height:1.3; }
+@media (max-width: 560px) {
+  .indexeddb-store-danger { align-items:stretch; flex-direction:column; }
+}
