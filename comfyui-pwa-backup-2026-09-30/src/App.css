@@ -10827,3 +10827,4 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
 @media (max-width: 560px) {
   .indexeddb-store-danger { align-items:stretch; flex-direction:column; }
 }
+.app-empty-header{display:flex;align-items:center;justify-content:flex-end;padding:8px 12px}.main-header-menu-button{display:grid;place-items:center;width:48px;height:48px;border:1px solid #30343d;border-radius:10px;background:#191c23;color:#f3f4f6;cursor:pointer}.main-header-menu-button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.main-header-menu-button:active{background:#242832}
