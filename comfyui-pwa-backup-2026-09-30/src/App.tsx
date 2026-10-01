@@ -161,6 +161,7 @@ export default function App() {
   const [presetsOpen, setPresetsOpen] = useState(false)
   const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
   const presetImportInputRef = useRef<HTMLInputElement | null>(null)
+  const historyImportInputRef = useRef<HTMLInputElement | null>(null)
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
   const [completedImageVisible, setCompletedImageVisible] = useState(true)
   const completedTapTimer = useRef<number | null>(null)
@@ -1061,6 +1062,48 @@ export default function App() {
     setHistoryOpen(true)
   }
 
+  async function importHistoryItem(file: File | undefined) {
+    if (!file) return
+    try {
+      const text = await file.text()
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(text)
+      } catch {
+        throw new Error('The selected file is not valid JSON.')
+      }
+      if (!parsed || typeof parsed !== 'object') throw new Error('This file is not a ComfyUI PWA History export.')
+      const payload = parsed as { format?: unknown; image?: { data?: unknown }; prompt?: unknown; metadata?: { createdAt?: unknown } }
+      if (payload.format !== 'comfyui-pwa-history-image') throw new Error('This JSON is not a ComfyUI PWA History export.')
+      if (!payload.image || typeof payload.image.data !== 'string' || !payload.image.data.startsWith('data:image/')) {
+        throw new Error('The export does not contain a valid image.')
+      }
+
+      const response = await fetch(payload.image.data)
+      if (!response.ok) throw new Error('Could not read the image from the export.')
+      const blob = await response.blob()
+      const id = 'imported-history-' + Date.now() + '-' + Math.random().toString(36).slice(2)
+      await cacheFile(id, blob)
+
+      const imported: ResultImage = {
+        id,
+        url: URL.createObjectURL(blob),
+        promptId: 'imported-history',
+        prompt: typeof payload.prompt === 'string' ? payload.prompt : '',
+        negativePrompt: '',
+        createdAt: typeof payload.metadata?.createdAt === 'number' ? payload.metadata.createdAt : Date.now(),
+      }
+
+      setResults((current) => [imported, ...current])
+      setLatestResultId(imported.id)
+      setHistorySection('history')
+      setHistoryPage(1)
+      setHistoryOpen(true)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not import this history export.')
+    }
+  }
+
   function moveToTrash(id: string) {
     const item = results.find((x) => x.id === id)
     if (!item) return
@@ -1913,6 +1956,12 @@ export default function App() {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
                 {trash.length > 0 && <span>{trash.length}</span>}
               </button>
+              {historySection === 'history' && (
+                <>
+                  <input ref={historyImportInputRef} type="file" accept=".json,application/json" hidden onChange={(e) => { void importHistoryItem(e.target.files?.[0]); e.currentTarget.value = '' }} />
+                  <button type="button" className="history-import-btn" onClick={() => historyImportInputRef.current?.click()} aria-label="Import History JSON" title="Import History JSON">Import</button>
+                </>
+              )}
               {historySection === 'trash' && trash.length > 0 && <button type="button" className="history-delete-all-btn" onClick={deleteAllTrash}>Delete All</button>}
               <span className="history-page-indicator">{historySection === 'history' ? `Page ${safeHistoryPage} of ${historyPageCount}` : `Page ${safeHistoryPage} of ${trashPageCount}`}</span>
               <button className="history-close-btn" type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history">×</button>
