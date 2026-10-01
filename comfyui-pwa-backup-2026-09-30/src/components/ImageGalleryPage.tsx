@@ -354,9 +354,8 @@ function ensureKnownGalleryFolders(folders: GalleryFolder[]): GalleryFolder[] {
   }))
 }
 
-async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
+async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[] }> {
   const stored = await readGalleryDb()
-  const recoveredPresets = await recoverPresetsFromIndexedDb(stored.presets)
   const recoveredFolders = ensureKnownGalleryFolders(await recoverFoldersFromIndexedDb(stored.folders))
   const recoveredItems = await recoverGalleryItemsFromIndexedDb(stored.items)
   // If an older same-origin database still contains original inline image data,
@@ -437,6 +436,8 @@ export function ImageGalleryPage({
   const [sendFolderOpen, setSendFolderOpen] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
   const [presetMenuOpen, setPresetMenuOpen] = useState(false)
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
+  const [presets, setPresets] = useState<GalleryPreset[]>([])
   const feedbackTimer = useRef<number | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const armTimer = useRef<number | null>(null)
