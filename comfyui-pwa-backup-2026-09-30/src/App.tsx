@@ -1339,10 +1339,8 @@ export default function App() {
                 </svg>
               </span>
               <span className="main-sidebar-tool-copy">
-                <strong>IndexedDB Inspector</strong>
-                <small>Browser storage</small>
+                <strong>IndexedDB</strong>
               </span>
-              <span className="main-sidebar-tool-chevron" aria-hidden="true">›</span>
             </button>
           </div>
         </aside>
