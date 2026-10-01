@@ -2,7 +2,7 @@ import './QwenChatPage.css'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { buildQwenChatWorkflow } from '../qwenChatWorkflow'
 import { queuePrompt, uploadImage, waitForTextOutput } from '../comfyClient'
-import { loadQwenChats, saveQwenChats, type QwenChat, type QwenChatMessage } from '../qwenChatDb'
+import { clearQwenChatBackground, loadQwenChatBackground, loadQwenChats, saveQwenChatBackground, saveQwenChats, type QwenChat, type QwenChatMessage } from '../qwenChatDb'
 
 type MessagePart =
   | { type: 'text'; value: string }
@@ -81,7 +81,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const [activeChatId, setActiveChatId] = useState('')
   const [loadingChats, setLoadingChats] = useState(true)
   const [chatListOpen, setChatListOpen] = useState(false)
-  const [backgroundFile, setBackgroundFile] = useState<File | null>(null)
+  const [backgroundBlob, setBackgroundBlob] = useState<Blob | null>(null)
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -148,14 +148,28 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   }, [activeChatId, messages])
 
   useEffect(() => {
-    if (!backgroundFile) {
+    let cancelled = false
+
+    void loadQwenChatBackground()
+      .then((blob) => {
+        if (!cancelled) setBackgroundBlob(blob)
+      })
+      .catch(() => {
+        if (!cancelled) setBackgroundBlob(null)
+      })
+
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (!backgroundBlob) {
       setBackgroundUrl(null)
       return
     }
-    const url = URL.createObjectURL(backgroundFile)
+    const url = URL.createObjectURL(backgroundBlob)
     setBackgroundUrl(url)
     return () => URL.revokeObjectURL(url)
-  }, [backgroundFile])
+  }, [backgroundBlob])
 
   useEffect(() => {
     if (!imageFile) {
@@ -177,13 +191,23 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
     setImageFile(null)
   }
 
-  function handleBackground(file?: File) {
+  async function handleBackground(file?: File) {
     if (!file) return
-    setBackgroundFile(file)
+    try {
+      await saveQwenChatBackground(file)
+      setBackgroundBlob(file)
+    } catch {
+      setError('Could not save the chat background.')
+    }
   }
 
-  function removeBackground() {
-    setBackgroundFile(null)
+  async function removeBackground() {
+    try {
+      await clearQwenChatBackground()
+      setBackgroundBlob(null)
+    } catch {
+      setError('Could not remove the chat background.')
+    }
   }
 
   function updateChat(chatId: string, updater: (chat: QwenChat) => QwenChat) {
@@ -368,13 +392,13 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
               onChange={(event) => {
-                handleBackground(event.target.files?.[0])
+                void handleBackground(event.target.files?.[0])
                 event.currentTarget.value = ''
               }}
             />
           </label>
           {backgroundUrl && (
-            <button type="button" className="qwen-chat-background-remove" onClick={removeBackground} aria-label="Remove chat background" title="Remove background">×</button>
+            <button type="button" className="qwen-chat-background-remove" onClick={() => void removeBackground()} aria-label="Remove chat background" title="Remove background">×</button>
           )}
           <button type="button" className="close-btn" onClick={onClose} aria-label="Close Qwen Chat">×</button>
         </div>
