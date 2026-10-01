@@ -221,6 +221,39 @@ function looksLikeGalleryPreset(value: unknown): value is GalleryPreset {
   return typeof item.title === 'string' && typeof item.prompt === 'string'
 }
 
+function recoverPresetsFromLocalStorage(existing: GalleryPreset[]): GalleryPreset[] {
+  const byId = new Map(existing.map((preset) => [preset.id, preset]))
+  const addValue = (value: unknown) => {
+    if (!value || typeof value !== 'object') return
+    const candidates = Array.isArray(value) ? value : [value]
+    for (const candidate of candidates) {
+      if (!looksLikeGalleryPreset(candidate)) continue
+      const item = candidate as Partial<GalleryPreset>
+      const id = typeof item.id === 'string' && item.id
+        ? item.id
+        : 'preset-recovered-local-' + Date.now() + '-' + Math.random().toString(36).slice(2)
+      if (!byId.has(id)) {
+        byId.set(id, {
+          id,
+          title: item.title!,
+          prompt: item.prompt!,
+          createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
+        })
+      }
+    }
+  }
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index)
+      if (!key) continue
+      const raw = localStorage.getItem(key)
+      if (!raw) continue
+      try { addValue(JSON.parse(raw)) } catch {}
+    }
+  } catch {}
+  return Array.from(byId.values()).sort((a, b) => a.createdAt - b.createdAt)
+}
+
 async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<GalleryPreset[]> {
   const byId = new Map(existing.map((preset) => [preset.id, preset]))
   const databases: string[] = []
@@ -243,7 +276,10 @@ async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<G
     } catch { continue }
 
     try {
-      const storeNames = Array.from(db.objectStoreNames)
+      const storeNames = Array.from(db.objectStoreNames).filter((name) => {
+        const lower = name.toLowerCase()
+        return lower.includes('preset') || lower.includes('prompt') || lower === GALLERY_PRESET_STORE_NAME
+      })
       if (!storeNames.length) continue
       await new Promise<void>((resolve) => {
         let remaining = storeNames.length
@@ -282,7 +318,6 @@ async function recoverPresetsFromIndexedDb(existing: GalleryPreset[]): Promise<G
   }
   return Array.from(byId.values()).sort((a, b) => a.createdAt - b.createdAt)
 }
-
 async function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<GalleryFolder[]> {
   const byId = new Map(existing.map((folder) => [folder.id, folder]))
   const databases: string[] = []
@@ -443,7 +478,15 @@ function ensureKnownGalleryFolders(folders: GalleryFolder[]): GalleryFolder[] {
 
 async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const stored = await readGalleryDb()
-  const recoveredPresets = await recoverPresetsFromIndexedDb(stored.presets)
+
+  // Preset recovery is additive and read-only. It never clears or replaces
+  // existing preset records with an empty result.
+  let recoveredPresets = stored.presets
+  try {
+    recoveredPresets = recoverPresetsFromLocalStorage(recoveredPresets)
+    recoveredPresets = await recoverPresetsFromIndexedDb(recoveredPresets)
+  } catch {}
+
   const recoveredFolders = ensureKnownGalleryFolders(await recoverFoldersFromIndexedDb(stored.folders))
   const recoveredItems = await recoverGalleryItemsFromIndexedDb(stored.items)
   // If an older same-origin database still contains original inline image data,
