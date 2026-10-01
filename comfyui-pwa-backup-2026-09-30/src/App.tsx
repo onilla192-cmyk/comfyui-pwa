@@ -2071,7 +2071,7 @@ export default function App() {
         </section>
       </div>}
 
-      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => { setIndexedDbInspectorOpen(false); setMainFooterVisible(true) }} inspect={inspectIndexedDb} inspectKeys={inspectIndexedDbKeys} inspectRecord={inspectIndexedDbRecord} />}
+      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => { setIndexedDbInspectorOpen(false); setMainFooterVisible(true) }} inspect={inspectIndexedDb} inspectKeys={inspectIndexedDbKeys} inspectRecord={inspectIndexedDbRecord} permanentlyDelete={permanentlyDeleteIndexedDbStore} />}
 
       {historyOpen && <div className="history-backdrop" onClick={() => setHistoryOpen(false)}>
         <section className="history-panel" onClick={(e) => e.stopPropagation()}>
@@ -2435,11 +2435,13 @@ function IndexedDbInspector({
   inspect,
   inspectKeys,
   inspectRecord,
+  permanentlyDelete,
 }: {
   onClose: () => void
   inspect: () => Promise<Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }>>
   inspectKeys: (databaseName: string, storeName: string) => Promise<Array<{ key: string; rawKey: IDBValidKey }>>
   inspectRecord: (databaseName: string, storeName: string, key: IDBValidKey) => Promise<unknown>
+  permanentlyDelete: (databaseName: string, storeName: string) => Promise<void>
 }) {
   const [loading, setLoading] = useState(true)
   const [databases, setDatabases] = useState<Array<{ name: string; version: number; stores: Array<{ name: string; count: number; keyPath: string | string[] | null; autoIncrement: boolean }> }>>([])
@@ -2481,7 +2483,7 @@ function IndexedDbInspector({
     setDeletingStore(true)
     setRecordsError('')
     try {
-      await permanentlyDeleteIndexedDbStore(selectedStore.databaseName, selectedStore.storeName)
+      await permanentlyDelete(selectedStore.databaseName, selectedStore.storeName)
       if (recordPreviewUrl) {
         URL.revokeObjectURL(recordPreviewUrl)
         setRecordPreviewUrl(null)
