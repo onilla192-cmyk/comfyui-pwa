@@ -6,6 +6,7 @@ import { cacheImage, getCachedImage, deleteCachedImage, cacheFile, getCachedFile
 import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
+import { QwenChatPage } from './components/QwenChatPage'
 import { importPromptVaultItems } from './promptVaultDb'
 import { readCreatedPresets, createCreatedPreset, updateCreatedPreset, deleteCreatedPreset, exportCreatedPresets, importCreatedPresets, type CreatedPreset } from './createdPresetsDb'
 
@@ -212,6 +213,7 @@ export default function App() {
   const [logsOpen, setLogsOpen] = useState(false)
   const [datasetOpen, setDatasetOpen] = useState(false)
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
+  const [qwenChatOpen, setQwenChatOpen] = useState(false)
   const [indexedDbInspectorOpen, setIndexedDbInspectorOpen] = useState(false)
   const [mainSidebarOpen, setMainSidebarOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
@@ -1370,6 +1372,28 @@ export default function App() {
 
               <button
                 type="button"
+                className="main-sidebar-tool qwen-chat-sidebar-button"
+                onClick={() => {
+                  setMainSidebarOpen(false)
+                  setQwenChatOpen(true)
+                  setFooterExpanded(false)
+                  setMainFooterVisible(false)
+                }}
+                aria-label="Open Qwen Chat"
+              >
+                <span className="main-sidebar-tool-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M5 6h14v10H9l-4 3V6Z"/>
+                    <path d="M8 10h8M8 13h5"/>
+                  </svg>
+                </span>
+                <span className="main-sidebar-tool-copy">
+                  <strong>Qwen Chat</strong>
+                </span>
+              </button>
+
+              <button
+                type="button"
                 className="main-sidebar-tool indexeddb-sidebar-button"
                 onClick={() => {
                   setMainSidebarOpen(false)
@@ -1578,6 +1602,10 @@ export default function App() {
 
     {promptVaultOpen && (
       <PromptVaultPage onClose={() => setPromptVaultOpen(false)} />
+    )}
+
+    {qwenChatOpen && (
+      <QwenChatPage onClose={() => setQwenChatOpen(false)} />
     )}
 
     {datasetOpen && (

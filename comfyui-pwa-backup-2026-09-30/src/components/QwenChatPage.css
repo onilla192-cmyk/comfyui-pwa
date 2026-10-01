@@ -1,0 +1,229 @@
+.qwen-chat-page {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  background: #17181c;
+  color: #f2f3f5;
+}
+
+.qwen-chat-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #303238;
+  background: #1d1f24;
+}
+
+.qwen-chat-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.qwen-chat-header span {
+  display: block;
+  margin-top: 4px;
+  color: #969aa3;
+  font-size: 12px;
+}
+
+.qwen-chat-messages {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 20px max(14px, calc((100vw - 760px) / 2));
+  overscroll-behavior: contain;
+}
+
+.qwen-chat-empty {
+  min-height: 100%;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 8px;
+  color: #8f949d;
+}
+
+.qwen-chat-empty strong {
+  color: #f2f3f5;
+  font-size: 20px;
+}
+
+.qwen-chat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto 18px;
+}
+
+.qwen-chat-message.user {
+  align-items: flex-end;
+}
+
+.qwen-chat-message.assistant {
+  align-items: flex-start;
+}
+
+.qwen-chat-message-bubble {
+  max-width: min(92%, 680px);
+  padding: 12px 14px;
+  border: 1px solid #303238;
+  background: #202228;
+}
+
+.qwen-chat-message.user .qwen-chat-message-bubble {
+  background: #282b32;
+}
+
+.qwen-chat-message-role {
+  display: block;
+  margin-bottom: 7px;
+  color: #8f949d;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.qwen-chat-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.qwen-chat-message-image {
+  display: block;
+  max-width: min(70vw, 360px);
+  max-height: 360px;
+  object-fit: contain;
+  border: 1px solid #303238;
+}
+
+.qwen-chat-thinking {
+  color: #9da2aa;
+}
+
+.qwen-chat-error {
+  flex: 0 0 auto;
+  margin: 0 auto 8px;
+  width: min(760px, calc(100% - 28px));
+  padding: 10px 12px;
+  border: 1px solid #63353a;
+  background: #2a1c1f;
+  color: #ffb4b4;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.qwen-chat-attachment {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(760px, calc(100% - 28px));
+  margin: 0 auto 8px;
+  padding: 8px;
+  border: 1px solid #303238;
+  background: #1d1f24;
+}
+
+.qwen-chat-attachment img {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+}
+
+.qwen-chat-attachment strong {
+  display: block;
+  max-width: 52vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.qwen-chat-attachment button {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #aeb3bc;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.qwen-chat-composer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: min(760px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 10px 0 16px;
+  background: #17181c;
+}
+
+.qwen-chat-composer textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  resize: none;
+  padding: 11px 12px;
+  border: 1px solid #3a3d44;
+  outline: none;
+  background: #202228;
+  color: #f2f3f5;
+  font: inherit;
+  font-size: 14px;
+}
+
+.qwen-chat-composer textarea:focus {
+  border-color: #666b75;
+}
+
+.qwen-chat-upload,
+.qwen-chat-send {
+  flex: 0 0 auto;
+  height: 42px;
+  border: 1px solid #3a3d44;
+  background: #202228;
+  color: #f2f3f5;
+  cursor: pointer;
+}
+
+.qwen-chat-upload {
+  width: 42px;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+}
+
+.qwen-chat-upload input {
+  display: none;
+}
+
+.qwen-chat-send {
+  min-width: 64px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.qwen-chat-upload:disabled,
+.qwen-chat-send:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+@media (min-width: 760px) {
+  .qwen-chat-composer {
+    padding-bottom: 24px;
+  }
+}
