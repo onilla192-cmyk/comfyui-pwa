@@ -116,8 +116,16 @@ export default function App() {
       const customEvent = event as CustomEvent<string>
       if (typeof customEvent.detail === 'string') setPrompt(customEvent.detail)
     }
+    const handleQwenSendToMainPrompt = (event: Event) => {
+      const customEvent = event as CustomEvent<string>
+      if (typeof customEvent.detail === 'string') setPrompt(customEvent.detail)
+    }
     window.addEventListener('history-send-to-main-prompt', handleHistorySendToMainPrompt)
-    return () => window.removeEventListener('history-send-to-main-prompt', handleHistorySendToMainPrompt)
+    window.addEventListener('qwen-send-to-main-prompt', handleQwenSendToMainPrompt)
+    return () => {
+      window.removeEventListener('history-send-to-main-prompt', handleHistorySendToMainPrompt)
+      window.removeEventListener('qwen-send-to-main-prompt', handleQwenSendToMainPrompt)
+    }
   }, [])
 
   const [promptLabelBlock, setPromptLabelBlock] = useState('')
