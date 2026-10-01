@@ -444,6 +444,14 @@ async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: 
   const recoveredPresets = await recoverPresetsFromIndexedDb(stored.presets)
   const recoveredFolders = ensureKnownGalleryFolders(await recoverFoldersFromIndexedDb(stored.folders))
   const recoveredItems = await recoverGalleryItemsFromIndexedDb(stored.items)
+  // If an older same-origin database still contains original inline image data,
+  // copy it into the current imageData store before the normal metadata save.
+  // This only adds recovered image bytes; it never clears existing image data.
+  for (const item of recoveredItems) {
+    if (item.src) {
+      try { await putGalleryImageData(item.id, item.src) } catch {}
+    }
+  }
   const legacyItems = recoveredItems
   const legacy = loadGallery()
   const hasImageData = await new Promise<boolean>((resolve) => {
