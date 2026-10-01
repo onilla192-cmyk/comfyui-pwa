@@ -7,7 +7,8 @@ import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 import { importPromptVaultItems } from './promptVaultDb'
-import { ImageGalleryPage, readGalleryPresets, importGalleryPresets, type GalleryPreset } from './components/ImageGalleryPage'
+import { ImageGalleryPage } from './components/ImageGalleryPage'
+import { readCreatedPresets, createCreatedPreset, updateCreatedPreset, deleteCreatedPreset, exportCreatedPresets, importCreatedPresets, type GalleryPreset } from './createdPresetsDb'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -174,7 +175,8 @@ export default function App() {
   const [resultsOpen, setResultsOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
   const [presetActionsExpanded, setPresetActionsExpanded] = useState(false)
-  const [pendingPresetAction, setPendingPresetAction] = useState<'create' | 'edit' | 'delete' | 'export' | null>(null)
+  const [createdPresetEditor, setCreatedPresetEditor] = useState<{ mode: 'create' | 'edit'; id: string | null; title: string; prompt: string } | null>(null)
+  const [createdPresetDeleteId, setCreatedPresetDeleteId] = useState<string | null>(null)
   const [galleryPresets, setGalleryPresets] = useState<GalleryPreset[]>([])
   const presetImportInputRef = useRef<HTMLInputElement | null>(null)
   const historyImportInputRef = useRef<HTMLInputElement | null>(null)
@@ -453,6 +455,32 @@ export default function App() {
     const timer = window.setInterval(() => void refreshGalleryPresets(), 1000)
     return () => window.clearInterval(timer)
   }, [])
+
+  async function saveCreatedPresetFromPage() {
+    if (!createdPresetEditor) return
+    try {
+      if (createdPresetEditor.mode === 'create') {
+        await createCreatedPreset(createdPresetEditor.title, createdPresetEditor.prompt)
+      } else if (createdPresetEditor.id) {
+        await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt)
+      }
+      setCreatedPresetEditor(null)
+      await refreshGalleryPresets()
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not save preset.')
+    }
+  }
+
+  async function deleteCreatedPresetFromPage() {
+    if (!createdPresetDeleteId) return
+    try {
+      await deleteCreatedPreset(createdPresetDeleteId)
+      setCreatedPresetDeleteId(null)
+      await refreshGalleryPresets()
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not delete preset.')
+    }
+  }
 
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
 
@@ -1597,10 +1625,8 @@ export default function App() {
 
     {galleryOpen ? (
       <ImageGalleryPage
-        onClose={() => { setGalleryOpen(false); setPendingPresetAction(null) }}
+        onClose={() => setGalleryOpen(false)}
         onSetFigure={(which, item, presetPrompt) => { void setGalleryImage(which, item, presetPrompt) }}
-        presetAction={pendingPresetAction}
-        onPresetActionHandled={() => setPendingPresetAction(null)}
       />
     ) : (
       <main className="app-main">
@@ -2104,10 +2130,10 @@ export default function App() {
               </div>
               {presetActionsExpanded && (
                 <div className="preset-actions-panel">
-                  <button type="button" onClick={() => { setPendingPresetAction('create'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }}>Create Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setPendingPresetAction('edit'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }} disabled={!galleryPresets.length}>Edit Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setPendingPresetAction('delete'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }} disabled={!galleryPresets.length}>Delete Preset</button>
-                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setPendingPresetAction('export'); setPresetsOpen(false); setPresetActionsExpanded(false); setGalleryOpen(true) }} disabled={!galleryPresets.length}>Export Presets</button>
+                  <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '' }); setPresetActionsExpanded(false) }}>Create Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; const p = galleryPresets[0]; setCreatedPresetEditor({ mode: 'edit', id: p.id, title: p.title, prompt: p.prompt }); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Edit Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; setCreatedPresetDeleteId(galleryPresets[0].id); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Delete Preset</button>
+                  <button type="button" onClick={() => { if (!galleryPresets.length) return; exportCreatedPresets(galleryPresets); setPresetActionsExpanded(false) }} disabled={!galleryPresets.length}>Export Presets</button>
                   <input
                     ref={presetImportInputRef}
                     type="file"
@@ -2115,7 +2141,7 @@ export default function App() {
                     hidden
                     onChange={(event) => {
                       const file = event.target.files?.[0]
-                      void handlePresetImport(file)
+                      void (async () => { try { const count = await importCreatedPresets(file); await refreshGalleryPresets(); window.alert(count ? `Imported ${count} preset${count === 1 ? '' : 's'}.` : 'Those presets are already in your Created Presets.') } catch (error) { window.alert(error instanceof Error ? error.message : 'Could not import presets.') } })()
                       event.currentTarget.value = ''
                     }}
                   />
