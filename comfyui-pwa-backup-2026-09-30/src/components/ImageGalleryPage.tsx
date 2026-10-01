@@ -470,21 +470,17 @@ async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: 
         tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not migrate gallery metadata')) }
       })
     }
-    return { items: sourceItems.map((item) => ({ ...item, src: '' })), folders: recoveredFolders, presets: recoveredPresets }
+    return { items: sourceItems.map((item) => ({ ...item, src: '' })), folders: recoveredFolders }
   }
-  return { items: legacyItems, folders: recoveredFolders, presets: recoveredPresets }
+  return { items: legacyItems, folders: recoveredFolders }
 }
 
 export function ImageGalleryPage({
   onClose,
   onSetFigure,
-  presetAction,
-  onPresetActionHandled,
 }: {
   onClose: () => void
   onSetFigure: (which: Figure, item: GalleryItem, presetPrompt?: string) => void
-  presetAction?: 'create' | 'edit' | 'delete' | 'export' | null
-  onPresetActionHandled?: () => void
 }) {
   const [items, setItems] = useState<GalleryItem[]>([])
   // Render the known recovered folders immediately. This keeps the folder UI
@@ -605,39 +601,6 @@ export function ImageGalleryPage({
     if (!name || name === currentFolder.name) return
     setFolders((current) => current.map((folder) => folder.id === currentFolder.id ? { ...folder, name } : folder))
   }
-
-  async function refreshGalleryPresetList() {
-    try {
-      const recovered = await readGalleryPresets()
-      setPresets(recovered)
-    } catch {
-      // Never replace existing preset state with an empty array.
-    }
-  }
-
-  function createPreset() {
-    const title = presetTitle.trim()
-    const prompt = presetPrompt.trim()
-    if (!title || !prompt) return
-    if (presets.some((preset) => preset.title.toLowerCase() === title.toLowerCase())) {
-      window.alert('A preset with that title already exists.')
-      return
-    }
-    const preset: GalleryPreset = {
-      id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2),
-      title,
-      prompt,
-      createdAt: Date.now(),
-    }
-    setPresets((current) => [...current, preset])
-    setSelectedPresetId(preset.id)
-    setPresetTitle('')
-    setPresetPrompt('')
-    setPresetCreatorOpen(false)
-    setPresetMenuOpen(false)
-    showFeedback('Preset Saved')
-  }
-
 
   function addFolder() {
     const name = window.prompt('Name this folder', 'New Folder')?.trim()
