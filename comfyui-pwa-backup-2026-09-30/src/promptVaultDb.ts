@@ -186,14 +186,9 @@ async function migrateLegacyStorage(): Promise<void> {
   localStorage.removeItem(KEY)
   localStorage.removeItem(ARCHIVE_KEY)
 
-  // Legacy records are retained unless the new shared store has verified the
-  // copied image. The shared Prompt Vault is now the source of truth.
-  if (copiedKeys.size) {
-    try {
-      const { deleteCachedFiles } = await import('./imageCache')
-      await deleteCachedFiles([...copiedKeys])
-    } catch {}
-  }
+  // Do not delete from the shared image store here. The Prompt Vault now
+  // intentionally lives inside comfyui-console-images, so those image records
+  // are the live Prompt Vault images.
 }
 
 async function readPromptVaultRecords(): Promise<{ items: PromptVaultItem[]; archived: PromptVaultItem[] }> {
@@ -288,10 +283,8 @@ export async function importPromptVaultItems(items: PromptVaultItem[]): Promise<
   const newItems = items.filter((item) => !existingIds.has(item.id))
   if (newItems.length) await savePromptVaultItems([...existing.items, ...newItems], existing.archived)
 
-  if (copied.size) {
-    const { deleteCachedFiles } = await import('./imageCache')
-    await deleteCachedFiles([...copied])
-  }
+  // The source images and Prompt Vault images intentionally share the same
+  // comfyui-console-images database, so the copied records must remain there.
 }
 
 export async function deletePromptVaultImages(cacheKeys: string[]): Promise<void> {
