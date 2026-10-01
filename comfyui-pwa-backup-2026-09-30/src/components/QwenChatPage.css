@@ -5,8 +5,8 @@
 .qwen-chat-chats-btn{display:flex;align-items:center;gap:7px;height:36px;padding:0 12px;border:0;border-radius:18px;background:#e5e5ea;color:#007aff;font:600 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;cursor:pointer}
 .qwen-chat-chats-btn:hover,.qwen-chat-chats-btn.active{background:#d1d1d6}
 .qwen-chat-chats-btn:disabled{opacity:.5;cursor:default}
-.qwen-chat-list-backdrop{position:absolute;inset:72px 0 0;z-index:124;border:0;background:rgba(0,0,0,.18);cursor:default}
-.qwen-chat-list{position:absolute;top:72px;bottom:0;left:0;z-index:130;width:min(330px,88vw);display:flex;flex-direction:column;background:rgba(248,248,250,.98);border-right:1px solid rgba(60,60,67,.16);box-shadow:8px 0 30px rgba(0,0,0,.14);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)}
+.qwen-chat-list-backdrop{position:fixed;top:calc(72px + max(10px,env(safe-area-inset-top)));right:0;bottom:0;left:0;z-index:9998 !important;border:0;background:rgba(0,0,0,.18);cursor:default}
+.qwen-chat-list{position:fixed;top:calc(72px + max(10px,env(safe-area-inset-top)));bottom:0;left:0;z-index:9999 !important;width:min(330px,88vw);display:flex;flex-direction:column;background:rgba(248,248,250,.98);border-right:1px solid rgba(60,60,67,.16);box-shadow:8px 0 30px rgba(0,0,0,.14);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)}
 .qwen-chat-list-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 14px 12px;border-bottom:1px solid rgba(60,60,67,.12)}
 .qwen-chat-list-header strong{display:block;color:#1c1c1e;font-size:17px}
 .qwen-chat-list-header span{display:block;margin-top:3px;color:#8e8e93;font-size:11px}
@@ -38,8 +38,8 @@
 }
 @media(max-width:600px){
 .qwen-chat-header-title{max-width:45vw}
-.qwen-chat-list{top:72px;width:min(330px,92vw)}
-.qwen-chat-list-backdrop{top:72px}
+.qwen-chat-list{top:calc(72px + max(10px,env(safe-area-inset-top)));width:min(330px,92vw)}
+.qwen-chat-list-backdrop{top:calc(72px + max(10px,env(safe-area-inset-top)))
 .qwen-chat-chats-btn{padding:0 10px}
 .qwen-chat-chats-btn span:last-child{display:none}
 }
@@ -53,7 +53,7 @@
 .qwen-chat-page.has-background{background:#000}
 .qwen-chat-page.has-background::before{content:"";position:absolute;inset:0;z-index:0;background-image:var(--qwen-chat-background);background-position:center;background-size:cover;background-repeat:no-repeat;pointer-events:none}
 .qwen-chat-page.has-background::after{content:"";position:absolute;inset:0;z-index:0;background:rgba(0,0,0,.18);pointer-events:none}
-.qwen-chat-page.has-background>*{position:relative;z-index:1}.qwen-chat-page.has-background .qwen-chat-list-backdrop{z-index:124}.qwen-chat-page.has-background .qwen-chat-list{z-index:130}
+.qwen-chat-page.has-background>*{position:relative;z-index:1}.qwen-chat-page.has-background .qwen-chat-list-backdrop{z-index:9998 !important}.qwen-chat-page.has-background .qwen-chat-list{z-index:9999 !important}.qwen-chat-page.has-background .qwen-chat-messages{z-index:1 !important}
 .qwen-chat-page.has-background .qwen-chat-messages{background:rgba(0,0,0,.04)}
 .qwen-chat-page.has-background .qwen-chat-header{background:rgba(255,255,255,.72)}
 .qwen-chat-page.has-background .qwen-chat-composer{background:transparent}
