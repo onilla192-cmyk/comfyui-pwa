@@ -210,6 +210,7 @@ export default function App() {
   const [promptVaultOpen, setPromptVaultOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [indexedDbInspectorOpen, setIndexedDbInspectorOpen] = useState(false)
+  const [mainSidebarOpen, setMainSidebarOpen] = useState(false)
   const [launcherLogs, setLauncherLogs] = useState<string[]>([])
   const [comfyPowerState, setComfyPowerState] = useState<'off' | 'starting' | 'active'>('off')
   const [powerProgress, setPowerProgress] = useState(0)
@@ -1315,8 +1316,17 @@ export default function App() {
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
 
   return <div className="app">
+    {mainSidebarOpen && (
+      <div className="main-sidebar-backdrop" onClick={() => setMainSidebarOpen(false)}>
+        <aside className="main-sidebar" onClick={(event) => event.stopPropagation()} aria-label="Main menu">
+          <button type="button" className="main-sidebar-close" onClick={() => setMainSidebarOpen(false)} aria-label="Close menu">×</button>
+          <div className="main-sidebar-content" />
+        </aside>
+      </div>
+    )}
+
     <header className="app-empty-header">
-      <button type="button" className="main-header-menu-button" aria-label="Open menu" title="Menu">
+      <button type="button" className="main-header-menu-button" onClick={() => setMainSidebarOpen(true)} aria-label="Open menu" title="Menu">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 7h16M4 12h16M4 17h16" />
         </svg>
