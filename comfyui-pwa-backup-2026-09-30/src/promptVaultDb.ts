@@ -23,7 +23,6 @@ const IMAGES_STORE = 'images'
 // Previous dedicated Prompt Vault database. It is only used for a one-time,
 // verified migration so existing Prompt Vault data is not stranded.
 const LEGACY_DB_NAME = 'comfyui-pwa-prompt-vault'
-const LEGACY_DB_VERSION = 1
 const LEGACY_ITEMS_STORE = 'items'
 const LEGACY_ARCHIVED_STORE = 'archived'
 const KEY = 'comfyui-console-prompt-vault-v1'
