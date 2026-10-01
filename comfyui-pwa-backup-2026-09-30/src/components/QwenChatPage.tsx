@@ -2,15 +2,7 @@ import './QwenChatPage.css'
 import { useEffect, useRef, useState } from 'react'
 import { buildQwenChatWorkflow } from '../qwenChatWorkflow'
 import { queuePrompt, uploadImage, waitForTextOutput } from '../comfyClient'
-
-type ChatMessage = {
-  id: string
-  role: 'user' | 'assistant'
-  text: string
-  imageUrl?: string
-}
-
-const STORAGE_KEY = 'qwen3.5-hauhau-chat-v1'
+import { loadQwenChats, saveQwenChats, type QwenChat, type QwenChatMessage } from '../qwenChatDb'
 
 type MessagePart =
   | { type: 'text'; value: string }
@@ -41,15 +33,42 @@ function splitMessageParts(text: string): MessagePart[] {
   return parts.length ? parts : [{ type: 'text', value: text }]
 }
 
-export function QwenChatPage({ onClose }: { onClose: () => void }) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-      return Array.isArray(saved) ? saved : []
-    } catch {
-      return []
+function makeStateUid(existing: QwenChat[] = []): number {
+  const used = new Set(existing.map((chat) => chat.stateUid))
+  let value = 100000 + Math.floor(Math.random() * 900000000)
+  while (used.has(value)) value = 100000 + Math.floor(Math.random() * 900000000)
+  return value
+}
+
+function makeChat(existing: QwenChat[] = [], title = 'New Chat'): QwenChat {
+  const now = Date.now()
+  return {
+    id: crypto.randomUUID(),
+    title,
+    stateUid: makeStateUid(existing),
+    messages: [],
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result)
+      else reject(new Error('Could not prepare the image for chat history.'))
     }
+    reader.onerror = () => reject(reader.error || new Error('Could not read the image.'))
+    reader.readAsDataURL(file)
   })
+}
+
+export function QwenChatPage({ onClose }: { onClose: () => void }) {
+  const [chats, setChats] = useState<QwenChat[]>([])
+  const [activeChatId, setActiveChatId] = useState('')
+  const [loadingChats, setLoadingChats] = useState(true)
+  const [chatListOpen, setChatListOpen] = useState(false)
   const [text, setText] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -60,10 +79,57 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const endRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
+  const activeChat = chats.find((chat) => chat.id === activeChatId) ?? null
+  const messages = activeChat?.messages ?? []
+  const sortedChats = [...chats].sort((a, b) => b.updatedAt - a.updatedAt)
+
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+    let cancelled = false
+
+    void (async () => {
+      try {
+        let loaded = await loadQwenChats()
+
+        if (!loaded.length) {
+          try {
+            const legacy = JSON.parse(localStorage.getItem('qwen3.5-hauhau-chat-v1') || '[]')
+            if (Array.isArray(legacy) && legacy.length) {
+              const migrated = makeChat([], 'Previous Chat')
+              migrated.messages = legacy as QwenChatMessage[]
+              migrated.updatedAt = Date.now()
+              loaded = [migrated]
+            }
+          } catch {}
+        }
+
+        if (!loaded.length) loaded = [makeChat([])]
+
+        if (!cancelled) {
+          setChats(loaded)
+          setActiveChatId(loaded[0].id)
+        }
+      } catch {
+        if (!cancelled) {
+          const fallback = makeChat([])
+          setChats([fallback])
+          setActiveChatId(fallback.id)
+          setError('Could not load saved chats. A new chat was created.')
+        }
+      } finally {
+        if (!cancelled) setLoadingChats(false)
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (!loadingChats) void saveQwenChats(chats).catch(() => {})
+  }, [chats, loadingChats])
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [activeChatId, messages])
 
   useEffect(() => {
     if (!imageFile) {
@@ -85,7 +151,66 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
     setImageFile(null)
   }
 
-  async function copyMessage(message: ChatMessage) {
+  function updateChat(chatId: string, updater: (chat: QwenChat) => QwenChat) {
+    setChats((current) => current.map((chat) => chat.id === chatId ? updater(chat) : chat))
+  }
+
+  function createNewChat() {
+    if (sending || loadingChats) return
+    const chat = makeChat(chats)
+    setChats((current) => [chat, ...current])
+    setActiveChatId(chat.id)
+    setText('')
+    setImageFile(null)
+    setError('')
+    setComposerExpanded(false)
+    setChatListOpen(false)
+  }
+
+  function switchChat(chatId: string) {
+    if (sending || chatId === activeChatId) {
+      if (!sending) setChatListOpen(false)
+      return
+    }
+    setActiveChatId(chatId)
+    setText('')
+    setImageFile(null)
+    setError('')
+    setComposerExpanded(false)
+    setChatListOpen(false)
+  }
+
+  function renameChat(chat: QwenChat) {
+    if (sending) return
+    const next = window.prompt('Rename chat', chat.title)
+    if (!next?.trim()) return
+    updateChat(chat.id, (current) => ({ ...current, title: next.trim(), updatedAt: Date.now() }))
+  }
+
+  function deleteChat(chat: QwenChat) {
+    if (sending) return
+    if (!window.confirm(`Delete "${chat.title}"? This cannot be undone.`)) return
+
+    setChats((current) => {
+      const remaining = current.filter((item) => item.id !== chat.id)
+      if (remaining.length) {
+        if (chat.id === activeChatId) setActiveChatId(remaining[0].id)
+        return remaining
+      }
+
+      const replacement = makeChat(current)
+      setActiveChatId(replacement.id)
+      return [replacement]
+    })
+
+    if (chat.id === activeChatId) {
+      setText('')
+      setImageFile(null)
+      setError('')
+    }
+  }
+
+  async function copyMessage(message: QwenChatMessage) {
     try {
       await navigator.clipboard.writeText(message.text)
       setCopiedId(message.id)
@@ -107,21 +232,36 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
 
   async function sendMessage() {
     const prompt = text.trim()
-    if ((!prompt && !imageFile) || sending) return
+    if ((!prompt && !imageFile) || sending || loadingChats || !activeChat) return
+
+    const chatId = activeChat.id
+    const stateUid = activeChat.stateUid
+    const responseText = prompt || 'Describe this image.'
 
     setSending(true)
     setError('')
     setComposerExpanded(false)
 
-    const userId = crypto.randomUUID()
-    const userMessage: ChatMessage = {
-      id: userId,
-      role: 'user',
-      text: prompt || 'Describe this image.',
-      imageUrl: imagePreview || undefined,
+    let persistedImageUrl = imagePreview || undefined
+    if (imageFile) {
+      try {
+        persistedImageUrl = await fileToDataUrl(imageFile)
+      } catch {}
     }
 
-    setMessages((current) => [...current, userMessage])
+    const userMessage: QwenChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      text: responseText,
+      imageUrl: persistedImageUrl,
+    }
+
+    updateChat(chatId, (chat) => ({
+      ...chat,
+      title: chat.messages.length ? chat.title : responseText.slice(0, 42) || 'New Chat',
+      messages: [...chat.messages, userMessage],
+      updatedAt: Date.now(),
+    }))
     setText('')
 
     try {
@@ -132,21 +272,26 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
       }
 
       const workflow = buildQwenChatWorkflow({
-        prompt: prompt || 'Describe this image.',
+        prompt: responseText,
         imageName,
+        stateUid,
       })
 
       const { prompt_id: promptId } = await queuePrompt(workflow)
       const answer = await waitForTextOutput(promptId)
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          text: answer,
-        },
-      ])
+      updateChat(chatId, (chat) => ({
+        ...chat,
+        messages: [
+          ...chat.messages,
+          {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            text: answer,
+          },
+        ],
+        updatedAt: Date.now(),
+      }))
       setImageFile(null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Qwen chat failed.'
@@ -161,17 +306,62 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   return (
     <section className={`qwen-chat-page ${composerExpanded ? 'composer-expanded' : ''}`} aria-label="Qwen Chat">
       <header className="qwen-chat-header">
-        <div>
-          <h2>Qwen Chat</h2>
+        <button
+          type="button"
+          className={`qwen-chat-chats-btn${chatListOpen ? ' active' : ''}`}
+          onClick={() => setChatListOpen((open) => !open)}
+          disabled={loadingChats}
+          aria-expanded={chatListOpen}
+          aria-label="Open chats"
+        >
+          <span aria-hidden="true">☰</span>
+          <span>Chats</span>
+        </button>
+        <div className="qwen-chat-header-title">
+          <h2>{activeChat?.title || 'Qwen Chat'}</h2>
           <span>Qwen3.5 4B · Hauhau · ComfyUI</span>
         </div>
         <button type="button" className="close-btn" onClick={onClose} aria-label="Close Qwen Chat">×</button>
       </header>
 
+      {chatListOpen && (
+        <>
+          <button type="button" className="qwen-chat-list-backdrop" onClick={() => setChatListOpen(false)} aria-label="Close chat list" />
+          <aside className="qwen-chat-list" aria-label="Chats">
+            <div className="qwen-chat-list-header">
+              <div>
+                <strong>Chats</strong>
+                <span>{chats.length} conversation{chats.length === 1 ? '' : 's'}</span>
+              </div>
+              <button type="button" onClick={createNewChat} disabled={sending || loadingChats}>+ New Chat</button>
+            </div>
+            <div className="qwen-chat-list-items">
+              {sortedChats.map((chat) => (
+                <div className={`qwen-chat-list-item${chat.id === activeChatId ? ' active' : ''}`} key={chat.id}>
+                  <button type="button" className="qwen-chat-list-select" onClick={() => switchChat(chat.id)} disabled={sending}>
+                    <strong>{chat.title}</strong>
+                    <span>{chat.messages.length ? `${chat.messages.length} message${chat.messages.length === 1 ? '' : 's'}` : 'New conversation'}</span>
+                  </button>
+                  <div className="qwen-chat-list-actions">
+                    <button type="button" onClick={() => renameChat(chat)} disabled={sending} aria-label={`Rename ${chat.title}`} title="Rename">✎</button>
+                    <button type="button" onClick={() => deleteChat(chat)} disabled={sending} aria-label={`Delete ${chat.title}`} title="Delete">×</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
+        </>
+      )}
+
       <div className="qwen-chat-messages">
-        {!messages.length && (
+        {loadingChats ? (
           <div className="qwen-chat-empty">
-            <strong>Qwen3.5 Hauhau</strong>
+            <strong>Loading chats…</strong>
+            <span>Opening your saved conversations.</span>
+          </div>
+        ) : !messages.length && (
+          <div className="qwen-chat-empty">
+            <strong>{activeChat?.title || 'Qwen3.5 Hauhau'}</strong>
             <span>Send a message or attach an image.</span>
           </div>
         )}
@@ -248,7 +438,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp"
-            disabled={sending}
+            disabled={sending || loadingChats}
             onChange={(event) => {
               handleImage(event.target.files?.[0])
               event.currentTarget.value = ''
@@ -259,7 +449,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
         <textarea
           ref={inputRef}
           value={text}
-          disabled={sending}
+          disabled={sending || loadingChats}
           placeholder="Message Qwen…"
           rows={2}
           onFocus={() => setComposerExpanded(true)}
@@ -278,7 +468,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           className="qwen-chat-send"
-          disabled={sending || (!text.trim() && !imageFile)}
+          disabled={sending || loadingChats || (!text.trim() && !imageFile)}
           onClick={() => void sendMessage()}
         >
           {sending ? '…' : 'Send'}
