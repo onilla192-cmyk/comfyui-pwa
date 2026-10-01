@@ -663,6 +663,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
                   )
                 : <p>{message.text}</p>}
               </div>
+              </div>
             </div>
             {message.role === 'assistant' && (
               <div className="qwen-chat-response-actions">
