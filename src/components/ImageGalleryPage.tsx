@@ -340,6 +340,93 @@ async function recoverFoldersFromIndexedDb(existing: GalleryFolder[]): Promise<G
   return Array.from(byId.values()).sort((a, b) => a.createdAt - b.createdAt)
 }
 
+async function recoverGalleryItemsFromIndexedDb(existing: GalleryItem[]): Promise<GalleryItem[]> {
+  const byId = new Map(existing.map((item) => [item.id, item]))
+  const databases: string[] = []
+  try {
+    if (typeof indexedDB.databases === 'function') {
+      const entries = await indexedDB.databases()
+      for (const entry of entries) if (entry.name && !databases.includes(entry.name)) databases.push(entry.name)
+    }
+  } catch {}
+  if (!databases.includes(GALLERY_DB_NAME)) databases.push(GALLERY_DB_NAME)
+
+  for (const databaseName of databases) {
+    let db: IDBDatabase
+    try {
+      db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(databaseName)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error || new Error('Could not open IndexedDB database'))
+      })
+    } catch { continue }
+
+    try {
+      const storeNames = Array.from(db.objectStoreNames)
+      if (!storeNames.length) continue
+      await new Promise<void>((resolve) => {
+        let remaining = storeNames.length
+        const finish = () => { remaining -= 1; if (remaining <= 0) resolve() }
+        let tx: IDBTransaction
+        try { tx = db.transaction(storeNames, 'readonly') } catch { resolve(); return }
+
+        for (const storeName of storeNames) {
+          const request = tx.objectStore(storeName).openCursor()
+          request.onsuccess = () => {
+            const cursor = request.result
+            if (!cursor) { finish(); return }
+            const value = cursor.value
+            if (value && typeof value === 'object') {
+              const item = value as Record<string, unknown>
+              const id = typeof item.id === 'string' ? item.id : ''
+              const src = typeof item.src === 'string' ? item.src : ''
+              const thumbnailSrc = typeof item.thumbnailSrc === 'string' ? item.thumbnailSrc : ''
+              const name = typeof item.name === 'string' ? item.name : ''
+              const createdAt = typeof item.createdAt === 'number' ? item.createdAt : Date.now()
+              const folderId = typeof item.folderId === 'string' ? item.folderId : null
+
+              // Recover either original inline gallery records or optimized
+              // imageData records. Read-only only: nothing is changed here.
+              if (id && src && (src.startsWith('data:image/') || src.startsWith('blob:') || src.startsWith('http://') || src.startsWith('https://'))) {
+                const existingItem = byId.get(id)
+                if (!existingItem || !existingItem.src) {
+                  byId.set(id, {
+                    id,
+                    name: name || existingItem?.name || 'Recovered Image',
+                    src,
+                    thumbnailSrc: thumbnailSrc || existingItem?.thumbnailSrc,
+                    createdAt: existingItem?.createdAt || createdAt,
+                    folderId: existingItem?.folderId ?? folderId,
+                  })
+                }
+              } else if (id && thumbnailSrc) {
+                const existingItem = byId.get(id)
+                if (!existingItem) {
+                  byId.set(id, {
+                    id,
+                    name: name || 'Recovered Image',
+                    src: '',
+                    thumbnailSrc,
+                    createdAt,
+                    folderId,
+                  })
+                }
+              }
+            }
+            cursor.continue()
+          }
+          request.onerror = () => finish()
+        }
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => resolve()
+        tx.onabort = () => resolve()
+      })
+    } finally { db.close() }
+  }
+
+  return Array.from(byId.values()).sort((a, b) => b.createdAt - a.createdAt)
+}
+
 const RECOVERED_FOLDER_NAMES = ['Caucasian Girls', 'Asian Girls', 'Myself', 'My Hunter', 'iPhone Gallery']
 
 function ensureKnownGalleryFolders(folders: GalleryFolder[]): GalleryFolder[] {
@@ -354,9 +441,10 @@ function ensureKnownGalleryFolders(folders: GalleryFolder[]): GalleryFolder[] {
 
 async function migrateLegacyGallery(): Promise<{ items: GalleryItem[]; folders: GalleryFolder[]; presets: GalleryPreset[] }> {
   const stored = await readGalleryDb()
-  const legacyItems = stored.items
   const recoveredPresets = await recoverPresetsFromIndexedDb(stored.presets)
   const recoveredFolders = ensureKnownGalleryFolders(await recoverFoldersFromIndexedDb(stored.folders))
+  const recoveredItems = await recoverGalleryItemsFromIndexedDb(stored.items)
+  const legacyItems = recoveredItems
   const legacy = loadGallery()
   const hasImageData = await new Promise<boolean>((resolve) => {
     const dbPromise = openGalleryDb()
