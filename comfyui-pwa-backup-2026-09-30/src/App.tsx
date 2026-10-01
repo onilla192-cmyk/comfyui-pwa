@@ -1329,7 +1329,6 @@ export default function App() {
                   setMainSidebarOpen(false)
                   openHistory()
                   setFooterExpanded(false)
-                  setMainFooterVisible(false)
                 }}
                 aria-label="Open History"
               >
