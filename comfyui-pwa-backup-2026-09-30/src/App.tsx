@@ -2051,7 +2051,7 @@ export default function App() {
         </section>
       </div>}
 
-      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => setIndexedDbInspectorOpen(false)} inspect={inspectIndexedDb} inspectKeys={inspectIndexedDbKeys} inspectRecord={inspectIndexedDbRecord} />}
+      {indexedDbInspectorOpen && <IndexedDbInspector onClose={() => { setIndexedDbInspectorOpen(false); setMainFooterVisible(true) }} inspect={inspectIndexedDb} inspectKeys={inspectIndexedDbKeys} inspectRecord={inspectIndexedDbRecord} />}
 
       {historyOpen && <div className="history-backdrop" onClick={() => setHistoryOpen(false)}>
         <section className="history-panel" onClick={(e) => e.stopPropagation()}>
@@ -2186,7 +2186,7 @@ export default function App() {
         <button
           className="icon-btn indexeddb-inspector-btn"
           type="button"
-          onClick={() => { setIndexedDbInspectorOpen(true); setFooterExpanded(false) }}
+          onClick={() => { setIndexedDbInspectorOpen(true); setFooterExpanded(false); setMainFooterVisible(false) }}
           aria-label="Open IndexedDB Inspector"
           title="IndexedDB Inspector"
         >
