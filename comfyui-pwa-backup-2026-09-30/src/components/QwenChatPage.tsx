@@ -26,6 +26,7 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
@@ -52,6 +53,16 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
 
   function removeImage() {
     setImageFile(null)
+  }
+
+  async function copyMessage(message: ChatMessage) {
+    try {
+      await navigator.clipboard.writeText(message.text)
+      setCopiedId(message.id)
+      window.setTimeout(() => setCopiedId((current) => current === message.id ? null : current), 1400)
+    } catch {
+      setError('Could not copy Qwen message.')
+    }
   }
 
   async function sendMessage() {
@@ -133,6 +144,16 @@ export function QwenChatPage({ onClose }: { onClose: () => void }) {
               <span className="qwen-chat-message-role">{message.role === 'user' ? 'You' : 'Qwen'}</span>
               <p>{message.text}</p>
             </div>
+            {message.role === 'assistant' && (
+              <button
+                type="button"
+                className={`qwen-chat-copy ${copiedId === message.id ? 'copied' : ''}`}
+                onClick={() => void copyMessage(message)}
+                aria-label={copiedId === message.id ? 'Copied Qwen message' : 'Copy Qwen message'}
+              >
+                {copiedId === message.id ? '✓ Copied' : 'Copy'}
+              </button>
+            )}
           </article>
         ))}
 
