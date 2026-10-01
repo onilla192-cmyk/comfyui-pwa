@@ -1588,7 +1588,7 @@ export default function App() {
       />
     )}
 
-    {<main className="app-main">
+    <main className="app-main">
       {isBusy && progress && (
         <div className="progress-wrap" aria-label="Generation progress">
           <div className="progress-bar">
