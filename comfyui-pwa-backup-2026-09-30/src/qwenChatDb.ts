@@ -16,16 +16,21 @@ export type QwenChat = {
 
 const DB_NAME = 'qwen-chat-db-v1'
 const STORE_NAME = 'state'
+const BACKGROUND_STORE_NAME = 'background'
 const STATE_KEY = 'singleton'
+const BACKGROUND_KEY = 'current'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1)
+    const request = indexedDB.open(DB_NAME, 2)
 
     request.onupgradeneeded = () => {
       const db = request.result
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME)
+      }
+      if (!db.objectStoreNames.contains(BACKGROUND_STORE_NAME)) {
+        db.createObjectStore(BACKGROUND_STORE_NAME)
       }
     }
 
@@ -67,6 +72,63 @@ export async function saveQwenChats(chats: QwenChat[]): Promise<void> {
 
     transaction.onerror = () => {
       const error = transaction.error || new Error('Could not save Qwen chats.')
+      db.close()
+      reject(error)
+    }
+  })
+}
+
+export async function loadQwenChatBackground(): Promise<Blob | null> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(BACKGROUND_STORE_NAME, 'readonly')
+    const request = transaction.objectStore(BACKGROUND_STORE_NAME).get(BACKGROUND_KEY)
+
+    request.onsuccess = () => {
+      const value = request.result
+      resolve(value instanceof Blob ? value : null)
+      db.close()
+    }
+
+    request.onerror = () => {
+      reject(request.error || new Error('Could not read the Qwen chat background.'))
+      db.close()
+    }
+  })
+}
+
+export async function saveQwenChatBackground(background: Blob): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(BACKGROUND_STORE_NAME, 'readwrite')
+    transaction.objectStore(BACKGROUND_STORE_NAME).put(background, BACKGROUND_KEY)
+
+    transaction.oncomplete = () => {
+      db.close()
+      resolve()
+    }
+
+    transaction.onerror = () => {
+      const error = transaction.error || new Error('Could not save the Qwen chat background.')
+      db.close()
+      reject(error)
+    }
+  })
+}
+
+export async function clearQwenChatBackground(): Promise<void> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(BACKGROUND_STORE_NAME, 'readwrite')
+    transaction.objectStore(BACKGROUND_STORE_NAME).delete(BACKGROUND_KEY)
+
+    transaction.oncomplete = () => {
+      db.close()
+      resolve()
+    }
+
+    transaction.onerror = () => {
+      const error = transaction.error || new Error('Could not remove the Qwen chat background.')
       db.close()
       reject(error)
     }
