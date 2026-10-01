@@ -2465,9 +2465,10 @@ function IndexedDbInspector({
   }
 
   async function permanentlyDeleteStore() {
-    if (!selectedStore || selectedStore.storeName !== 'imageData' || deletingStore) return
+    if (!selectedStore || deletingStore) return
+    const label = `${selectedStore.databaseName} / ${selectedStore.storeName}`
     const confirmed = window.confirm(
-      `PERMANENTLY DELETE ALL ${selectedStore.count} IMAGE DATA RECORDS?\n\nThis will remove every record in imageData from IndexedDB. This cannot be undone.\n\nPress OK only if you are absolutely sure.`
+      `PERMANENTLY DELETE ALL ${selectedStore.count} RECORDS?\n\nThis will remove every record in ${label} from IndexedDB. This cannot be undone.\n\nPress OK only if you are absolutely sure.`
     )
     if (!confirmed) return
 
@@ -2484,7 +2485,7 @@ function IndexedDbInspector({
       setSelectedStore((current) => current ? { ...current, count: 0 } : null)
       await load()
     } catch (error) {
-      setRecordsError(error instanceof Error ? error.message : 'Could not permanently delete imageData.')
+      setRecordsError(error instanceof Error ? error.message : `Could not permanently delete ${label}.`)
     } finally {
       setDeletingStore(false)
     }
@@ -2598,7 +2599,7 @@ function IndexedDbInspector({
               >
                 {deletingStore ? 'Permanently Deleting…' : 'Permanently Delete All'}
               </button>
-              <span>This permanently removes every record in imageData.</span>
+              <span>This permanently removes every record in this category.</span>
             </div>
 
             <div className="indexeddb-records-note">{isImageRecord ? 'Tap an image record to view the image stored inside IndexedDB.' : 'Tap a record to inspect its contents.'}</div>
