@@ -112,7 +112,7 @@
 .settings-backdrop,.history-backdrop{overscroll-behavior:contain;touch-action:none}
 .settings-drawer,.history-panel{touch-action:auto}
 .history-list{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.history-item{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer;touch-action:manipulation;transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.history-item{user-select:none;-webkit-user-select:none;cursor:pointer;touch-action:auto;transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .18s ease,box-shadow .18s ease,background .18s ease}
 .history-item:active{transform:scale(.985)}
 .history-item-tap-armed{
   border-color:#38d98b !important;
@@ -120,7 +120,7 @@
   background:#18221d !important;
   animation:history-card-pop .28s cubic-bezier(.2,.85,.25,1);
 }
-.history-item img{user-select:none;-webkit-user-drag:none}
+.history-item img{user-select:none;-webkit-user-drag:none;-webkit-touch-callout:default;pointer-events:auto}
 .history-hold-hint{margin:0 0 7px;color:#7f8795;font-size:10px}
 @keyframes history-card-pop{
   0%{transform:scale(1)}
