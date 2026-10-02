@@ -665,7 +665,7 @@ export default function App() {
     setPromptBuilderDragPosition(null)
   }
 
-  function startPromptBuilderDrag(label: string, event: React.PointerEvent<HTMLDivElement>) {
+  function startPromptBuilderDrag(label: string, event: import('react').PointerEvent<HTMLDivElement>) {
     promptBuilderDragActiveRef.current = true
     promptBuilderDragLabelRef.current = label
     promptBuilderDragPointerRef.current = event.pointerId
