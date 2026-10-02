@@ -2469,73 +2469,6 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
   const [prompt, setPrompt] = useState(img.prompt || '')
   const [promptOpen, setPromptOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const historyLongPressTimer = useRef<number | null>(null)
-  const historyLongPressTriggered = useRef(false)
-  const historyLongPressStart = useRef<{ x: number; y: number } | null>(null)
-
-  function cancelHistoryLongPress() {
-    if (historyLongPressTimer.current !== null) {
-      window.clearTimeout(historyLongPressTimer.current)
-      historyLongPressTimer.current = null
-    }
-    historyLongPressStart.current = null
-  }
-
-  async function saveHistoryImage() {
-    try {
-      const response = await fetch(img.url)
-      if (!response.ok) throw new Error('Could not load the history image.')
-      const blob = await response.blob()
-      const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
-      const filename = `comfyui-${img.id}.${extension}`
-      const file = new File([blob], filename, { type: blob.type || 'image/jpeg' })
-
-      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-        await navigator.share({
-          title: 'Save image',
-          files: [file],
-        })
-      } else {
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = filename
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return
-      window.alert(error instanceof Error ? error.message : 'Could not save this image.')
-    }
-  }
-
-  function startHistoryLongPress(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === 'mouse' && event.button !== 0) return
-    historyLongPressTriggered.current = false
-    historyLongPressStart.current = { x: event.clientX, y: event.clientY }
-    cancelHistoryLongPress()
-    historyLongPressStart.current = { x: event.clientX, y: event.clientY }
-    historyLongPressTimer.current = window.setTimeout(() => {
-      historyLongPressTimer.current = null
-      historyLongPressTriggered.current = true
-      if (navigator.vibrate) navigator.vibrate(30)
-      void saveHistoryImage()
-    }, 650)
-  }
-
-  function moveHistoryLongPress(event: React.PointerEvent<HTMLDivElement>) {
-    const start = historyLongPressStart.current
-    if (!start) return
-    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) cancelHistoryLongPress()
-  }
-
-  function endHistoryLongPress() {
-    cancelHistoryLongPress()
-  }
-
-
   useEffect(() => {
     setPrompt(img.prompt || '')
   }, [img.prompt])
@@ -2615,28 +2548,9 @@ function HistoryItem({ img, index, section, onRestore, onPermanentDelete, onTras
   return <article
     className={`history-item${expanded ? ' history-item-expanded' : ''}`}
     onClick={handleCardTap}
-    onContextMenu={(e) => e.preventDefault()}
     aria-label={`${section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}${expanded ? '. Expanded.' : '. Tap to expand.'}`}
   >
-    <div
-      className="history-thumbnail-save-target"
-      onPointerDown={startHistoryLongPress}
-      onPointerMove={moveHistoryLongPress}
-      onPointerUp={endHistoryLongPress}
-      onPointerCancel={endHistoryLongPress}
-      onPointerLeave={endHistoryLongPress}
-      onContextMenu={(event) => event.preventDefault()}
-      onClick={(event) => {
-        if (historyLongPressTriggered.current) {
-          event.preventDefault()
-          event.stopPropagation()
-          historyLongPressTriggered.current = false
-        }
-      }}
-      aria-label="Hold to save image"
-    >
-      <img src={img.url} alt={`Generated result ${index + 1}`} loading="lazy" draggable={false} />
-    </div>
+    <img src={img.url} alt={`Generated result ${index + 1}`} loading="lazy" />
     <div className="history-details">
       <div className="history-meta">{section === 'history' ? `Generation ${index + 1}` : 'Deleted generation'}</div>
       {!expanded && <div className="history-prompt"><p>{img.prompt || 'Prompt not saved for this generation.'}</p></div>}
