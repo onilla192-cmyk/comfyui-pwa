@@ -2151,22 +2151,33 @@ export default function App() {
         <div className="preset-popup-backdrop" onClick={() => setPresetsOpen(false)}>
           <section className="preset-popup" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Created presets">
             <div className="preset-popup-header">
-              <div>
-                <h2>Created Presets</h2>
-                <span>{createdPresets.length} preset{createdPresets.length === 1 ? '' : 's'}</span>
+              <div className="preset-popup-heading">
+                <span className="preset-popup-kicker">PROMPT LIBRARY</span>
+                <div className="preset-popup-title-row">
+                  <h2>Created Presets</h2>
+                  <span className="preset-popup-count">{createdPresets.length} saved</span>
+                </div>
+                <span className="preset-popup-subtitle">Your saved prompts, ready to use again.</span>
               </div>
               <div className="preset-popup-header-actions">
                 <button
                   type="button"
+                  className="preset-create-button"
+                  onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}
+                >
+                  <span aria-hidden="true">+</span> New preset
+                </button>
+                <button
+                  type="button"
                   className={'preset-actions-chevron' + (presetActionsExpanded ? ' active' : '')}
                   onClick={() => setPresetActionsExpanded((open) => !open)}
-                  aria-label={presetActionsExpanded ? 'Collapse preset actions' : 'Expand preset actions'}
+                  aria-label={presetActionsExpanded ? 'Close preset menu' : 'More preset actions'}
                   aria-expanded={presetActionsExpanded}
                 >
-                  <span>Preset Actions</span>
+                  <span>More</span>
                   <span aria-hidden="true">{presetActionsExpanded ? '⌃' : '⌄'}</span>
                 </button>
-                <button type="button" className="close-btn" onClick={() => { setPresetsOpen(false); setPresetActionsExpanded(false) }} aria-label="Close presets">×</button>
+                <button type="button" className="close-btn preset-popup-close" onClick={() => { setPresetsOpen(false); setPresetActionsExpanded(false) }} aria-label="Close presets">×</button>
               </div>
               {presetActionsExpanded && (
                 <div className="preset-actions-panel">
@@ -2201,19 +2212,29 @@ export default function App() {
                     setPresetsOpen(false)
                   }}
                 >
-                  {preset.thumbnail && (
-                    <img
-                      className="preset-popup-thumbnail"
-                      src={preset.thumbnail.dataUrl}
-                      alt=""
-                      width={preset.thumbnail.width}
-                      height={preset.thumbnail.height}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  )}
-                  <strong>{preset.title}</strong>
-                  <span>{preset.prompt}</span>
+                  <div className="preset-popup-media">
+                    {preset.thumbnail ? (
+                      <img
+                        className="preset-popup-thumbnail"
+                        src={preset.thumbnail.dataUrl}
+                        alt=""
+                        width={preset.thumbnail.width}
+                        height={preset.thumbnail.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="preset-popup-thumbnail-placeholder" aria-hidden="true">
+                        <span>✦</span>
+                        <small>Prompt card</small>
+                      </div>
+                    )}
+                  </div>
+                  <div className="preset-popup-card-body">
+                    <strong>{preset.title}</strong>
+                    <span className="preset-popup-prompt">{preset.prompt}</span>
+                    <span className="preset-popup-use">Use this prompt <span aria-hidden="true">↗</span></span>
+                  </div>
                 </button>
               )) : (
                 <div className="preset-popup-empty">No created presets. Create one from the Preset Actions menu.</div>
