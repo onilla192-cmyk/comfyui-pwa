@@ -2255,7 +2255,6 @@ export default function App() {
                   <div className="preset-popup-card-body">
                     <strong>{preset.title}</strong>
                     <span className="preset-popup-prompt">{preset.prompt}</span>
-                    <span className="preset-popup-use">Use this prompt <span aria-hidden="true">↗</span></span>
                   </div>
                 </button>
               )) : (

@@ -9777,20 +9777,6 @@ body:has(.preset-popup-backdrop) {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
-.preset-popup-use {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  margin-top:13px;
-  padding-top:10px;
-  border-top:1px solid rgba(255,255,255,.07);
-  color:#b2a7ff;
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:.02em;
-}
-.preset-popup-use > span { font-size:15px; line-height:1; }
 .preset-popup-empty {
   grid-column: 1 / -1;
   display:grid;
@@ -9831,8 +9817,6 @@ body:has(.preset-popup-backdrop) {
   .preset-popup-list[data-columns="3"] .preset-popup-card-body { padding:9px 8px 8px; }
   .preset-popup-list[data-columns="3"] .preset-popup-item strong { font-size:11px; }
   .preset-popup-list[data-columns="3"] .preset-popup-prompt { margin-top:4px; font-size:10px; line-height:1.35; -webkit-line-clamp:2; }
-  .preset-popup-list[data-columns="3"] .preset-popup-use { margin-top:8px; padding-top:7px; font-size:0; }
-  .preset-popup-list[data-columns="3"] .preset-popup-use > span { font-size:14px; }
   .preset-popup-list[data-columns="3"] .preset-popup-thumbnail-placeholder { gap:5px; }
   .preset-popup-list[data-columns="3"] .preset-popup-thumbnail-placeholder > span { width:32px; height:32px; border-radius:11px; font-size:16px; }
   .preset-popup-list[data-columns="3"] .preset-popup-thumbnail-placeholder small { font-size:9px; }
