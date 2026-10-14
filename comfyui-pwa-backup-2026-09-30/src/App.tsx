@@ -1991,7 +1991,7 @@ export default function App() {
         </section>
       )}
 
-      {hookPromptsPageOpen && (
+      {hookPromptsPageOpen && createPortal(
         <section className="hook-prompts-page" aria-label="Hook Prompts">
           <div className="hook-prompts-page-header hook-prompts-minimal-header">
             <button className="close-btn" type="button" onClick={() => { setHookPromptsPageOpen(false); setHookPromptEditing(null) }} aria-label="Close Hook Prompts">×</button>
@@ -2040,7 +2040,8 @@ export default function App() {
               </section>
             </div>
           )}
-        </section>
+        </section>,
+        document.body,
       )}
 
       {masterPromptsPageOpen && (
