@@ -243,8 +243,9 @@ export async function createCreatedPreset(title: string, prompt: string, thumbna
   return preset
 }
 
-export async function createCreatedPresets(entries: Array<{ title: string; prompt: string; thumbnail?: PresetThumbnail | null }>): Promise<CreatedPreset[]> {
+export async function createCreatedPresets(entries: Array<{ title: string; prompt: string; thumbnail?: PresetThumbnail | null }>, folderId?: string | null): Promise<CreatedPreset[]> {
   if (!entries.length) return []
+  await verifyPresetFolder(folderId)
   const normalized = entries.map(({ title, prompt, thumbnail }) => ({
     title: title.trim(),
     prompt: prompt.trim(),
@@ -266,6 +267,7 @@ export async function createCreatedPresets(entries: Array<{ title: string; promp
     prompt: entry.prompt,
     createdAt: Date.now(),
     ...(entry.thumbnail ? { thumbnail: entry.thumbnail } : {}),
+    ...(folderId ? { folderId } : {}),
   }))
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
@@ -319,12 +321,16 @@ async function putCreatedPreset(preset: CreatedPreset): Promise<void> {
   })
 }
 
-export async function deleteCreatedPreset(id: string): Promise<void> {
-  // Delete from the current preset store first.
+export async function deleteCreatedPresets(ids: string[]): Promise<void> {
+  const targetIds = new Set(ids)
+  if (!targetIds.size) return
+
+  // Remove every selected preset in one current-store transaction.
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(PRESET_STORE, 'readwrite')
-    tx.objectStore(PRESET_STORE).delete(id)
+    const store = tx.objectStore(PRESET_STORE)
+    targetIds.forEach((id) => store.delete(id))
     tx.oncomplete = () => { db.close(); resolve() }
     tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not delete preset')) }
     tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not delete preset')) }
@@ -336,7 +342,7 @@ export async function deleteCreatedPreset(id: string): Promise<void> {
     try {
       const value = JSON.parse(localStorage.getItem(key) || '[]')
       if (!Array.isArray(value)) continue
-      const filtered = value.filter((item) => !item || typeof item !== 'object' || (item as { id?: unknown }).id !== id)
+      const filtered = value.filter((item) => !item || typeof item !== 'object' || !targetIds.has((item as { id?: unknown }).id as string))
       if (filtered.length !== value.length) {
         localStorage.setItem(key, JSON.stringify(filtered))
       }
@@ -363,7 +369,8 @@ export async function deleteCreatedPreset(id: string): Promise<void> {
           }
           await new Promise<void>((resolve, reject) => {
             const tx = legacyDb.transaction(PRESET_STORE, 'readwrite')
-            tx.objectStore(PRESET_STORE).delete(id)
+            const store = tx.objectStore(PRESET_STORE)
+            targetIds.forEach((id) => store.delete(id))
             tx.oncomplete = () => { legacyDb.close(); resolve() }
             tx.onerror = () => { legacyDb.close(); reject(tx.error) }
             tx.onabort = () => { legacyDb.close(); reject(tx.error) }
@@ -373,11 +380,15 @@ export async function deleteCreatedPreset(id: string): Promise<void> {
     } catch {}
   }
 
-  // Read back the current store and verify the deleted id is truly gone.
+  // Read back the current store and verify all requested ids are gone.
   const remaining = await readCreatedPresetsInternal()
-  if (remaining.some((preset) => preset.id === id)) {
-    throw new Error('Preset could not be verified as deleted.')
+  if (remaining.some((preset) => targetIds.has(preset.id))) {
+    throw new Error('Presets could not be verified as deleted.')
   }
+}
+
+export async function deleteCreatedPreset(id: string): Promise<void> {
+  await deleteCreatedPresets([id])
 }
 
 export function exportCreatedPresets(presets: CreatedPreset[]): void {
