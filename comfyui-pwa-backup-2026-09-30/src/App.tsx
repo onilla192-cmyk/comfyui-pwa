@@ -8,7 +8,7 @@ import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 import { QwenChatPage } from './components/QwenChatPage'
 import { getPromptVaultImage, importPromptVaultItems } from './promptVaultDb'
-import { readCreatedPresets, readCreatedPresetFolders, createCreatedPreset, createCreatedPresets, createCreatedPresetFolder, updateCreatedPreset, deleteCreatedPreset, deleteCreatedPresetFolder, moveCreatedPresetsToFolder, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type CreatedPresetFolder, type PresetThumbnail } from './createdPresetsDb'
+import { readCreatedPresets, readCreatedPresetFolders, createCreatedPreset, createCreatedPresets, createCreatedPresetFolder, updateCreatedPreset, deleteCreatedPresets, deleteCreatedPresetFolder, moveCreatedPresetsToFolder, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type CreatedPresetFolder, type PresetThumbnail } from './createdPresetsDb'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -232,6 +232,8 @@ export default function App() {
   const [createdPresetFolders, setCreatedPresetFolders] = useState<CreatedPresetFolder[]>([])
   const [activePresetFolderId, setActivePresetFolderId] = useState<string | null>(null)
   const [presetMoveMode, setPresetMoveMode] = useState(false)
+  const [presetDeleteMode, setPresetDeleteMode] = useState(false)
+  const [presetDeleting, setPresetDeleting] = useState(false)
   const [selectedPresetIds, setSelectedPresetIds] = useState<string[]>([])
   const [moveDestinationOpen, setMoveDestinationOpen] = useState(false)
   const [presetFolderName, setPresetFolderName] = useState<string | null>(null)
@@ -239,8 +241,7 @@ export default function App() {
   const presetCardDidHold = useRef(false)
   const presetCardPressStart = useRef<{ x: number; y: number } | null>(null)
   const [presetThumbnailProcessing, setPresetThumbnailProcessing] = useState(false)
-  const [createdPresetDeleteId, setCreatedPresetDeleteId] = useState<string | null>(null)
-  const [createdPresetManagerMode, setCreatedPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
+  const [createdPresetManagerMode, setCreatedPresetManagerMode] = useState<'edit' | null>(null)
   const [createdPresets, setCreatedPresets] = useState<CreatedPreset[]>([])
   const presetImportInputRef = useRef<HTMLInputElement | null>(null)
   const presetThumbnailInputRef = useRef<HTMLInputElement | null>(null)
@@ -527,6 +528,7 @@ export default function App() {
   }
 
   async function transferDatasetItemsToCreatedPresets(items: PromptVaultItem[]) {
+    if (!items.length) return
     const existing = await readCreatedPresets()
     const usedTitles = new Set(existing.map((preset) => preset.title.toLocaleLowerCase()))
     const titledItems = items.map((item) => {
@@ -554,7 +556,19 @@ export default function App() {
       }))
       entries.push(...batch)
     }
-    const created = await createCreatedPresets(entries)
+    let importedFolder = (await readCreatedPresetFolders()).find((folder) => folder.name.trim().toLocaleLowerCase() === 'imported')
+    if (!importedFolder) {
+      try {
+        importedFolder = await createCreatedPresetFolder('Imported')
+      } catch (error) {
+        importedFolder = (await readCreatedPresetFolders()).find((folder) => folder.name.trim().toLocaleLowerCase() === 'imported')
+        if (!importedFolder) throw error
+      }
+    }
+    const created = await createCreatedPresets(entries, importedFolder.id)
+    setCreatedPresetFolders((current) => current.some((folder) => folder.id === importedFolder.id)
+      ? current
+      : [...current, importedFolder].sort((a, b) => a.createdAt - b.createdAt))
     setCreatedPresets((current) => [...current, ...created].sort((a, b) => a.createdAt - b.createdAt))
   }
 
@@ -580,15 +594,34 @@ export default function App() {
     }
   }
 
-  async function deleteCreatedPresetFromPage() {
-    if (!createdPresetDeleteId) return
+  async function deleteVisiblePresets(ids: string[], confirmation: string) {
+    const visibleIds = new Set(visiblePresets.map((preset) => preset.id))
+    const targetIds = [...new Set(ids)].filter((id) => visibleIds.has(id))
+    if (!targetIds.length || presetDeleting) return
+    if (!window.confirm(confirmation)) return
+    setPresetDeleting(true)
     try {
-      await deleteCreatedPreset(createdPresetDeleteId)
-      setCreatedPresetDeleteId(null)
-      await refreshCreatedPresets()
+      await deleteCreatedPresets(targetIds)
+      const deletedIds = new Set(targetIds)
+      setCreatedPresets((current) => current.filter((preset) => !deletedIds.has(preset.id)))
+      setSelectedPresetIds((current) => current.filter((id) => !deletedIds.has(id)))
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Could not delete preset.')
+      window.alert(error instanceof Error ? error.message : 'Could not delete presets.')
+    } finally {
+      setPresetDeleting(false)
     }
+  }
+
+  function deleteSelectedVisiblePresets() {
+    const selectedVisible = selectedPresetIds.filter((id) => visiblePresets.some((preset) => preset.id === id))
+    if (!selectedVisible.length) return
+    void deleteVisiblePresets(selectedVisible, `Delete ${selectedVisible.length} selected preset${selectedVisible.length === 1 ? '' : 's'} from this page? This cannot be undone.`)
+  }
+
+  function deleteAllVisiblePresets() {
+    const count = visiblePresets.length
+    if (!count) return
+    void deleteVisiblePresets(visiblePresets.map((preset) => preset.id), `Delete all ${count} preset${count === 1 ? '' : 's'} shown on this page? Folders and presets in other folders will stay untouched.`)
   }
 
   async function savePresetFolder() {
@@ -610,6 +643,7 @@ export default function App() {
       if (activePresetFolderId === folder.id) setActivePresetFolderId(null)
       setSelectedPresetIds([])
       setPresetMoveMode(false)
+      setPresetDeleteMode(false)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Could not delete folder.')
     }
@@ -622,6 +656,7 @@ export default function App() {
       await refreshCreatedPresets()
       setSelectedPresetIds([])
       setPresetMoveMode(false)
+      setPresetDeleteMode(false)
       setMoveDestinationOpen(false)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Could not move presets.')
@@ -1301,7 +1336,7 @@ export default function App() {
   }
 
   function handlePresetCardPointerDown(event: ReactPointerEvent<HTMLButtonElement>, preset: CreatedPreset) {
-    if (presetMoveMode) {
+    if (presetMoveMode || presetDeleteMode) {
       presetCardDidHold.current = false
       return
     }
@@ -1351,7 +1386,7 @@ export default function App() {
       presetCardDidHold.current = false
       return
     }
-    if (presetMoveMode) {
+    if (presetMoveMode || presetDeleteMode) {
       togglePresetSelection(preset.id)
       return
     }
@@ -2330,7 +2365,7 @@ export default function App() {
       {status === 'cancelling' && <p className="cancel-text">Cancelling generation…</p>}
       {errorMsg && <p className="error-text">{errorMsg}</p>}
       {presetsOpen && (
-        <div className="preset-popup-backdrop" onClick={() => setPresetsOpen(false)}>
+        <div className="preset-popup-backdrop" onClick={() => { setPresetsOpen(false); setPresetMoveMode(false); setPresetDeleteMode(false); setSelectedPresetIds([]); setMoveDestinationOpen(false) }}>
           <section className="preset-popup" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Created presets">
             <div className="preset-popup-header">
               <div className="preset-popup-heading">
@@ -2347,16 +2382,35 @@ export default function App() {
               data-columns={presetColumns}
               style={{ gridTemplateColumns: `repeat(${presetColumns}, minmax(0, 1fr))` }}
             >
-              {presetMoveMode && (
+              {(presetMoveMode || presetDeleteMode) && (
                 <div className="preset-move-hint">
-                  {selectedPresetIds.length
-                    ? `${selectedPresetIds.length} selected · Tap the folder button below to choose a destination.`
-                    : 'Select one or more presets to move. Tap the folder button again when you are ready.'}
+                  {presetDeleteMode
+                    ? selectedPresetIds.length
+                      ? `${selectedPresetIds.length} selected on this page. Use Delete Selected or Delete All below.`
+                      : 'Select the presets to delete on this page. Presets in other folders are not affected.'
+                    : selectedPresetIds.length
+                      ? `${selectedPresetIds.length} selected · Tap the folder button below to choose a destination.`
+                      : 'Select one or more presets to move. Tap the folder button again when you are ready.'}
+                </div>
+              )}
+              {presetDeleteMode && (
+                <div className="preset-delete-toolbar" role="toolbar" aria-label="Delete presets">
+                  <div className="preset-delete-toolbar-copy">
+                    <strong>Delete presets</strong>
+                    <span>{selectedPresetIds.filter((id) => visiblePresets.some((preset) => preset.id === id)).length} selected · {activePresetFolder?.name ?? 'Created Presets'}</span>
+                  </div>
+                  <div className="preset-delete-toolbar-actions">
+                    <button type="button" className="preset-delete-selected" onClick={deleteSelectedVisiblePresets} disabled={presetDeleting || !selectedPresetIds.some((id) => visiblePresets.some((preset) => preset.id === id))}>
+                      {presetDeleting ? 'Deleting…' : 'Delete Selected'}
+                    </button>
+                    <button type="button" className="preset-delete-all" onClick={deleteAllVisiblePresets} disabled={presetDeleting || !visiblePresets.length}>Delete All</button>
+                    <button type="button" className="preset-delete-cancel" onClick={() => { setPresetDeleteMode(false); setSelectedPresetIds([]) }} disabled={presetDeleting}>Cancel</button>
+                  </div>
                 </div>
               )}
               {activePresetFolder ? (
                 <div className="preset-folder-current">
-                  <button type="button" className="preset-folder-back" onClick={() => setActivePresetFolderId(null)}>
+                  <button type="button" className="preset-folder-back" onClick={() => { setActivePresetFolderId(null); setSelectedPresetIds([]) }}>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5-7 7 7 7M8 12h12" /></svg>
                     <span>All presets</span>
                   </button>
@@ -2364,9 +2418,9 @@ export default function App() {
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /></svg>
                     <strong>{activePresetFolder.name}</strong>
                   </div>
-                  <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(activePresetFolder)} aria-label={`Delete ${activePresetFolder.name} folder`} title="Delete folder">
+                  {!presetDeleteMode && <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(activePresetFolder)} aria-label={`Delete ${activePresetFolder.name} folder`} title="Delete folder">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m3 3v7m6-7v7" /></svg>
-                  </button>
+                  </button>}
                 </div>
               ) : createdPresetFolders.length > 0 ? (
                 <div className="preset-folder-grid" aria-label="Preset folders">
@@ -2377,9 +2431,9 @@ export default function App() {
                         <span><strong>{folder.name}</strong><small>{createdPresets.filter((preset) => preset.folderId === folder.id).length} presets</small></span>
                         <svg className="preset-folder-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
                       </button>
-                      <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(folder)} aria-label={`Delete ${folder.name} folder`} title="Delete folder">
+                      {!presetDeleteMode && <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(folder)} aria-label={`Delete ${folder.name} folder`} title="Delete folder">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m3 3v7m6-7v7" /></svg>
-                      </button>
+                      </button>}
                     </div>
                   ))}
                 </div>
@@ -2387,7 +2441,7 @@ export default function App() {
               {visiblePresets.length ? visiblePresets.map((preset) => (
                 <button
                   type="button"
-                  className={'preset-popup-item' + (presetMoveMode ? ' preset-move-selecting' : '') + (selectedPresetIds.includes(preset.id) ? ' preset-move-selected' : '')}
+                  className={'preset-popup-item' + (presetMoveMode || presetDeleteMode ? ' preset-move-selecting' : '') + (selectedPresetIds.includes(preset.id) ? ' preset-move-selected' : '')}
                   key={preset.id}
                   onPointerDown={(event) => handlePresetCardPointerDown(event, preset)}
                   onPointerMove={handlePresetCardPointerMove}
@@ -2419,7 +2473,7 @@ export default function App() {
                     <strong>{preset.title}</strong>
                     <span className="preset-popup-prompt">{preset.prompt}</span>
                   </div>
-                  {presetMoveMode && <span className="preset-selection-mark" aria-hidden="true">{selectedPresetIds.includes(preset.id) ? '✓' : ''}</span>}
+                  {(presetMoveMode || presetDeleteMode) && <span className="preset-selection-mark" aria-hidden="true">{selectedPresetIds.includes(preset.id) ? '✓' : ''}</span>}
                 </button>
               )) : (
                 <div className="preset-popup-empty">{activePresetFolder ? 'This folder is empty. Move presets here or create a preset in this folder.' : createdPresetFolders.length ? 'No presets in the main list yet.' : 'No created presets. Create one from the Preset Actions menu.'}</div>
@@ -2431,6 +2485,7 @@ export default function App() {
                   type="button"
                   className="preset-create-button"
                   onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null, folderId: activePresetFolderId }); setPresetActionsExpanded(false) }}
+                  disabled={presetMoveMode || presetDeleteMode || presetDeleting}
                   aria-label="New preset"
                   title="New preset"
                 >
@@ -2442,6 +2497,7 @@ export default function App() {
                   onClick={() => {
                     setPresetActionsExpanded(false)
                     if (!presetMoveMode) {
+                      setPresetDeleteMode(false)
                       setPresetMoveMode(true)
                       setSelectedPresetIds([])
                     } else if (selectedPresetIds.length) {
@@ -2453,6 +2509,7 @@ export default function App() {
                   aria-label={presetMoveMode ? selectedPresetIds.length ? `Choose a folder for ${selectedPresetIds.length} selected presets` : 'Cancel moving presets' : 'Move presets'}
                   aria-pressed={presetMoveMode}
                   title={presetMoveMode ? selectedPresetIds.length ? 'Choose destination' : 'Cancel move' : 'Move presets'}
+                  disabled={presetDeleteMode || presetDeleting || (!presetMoveMode && !visiblePresets.length)}
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /><path d="M8 13h8m-3-3 3 3-3 3" /></svg>
                   {selectedPresetIds.length > 0 && <span className="preset-move-count">{selectedPresetIds.length}</span>}
@@ -2474,13 +2531,14 @@ export default function App() {
                   type="button"
                   className={'preset-actions-chevron' + (presetActionsExpanded ? ' active' : '')}
                   onClick={() => setPresetActionsExpanded((open) => !open)}
+                  disabled={presetMoveMode || presetDeleteMode || presetDeleting}
                   aria-label={presetActionsExpanded ? 'Close preset menu' : 'More preset actions'}
                   title="More preset actions"
                   aria-expanded={presetActionsExpanded}
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></svg>
                 </button>
-                <button type="button" className="close-btn preset-popup-close" onClick={() => { setPresetsOpen(false); setPresetActionsExpanded(false) }} aria-label="Close presets" title="Close presets">
+                <button type="button" className="close-btn preset-popup-close" onClick={() => { setPresetsOpen(false); setPresetActionsExpanded(false); setPresetMoveMode(false); setPresetDeleteMode(false); setSelectedPresetIds([]); setMoveDestinationOpen(false) }} aria-label="Close presets" title="Close presets">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
                 </button>
                 {presetActionsExpanded && (
@@ -2488,7 +2546,7 @@ export default function App() {
                     <button type="button" onClick={() => { setPresetFolderName(''); setPresetActionsExpanded(false) }}>Create Folder</button>
                     <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null, folderId: activePresetFolderId }); setPresetActionsExpanded(false) }}>Create Preset</button>
                     <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Edit Preset</button>
-                    <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Delete Preset</button>
+                    <button type="button" onClick={() => { if (!visiblePresets.length) return; setPresetMoveMode(false); setPresetDeleteMode(true); setSelectedPresetIds([]); setPresetActionsExpanded(false) }} disabled={!visiblePresets.length}>Delete Presets</button>
                     <button type="button" onClick={() => { if (!createdPresets.length) return; exportCreatedPresets(createdPresets); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Export Presets</button>
                     <input
                       ref={presetImportInputRef}
@@ -2639,7 +2697,7 @@ export default function App() {
           <section className="preset-management-panel" onClick={(event) => event.stopPropagation()}>
             <div className="preset-management-header">
               <div>
-                <h2>{createdPresetManagerMode === 'edit' ? 'Edit Preset' : 'Delete Preset'}</h2>
+                <h2>Edit Preset</h2>
                 <span>Select a preset from Created Presets.</span>
               </div>
               <button type="button" className="close-btn" onClick={() => setCreatedPresetManagerMode(null)} aria-label="Close preset manager">×</button>
@@ -2649,39 +2707,16 @@ export default function App() {
                 <button
                   key={preset.id}
                   type="button"
-                  className={createdPresetManagerMode === 'delete' ? 'preset-management-option delete' : 'preset-management-option'}
+                  className="preset-management-option"
                   onClick={() => {
-                    if (createdPresetManagerMode === 'edit') {
-                      setCreatedPresetEditor({ mode: 'edit', id: preset.id, title: preset.title, prompt: preset.prompt, thumbnail: preset.thumbnail ?? null, folderId: preset.folderId ?? null })
-                      setCreatedPresetManagerMode(null)
-                    } else {
-                      setCreatedPresetDeleteId(preset.id)
-                      setCreatedPresetManagerMode(null)
-                    }
+                    setCreatedPresetEditor({ mode: 'edit', id: preset.id, title: preset.title, prompt: preset.prompt, thumbnail: preset.thumbnail ?? null, folderId: preset.folderId ?? null })
+                    setCreatedPresetManagerMode(null)
                   }}
                 >
                   <span>{preset.title}</span>
-                  <span>{createdPresetManagerMode === 'edit' ? 'Edit' : 'Delete'}</span>
+                  <span>Edit</span>
                 </button>
               ))}
-            </div>
-          </section>
-        </div>
-      )}
-
-      {createdPresetDeleteId && (
-        <div className="preset-management-backdrop" onClick={() => setCreatedPresetDeleteId(null)}>
-          <section className="preset-management-panel preset-delete-confirm" onClick={(event) => event.stopPropagation()}>
-            <div className="preset-management-header">
-              <div>
-                <h2>Delete Preset?</h2>
-                <span>This permanently removes the selected preset.</span>
-              </div>
-              <button type="button" className="close-btn" onClick={() => setCreatedPresetDeleteId(null)} aria-label="Close delete confirmation">×</button>
-            </div>
-            <div className="preset-management-actions">
-              <button type="button" onClick={() => setCreatedPresetDeleteId(null)}>Cancel</button>
-              <button type="button" className="primary danger" onClick={() => void deleteCreatedPresetFromPage()}>Delete Preset</button>
             </div>
           </section>
         </div>
