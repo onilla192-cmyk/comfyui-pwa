@@ -264,14 +264,15 @@ export function PromptVaultPage({ onClose, onTransferToCreatedPresets }: { onClo
   }
 
   const transferSelected = async () => {
-    const chosen = items.filter((item) => selected.has(item.id))
+    const chosen = visibleItems.filter((item) => selected.has(item.id))
     if (!chosen.length || transferPending) return
     setTransferPending(true)
     setTransferMessage('')
     try {
       await onTransferToCreatedPresets(chosen)
       const ids = new Set(chosen.map((item) => item.id))
-      setItems((current) => current.filter((item) => !ids.has(item.id)))
+      if (showArchived) setArchived((current) => current.filter((item) => !ids.has(item.id)))
+      else setItems((current) => current.filter((item) => !ids.has(item.id)))
       setSelected(new Set())
       setArmedId(null)
       void deletePromptVaultImages(chosen.flatMap((item) => item.imageRefs.map((ref) => ref.cacheKey))).catch(() => {})
@@ -344,7 +345,7 @@ export function PromptVaultPage({ onClose, onTransferToCreatedPresets }: { onClo
           {!showArchived && <button type="button" className="prompt-vault-new" onClick={() => setCreating(true)}>New Card</button>}
           <button type="button" className="prompt-vault-archive-view" onClick={() => { setShowArchived((current) => !current); setSelected(new Set()); setArmedId(null) }}>{showArchived ? 'Back to Vault' : `Archived (${archived.length})`}</button>
           <button type="button" className="prompt-vault-select-all" onClick={() => allSelected ? setSelected(new Set()) : selectAll()} disabled={!visibleItems.length}>{allSelected ? 'Clear All' : 'Select All'}</button>
-          {!showArchived && selected.size > 0 && <button type="button" className="prompt-vault-transfer" onClick={() => void transferSelected()} disabled={transferPending}>{transferPending ? 'Moving…' : 'Move to Created Presets'}</button>}
+          {selected.size > 0 && <button type="button" className="prompt-vault-transfer" onClick={() => void transferSelected()} disabled={transferPending}>{transferPending ? 'Moving…' : 'Move to Created Presets'}</button>}
           {selected.size > 0 && (showArchived
             ? <button type="button" className="prompt-vault-restore" onClick={() => restoreItems(visibleItems.filter((item) => selected.has(item.id)))}>Restore Selected</button>
             : <button type="button" className="prompt-vault-archive" onClick={() => archiveItems(visibleItems.filter((item) => selected.has(item.id)))}>Archive Selected</button>)}
