@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { connectProgress, getHistory, queuePrompt, uploadImage, viewImageUrl, interruptGeneration, getLauncherLogs, getNodeObjectInfo, getRemoteControlStatus, startComfyFromPhone } from './comfyClient'
 import { buildWorkflow } from './workflowTemplate'
@@ -229,6 +229,9 @@ export default function App() {
   const nextPresetColumns: 1 | 2 | 3 = presetColumns === 3 ? 1 : (presetColumns + 1) as 1 | 2 | 3
   const [presetActionsExpanded, setPresetActionsExpanded] = useState(false)
   const [createdPresetEditor, setCreatedPresetEditor] = useState<CreatedPresetEditor | null>(null)
+  const presetCardHoldTimer = useRef<number | null>(null)
+  const presetCardDidHold = useRef(false)
+  const presetCardPressStart = useRef<{ x: number; y: number } | null>(null)
   const [presetThumbnailProcessing, setPresetThumbnailProcessing] = useState(false)
   const [createdPresetDeleteId, setCreatedPresetDeleteId] = useState<string | null>(null)
   const [createdPresetManagerMode, setCreatedPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
@@ -1080,6 +1083,9 @@ export default function App() {
     if (promptLabelHoldTimer.current !== null) window.clearTimeout(promptLabelHoldTimer.current)
     if (promptLabelTapTimer.current !== null) window.clearTimeout(promptLabelTapTimer.current)
   }, [])
+  useEffect(() => () => {
+    if (presetCardHoldTimer.current !== null) window.clearTimeout(presetCardHoldTimer.current)
+  }, [])
 
   function createPromptLabelId() {
     return `label-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -1186,6 +1192,57 @@ export default function App() {
   function removePromptLabelFromPrompt(id: string) {
     if (!activePromptLabelIds.includes(id)) return
     rebuildPromptFromLabels(activePromptLabelIds.filter((labelId) => labelId !== id))
+  }
+
+  function handlePresetCardPointerDown(event: ReactPointerEvent<HTMLButtonElement>, preset: CreatedPreset) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    presetCardDidHold.current = false
+    presetCardPressStart.current = { x: event.clientX, y: event.clientY }
+    if (presetCardHoldTimer.current !== null) window.clearTimeout(presetCardHoldTimer.current)
+    presetCardHoldTimer.current = window.setTimeout(() => {
+      presetCardHoldTimer.current = null
+      presetCardDidHold.current = true
+      presetCardPressStart.current = null
+      if (navigator.vibrate) navigator.vibrate(25)
+      setCreatedPresetEditor({
+        mode: 'edit',
+        id: preset.id,
+        title: preset.title,
+        prompt: preset.prompt,
+        thumbnail: preset.thumbnail ?? null,
+      })
+      setPresetActionsExpanded(false)
+    }, 650)
+  }
+
+  function handlePresetCardPointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+    const start = presetCardPressStart.current
+    if (!start || presetCardHoldTimer.current === null) return
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) {
+      window.clearTimeout(presetCardHoldTimer.current)
+      presetCardHoldTimer.current = null
+      presetCardPressStart.current = null
+    }
+  }
+
+  function handlePresetCardPointerEnd() {
+    if (presetCardHoldTimer.current !== null) {
+      window.clearTimeout(presetCardHoldTimer.current)
+      presetCardHoldTimer.current = null
+    }
+    presetCardPressStart.current = null
+  }
+
+  function handlePresetCardClick(event: ReactMouseEvent<HTMLButtonElement>, preset: CreatedPreset) {
+    if (presetCardDidHold.current) {
+      event.preventDefault()
+      event.stopPropagation()
+      presetCardDidHold.current = false
+      return
+    }
+    setPrompt(preset.prompt)
+    setPromptBuilderOpen(false)
+    setPresetsOpen(false)
   }
 
   function handlePromptLabelPointerDown(id: string) {
@@ -2174,11 +2231,13 @@ export default function App() {
                   type="button"
                   className="preset-popup-item"
                   key={preset.id}
-                  onClick={() => {
-                    setPrompt(preset.prompt)
-                    setPromptBuilderOpen(false)
-                    setPresetsOpen(false)
-                  }}
+                  onPointerDown={(event) => handlePresetCardPointerDown(event, preset)}
+                  onPointerMove={handlePresetCardPointerMove}
+                  onPointerUp={handlePresetCardPointerEnd}
+                  onPointerCancel={handlePresetCardPointerEnd}
+                  onPointerLeave={handlePresetCardPointerEnd}
+                  onContextMenu={(event) => event.preventDefault()}
+                  onClick={(event) => handlePresetCardClick(event, preset)}
                 >
                   <div className="preset-popup-media">
                     {preset.thumbnail ? (

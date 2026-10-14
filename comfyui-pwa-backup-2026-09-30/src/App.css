@@ -9768,6 +9768,11 @@ body:has(.preset-popup-backdrop) {
   font:inherit;
   box-shadow:0 8px 22px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.025);
   cursor: pointer;
+  touch-action:pan-y;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  -webkit-user-select:none;
   transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .2s ease;
 }
 .preset-popup-item:hover {
