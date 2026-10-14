@@ -243,6 +243,42 @@ export async function createCreatedPreset(title: string, prompt: string, thumbna
   return preset
 }
 
+export async function createCreatedPresets(entries: Array<{ title: string; prompt: string; thumbnail?: PresetThumbnail | null }>): Promise<CreatedPreset[]> {
+  if (!entries.length) return []
+  const normalized = entries.map(({ title, prompt, thumbnail }) => ({
+    title: title.trim(),
+    prompt: prompt.trim(),
+    thumbnail: thumbnail ?? null,
+  }))
+  if (normalized.some((entry) => !entry.title || !entry.prompt)) {
+    throw new Error('Preset title and prompt are required.')
+  }
+  const titles = normalized.map((entry) => entry.title.toLowerCase())
+  if (new Set(titles).size !== titles.length) throw new Error('Preset titles must be unique.')
+  const existing = await readCreatedPresets()
+  const existingTitles = new Set(existing.map((preset) => preset.title.toLowerCase()))
+  if (titles.some((title) => existingTitles.has(title))) {
+    throw new Error('A preset with that title already exists.')
+  }
+  const created = normalized.map((entry): CreatedPreset => ({
+    id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+    title: entry.title,
+    prompt: entry.prompt,
+    createdAt: Date.now(),
+    ...(entry.thumbnail ? { thumbnail: entry.thumbnail } : {}),
+  }))
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(PRESET_STORE, 'readwrite')
+    const store = tx.objectStore(PRESET_STORE)
+    created.forEach((preset) => store.add(preset))
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not transfer presets')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not transfer presets')) }
+  })
+  return created
+}
+
 export async function updateCreatedPreset(id: string, title: string, prompt: string, thumbnail?: PresetThumbnail | null, folderId?: string | null): Promise<CreatedPreset> {
   const cleanTitle = title.trim()
   const cleanPrompt = prompt.trim()

@@ -132,7 +132,7 @@ function PromptVaultCard({ item, selected, armed, onCardClick, onToggleSelected 
   )
 }
 
-export function PromptVaultPage({ onClose }: { onClose: () => void }) {
+export function PromptVaultPage({ onClose, onTransferToCreatedPresets }: { onClose: () => void; onTransferToCreatedPresets: (items: PromptVaultItem[]) => Promise<void> }) {
   const [items, setItems] = useState<PromptVaultItem[]>([])
   const [archived, setArchived] = useState<PromptVaultItem[]>([])
   const [storageReady, setStorageReady] = useState(false)
@@ -145,6 +145,8 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
   const [newPrompt, setNewPrompt] = useState('')
   const [newImage, setNewImage] = useState<File | null>(null)
   const [newImagePreview, setNewImagePreview] = useState('')
+  const [transferPending, setTransferPending] = useState(false)
+  const [transferMessage, setTransferMessage] = useState('')
   const armedTimerRef = useRef<number | null>(null)
 
   const visibleItems = showArchived ? archived : items
@@ -261,6 +263,26 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
     setSelected(new Set())
   }
 
+  const transferSelected = async () => {
+    const chosen = items.filter((item) => selected.has(item.id))
+    if (!chosen.length || transferPending) return
+    setTransferPending(true)
+    setTransferMessage('')
+    try {
+      await onTransferToCreatedPresets(chosen)
+      const ids = new Set(chosen.map((item) => item.id))
+      setItems((current) => current.filter((item) => !ids.has(item.id)))
+      setSelected(new Set())
+      setArmedId(null)
+      void deletePromptVaultImages(chosen.flatMap((item) => item.imageRefs.map((ref) => ref.cacheKey))).catch(() => {})
+      setTransferMessage(`${chosen.length} card${chosen.length === 1 ? '' : 's'} moved to Created Presets.`)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not transfer the selected cards.')
+    } finally {
+      setTransferPending(false)
+    }
+  }
+
   const selectAll = () => setSelected(new Set(visibleItems.map((item) => item.id)))
   const allSelected = visibleItems.length > 0 && selected.size === visibleItems.length
 
@@ -322,12 +344,15 @@ export function PromptVaultPage({ onClose }: { onClose: () => void }) {
           {!showArchived && <button type="button" className="prompt-vault-new" onClick={() => setCreating(true)}>New Card</button>}
           <button type="button" className="prompt-vault-archive-view" onClick={() => { setShowArchived((current) => !current); setSelected(new Set()); setArmedId(null) }}>{showArchived ? 'Back to Vault' : `Archived (${archived.length})`}</button>
           <button type="button" className="prompt-vault-select-all" onClick={() => allSelected ? setSelected(new Set()) : selectAll()} disabled={!visibleItems.length}>{allSelected ? 'Clear All' : 'Select All'}</button>
+          {!showArchived && selected.size > 0 && <button type="button" className="prompt-vault-transfer" onClick={() => void transferSelected()} disabled={transferPending}>{transferPending ? 'Moving…' : 'Move to Created Presets'}</button>}
           {selected.size > 0 && (showArchived
             ? <button type="button" className="prompt-vault-restore" onClick={() => restoreItems(visibleItems.filter((item) => selected.has(item.id)))}>Restore Selected</button>
             : <button type="button" className="prompt-vault-archive" onClick={() => archiveItems(visibleItems.filter((item) => selected.has(item.id)))}>Archive Selected</button>)}
           <button type="button" className="prompt-vault-delete" onClick={() => void deleteSelected()} disabled={!selected.size}>Delete Selected</button>
         </div>
       </div>
+
+      {transferMessage && <div className="prompt-vault-transfer-message" role="status" aria-live="polite">{transferMessage}</div>}
 
       <div className="prompt-vault-list">
         {visibleItems.map((item) => (

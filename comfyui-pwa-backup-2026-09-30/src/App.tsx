@@ -7,8 +7,8 @@ import './App.css'
 import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 import { QwenChatPage } from './components/QwenChatPage'
-import { importPromptVaultItems } from './promptVaultDb'
-import { readCreatedPresets, readCreatedPresetFolders, createCreatedPreset, createCreatedPresetFolder, updateCreatedPreset, deleteCreatedPreset, deleteCreatedPresetFolder, moveCreatedPresetsToFolder, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type CreatedPresetFolder, type PresetThumbnail } from './createdPresetsDb'
+import { getPromptVaultImage, importPromptVaultItems } from './promptVaultDb'
+import { readCreatedPresets, readCreatedPresetFolders, createCreatedPreset, createCreatedPresets, createCreatedPresetFolder, updateCreatedPreset, deleteCreatedPreset, deleteCreatedPresetFolder, moveCreatedPresetsToFolder, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type CreatedPresetFolder, type PresetThumbnail } from './createdPresetsDb'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -499,6 +499,31 @@ export default function App() {
       setCreatedPresets([])
       setCreatedPresetFolders([])
     }
+  }
+
+  async function transferVaultItemsToCreatedPresets(items: PromptVaultItem[]) {
+    const existing = await readCreatedPresets()
+    const usedTitles = new Set(existing.map((preset) => preset.title.toLocaleLowerCase()))
+    const entries: Array<{ title: string; prompt: string; thumbnail?: PresetThumbnail | null }> = []
+    for (const item of items) {
+      const baseTitle = item.name.trim() || 'Untitled Prompt'
+      let title = baseTitle
+      let suffix = 2
+      while (usedTitles.has(title.toLocaleLowerCase())) title = `${baseTitle} (${suffix++})`
+      usedTitles.add(title.toLocaleLowerCase())
+      let thumbnail: PresetThumbnail | null = null
+      const imageRef = item.imageRefs[0]
+      if (imageRef) {
+        const imageBlob = await getPromptVaultImage(imageRef.cacheKey)
+        if (imageBlob) {
+          const imageFile = new File([imageBlob], imageRef.filename || `${baseTitle}.webp`, { type: imageBlob.type || imageRef.mimeType })
+          thumbnail = await compressPresetThumbnail(imageFile)
+        }
+      }
+      entries.push({ title, prompt: item.prompt.trim() || 'No prompt provided.', thumbnail })
+    }
+    await createCreatedPresets(entries)
+    await refreshCreatedPresets()
   }
 
   useEffect(() => {
@@ -1776,7 +1801,7 @@ export default function App() {
     </div>}
 
     {promptVaultOpen && (
-      <PromptVaultPage onClose={() => setPromptVaultOpen(false)} />
+      <PromptVaultPage onClose={() => setPromptVaultOpen(false)} onTransferToCreatedPresets={transferVaultItemsToCreatedPresets} />
     )}
 
     {qwenChatOpen && (

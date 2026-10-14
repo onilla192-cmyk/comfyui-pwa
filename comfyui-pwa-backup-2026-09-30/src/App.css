@@ -9989,3 +9989,5 @@ body:has(.preset-popup-backdrop) {
   .indexeddb-store-danger { align-items:stretch; flex-direction:column; }
 }
 .app-empty-header{display:flex;align-items:center;justify-content:flex-end;padding:8px 12px}.main-header-menu-button{display:grid;place-items:center;width:48px;height:48px;border:1px solid #30343d;border-radius:10px;background:#191c23;color:#f3f4f6;cursor:pointer}.main-header-menu-button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.main-header-menu-button:active{background:#242832}
+.prompt-vault-toolbar .prompt-vault-transfer{background:linear-gradient(180deg,#168568,#0c5c49)!important;border-color:#35b48e!important;color:#e5fff6!important}
+.prompt-vault-transfer-message{max-width:920px;margin:-3px auto 12px;padding:10px 13px;border:1px solid #276c58;border-radius:11px;background:#10251f;color:#baf3dd;font-size:12px}
