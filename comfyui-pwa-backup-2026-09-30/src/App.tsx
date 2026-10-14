@@ -2163,60 +2163,6 @@ export default function App() {
                 </div>
                 <span className="preset-popup-subtitle">Your saved prompts, ready to use again.</span>
               </div>
-              <div className="preset-popup-header-actions">
-                <button
-                  type="button"
-                  className="preset-create-button"
-                  onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}
-                >
-                  <span aria-hidden="true">+</span> New preset
-                </button>
-                <button
-                  type="button"
-                  className="preset-column-toggle"
-                  onClick={() => setPresetColumns((columns) => columns === 3 ? 1 : (columns + 1) as 1 | 2 | 3)}
-                  aria-label={`Currently ${presetColumns} ${presetColumns === 1 ? 'column' : 'columns'}. Change to ${nextPresetColumns} ${nextPresetColumns === 1 ? 'column' : 'columns'}.`}
-                  title="Cycle through 1, 2, and 3 columns"
-                >
-                  <svg viewBox="0 0 20 18" aria-hidden="true">
-                    <rect x="1" y="2" width="5" height="14" rx="1.3" />
-                    <rect x="7.5" y="2" width="5" height="14" rx="1.3" />
-                    <rect x="14" y="2" width="5" height="14" rx="1.3" />
-                  </svg>
-                  <span>{presetColumns} col{presetColumns === 1 ? '' : 's'}</span>
-                </button>
-                <button
-                  type="button"
-                  className={'preset-actions-chevron' + (presetActionsExpanded ? ' active' : '')}
-                  onClick={() => setPresetActionsExpanded((open) => !open)}
-                  aria-label={presetActionsExpanded ? 'Close preset menu' : 'More preset actions'}
-                  aria-expanded={presetActionsExpanded}
-                >
-                  <span>More</span>
-                  <span aria-hidden="true">{presetActionsExpanded ? '⌃' : '⌄'}</span>
-                </button>
-                <button type="button" className="close-btn preset-popup-close" onClick={() => { setPresetsOpen(false); setPresetActionsExpanded(false) }} aria-label="Close presets">×</button>
-              </div>
-              {presetActionsExpanded && (
-                <div className="preset-actions-panel">
-                  <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}>Create Preset</button>
-                  <button type="button" onClick={() => { if (!createdPresets.length) return; const p = createdPresets[0]; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Edit Preset</button>
-                  <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Delete Preset</button>
-                  <button type="button" onClick={() => { if (!createdPresets.length) return; exportCreatedPresets(createdPresets); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Export Presets</button>
-                  <input
-                    ref={presetImportInputRef}
-                    type="file"
-                    accept="application/json,.json,text/json"
-                    hidden
-                    onChange={(event) => {
-                      const file = event.target.files?.[0]
-                      void (async () => { try { const count = await importCreatedPresets(file); await refreshCreatedPresets(); window.alert(count ? `Imported ${count} preset${count === 1 ? '' : 's'}.` : 'Those presets are already in your Created Presets.') } catch (error) { window.alert(error instanceof Error ? error.message : 'Could not import presets.') } })()
-                      event.currentTarget.value = ''
-                    }}
-                  />
-                  <button type="button" onClick={() => presetImportInputRef.current?.click()}>Import JSON</button>
-                </div>
-              )}
             </div>
             <div
               className="preset-popup-list"
@@ -2261,6 +2207,65 @@ export default function App() {
                 <div className="preset-popup-empty">No created presets. Create one from the Preset Actions menu.</div>
               )}
             </div>
+            <footer className="preset-popup-footer">
+              <div className="preset-popup-header-actions">
+                <button
+                  type="button"
+                  className="preset-create-button"
+                  onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}
+                  aria-label="New preset"
+                  title="New preset"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                </button>
+                <button
+                  type="button"
+                  className="preset-column-toggle"
+                  onClick={() => setPresetColumns((columns) => columns === 3 ? 1 : (columns + 1) as 1 | 2 | 3)}
+                  aria-label={`Change columns. Currently ${presetColumns}, next ${nextPresetColumns}.`}
+                  title={`${presetColumns} columns`}
+                >
+                  <svg viewBox="0 0 20 18" aria-hidden="true">
+                    <rect x="1" y="2" width="5" height="14" rx="1.3" />
+                    <rect x="7.5" y="2" width="5" height="14" rx="1.3" />
+                    <rect x="14" y="2" width="5" height="14" rx="1.3" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className={'preset-actions-chevron' + (presetActionsExpanded ? ' active' : '')}
+                  onClick={() => setPresetActionsExpanded((open) => !open)}
+                  aria-label={presetActionsExpanded ? 'Close preset menu' : 'More preset actions'}
+                  title="More preset actions"
+                  aria-expanded={presetActionsExpanded}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></svg>
+                </button>
+                <button type="button" className="close-btn preset-popup-close" onClick={() => { setPresetsOpen(false); setPresetActionsExpanded(false) }} aria-label="Close presets" title="Close presets">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+                </button>
+                {presetActionsExpanded && (
+                  <div className="preset-actions-panel">
+                    <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}>Create Preset</button>
+                    <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Edit Preset</button>
+                    <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Delete Preset</button>
+                    <button type="button" onClick={() => { if (!createdPresets.length) return; exportCreatedPresets(createdPresets); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Export Presets</button>
+                    <input
+                      ref={presetImportInputRef}
+                      type="file"
+                      accept="application/json,.json,text/json"
+                      hidden
+                      onChange={(event) => {
+                        const file = event.target.files?.[0]
+                        void (async () => { try { const count = await importCreatedPresets(file); await refreshCreatedPresets(); window.alert(count ? `Imported ${count} preset${count === 1 ? '' : 's'}.` : 'Those presets are already in your Created Presets.') } catch (error) { window.alert(error instanceof Error ? error.message : 'Could not import presets.') } })()
+                        event.currentTarget.value = ''
+                      }}
+                    />
+                    <button type="button" onClick={() => presetImportInputRef.current?.click()}>Import JSON</button>
+                  </div>
+                )}
+              </div>
+            </footer>
           </section>
         </div>
       )}

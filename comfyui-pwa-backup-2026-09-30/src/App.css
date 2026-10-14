@@ -9648,16 +9648,85 @@ body:has(.preset-popup-backdrop) {
   transition:background .18s ease,color .18s ease,border-color .18s ease;
 }
 .preset-popup-close:hover { background:#2b2e39; border-color:#555a68; color:#fff; }
-.preset-popup-header-actions .preset-actions-chevron {
-  min-height:44px;
-  border-color:#353846;
-  border-radius:11px;
-  background:#1b1e26;
-  color:#bfc2ce;
-  font-size:13px;
+.preset-popup-footer {
+  position:relative;
+  z-index:25;
+  flex:0 0 auto;
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(18,20,27,.84);
+  box-shadow:0 -12px 32px rgba(0,0,0,.2);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
 }
-.preset-popup-header-actions .preset-actions-chevron.active { border-color:#7164b9; background:#242333; color:#e6e1ff; }
-.preset-popup-header-actions .preset-actions-chevron span:last-child { color:#a8a1c9; }
+.preset-popup-footer .preset-popup-header-actions {
+  position:relative;
+  width:min(100%, 400px);
+  display:grid;
+  grid-template-columns:repeat(4, 56px);
+  justify-content:space-between;
+  gap:12px;
+  margin:0 auto;
+}
+.preset-popup-footer .preset-create-button,
+.preset-popup-footer .preset-column-toggle,
+.preset-popup-footer .preset-actions-chevron,
+.preset-popup-footer .preset-popup-close {
+  width:56px;
+  min-width:56px;
+  height:56px;
+  min-height:56px;
+  flex:0 0 56px;
+  display:grid;
+  place-items:center;
+  box-sizing:border-box;
+  padding:0;
+  border:1px solid #3b3e4c;
+  border-radius:50%;
+  background:linear-gradient(145deg,#232632,#191b24);
+  color:#d7d8e4;
+  box-shadow:0 7px 18px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.06);
+  cursor:pointer;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease,color .16s ease,box-shadow .16s ease;
+}
+.preset-popup-footer .preset-create-button {
+  border-color:rgba(176,163,255,.72);
+  background:linear-gradient(145deg,#8975ef,#6651cb);
+  color:#fff;
+  box-shadow:0 7px 20px rgba(100,82,214,.3),inset 0 1px rgba(255,255,255,.2);
+}
+.preset-popup-footer .preset-create-button > span { display:none; }
+.preset-popup-footer .preset-create-button svg,
+.preset-popup-footer .preset-actions-chevron svg,
+.preset-popup-footer .preset-popup-close svg { width:22px; height:22px; }
+.preset-popup-footer .preset-create-button svg path,
+.preset-popup-footer .preset-popup-close svg path { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
+.preset-popup-footer .preset-column-toggle svg { width:22px; height:20px; }
+.preset-popup-footer .preset-column-toggle svg rect { fill:rgba(169,157,240,.1); stroke:currentColor; stroke-width:1.35; }
+.preset-popup-footer .preset-actions-chevron svg { fill:currentColor; }
+.preset-popup-footer .preset-actions-chevron.active { border-color:#8f80e4; background:#28243e; color:#e8e3ff; }
+.preset-popup-footer .preset-popup-close { font-size:inherit; }
+.preset-popup-footer .preset-create-button:hover,
+.preset-popup-footer .preset-column-toggle:hover,
+.preset-popup-footer .preset-actions-chevron:hover,
+.preset-popup-footer .preset-popup-close:hover { transform:translateY(-2px); border-color:#7168a1; color:#fff; }
+.preset-popup-footer .preset-create-button:active,
+.preset-popup-footer .preset-column-toggle:active,
+.preset-popup-footer .preset-actions-chevron:active,
+.preset-popup-footer .preset-popup-close:active { transform:scale(.96); }
+.preset-popup-footer .preset-create-button:focus-visible,
+.preset-popup-footer .preset-column-toggle:focus-visible,
+.preset-popup-footer .preset-actions-chevron:focus-visible,
+.preset-popup-footer .preset-popup-close:focus-visible { outline:3px solid rgba(174,160,255,.75); outline-offset:4px; }
+.preset-popup-footer .preset-actions-panel {
+  top:auto;
+  right:0;
+  bottom:calc(100% + 14px);
+  max-height:calc(100dvh - 190px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
 .preset-actions-panel { border-color:#343744; background:#1a1c24; }
 .preset-actions-panel button { border-color:#30333e; background:#22252e; color:#e7e8ef; }
 .preset-actions-panel button:hover:not(:disabled) { background:#2c2d39; border-color:#5a5479; }
@@ -9799,21 +9868,21 @@ body:has(.preset-popup-backdrop) {
 .preset-thumbnail-buttons button:disabled { opacity:.6; cursor:wait; }
 .preset-thumbnail-controls small { color:#8992a0; font-size:11px; line-height:1.4; }
 @media (max-width: 700px) {
-  .preset-popup-header { flex-wrap:wrap; gap:15px 12px; padding:calc(18px + env(safe-area-inset-top)) 18px 16px; }
-  .preset-popup-header-actions { width:100%; gap:8px; }
-  .preset-create-button { flex:1; min-width:0; }
-  .preset-popup-close { margin-left:auto; }
-  .preset-popup-list { grid-auto-rows: max-content; row-gap:16px; padding:20px 16px calc(24px + env(safe-area-inset-bottom)); }
+  .preset-popup-header { flex-wrap:nowrap; gap:12px; padding:calc(18px + env(safe-area-inset-top)) 18px 16px; }
+  .preset-popup-footer { padding:10px 18px calc(12px + env(safe-area-inset-bottom)); }
+  .preset-popup-list { grid-auto-rows: max-content; row-gap:16px; padding:20px 16px 24px; }
   .preset-popup-item:hover { transform:none; }
   .preset-popup-card-body { padding:14px 15px 12px; }
   .preset-thumbnail-editor { flex-direction:column; }
   .preset-thumbnail-editor > img,.preset-thumbnail-empty { width:100%; max-width:none; max-height:200px; }
 }
 @media (max-width: 390px) {
-  .preset-popup-header-actions { gap:6px; }
-  .preset-create-button { gap:5px; padding:0 8px; font-size:11px; }
-  .preset-popup-header-actions .preset-actions-chevron { gap:6px; padding:0 9px; }
-  .preset-column-toggle { gap:6px; padding:0 9px; font-size:11px; }
+  .preset-popup-footer { padding-left:14px; padding-right:14px; }
+  .preset-popup-footer .preset-popup-header-actions { grid-template-columns:repeat(4, 52px); gap:8px; }
+  .preset-popup-footer .preset-create-button,
+  .preset-popup-footer .preset-column-toggle,
+  .preset-popup-footer .preset-actions-chevron,
+  .preset-popup-footer .preset-popup-close { width:52px; min-width:52px; height:52px; min-height:52px; flex-basis:52px; }
   .preset-popup-list[data-columns="3"] .preset-popup-card-body { padding:9px 8px 8px; }
   .preset-popup-list[data-columns="3"] .preset-popup-item strong { font-size:11px; }
   .preset-popup-list[data-columns="3"] .preset-popup-prompt { margin-top:4px; font-size:10px; line-height:1.35; -webkit-line-clamp:2; }
