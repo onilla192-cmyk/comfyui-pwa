@@ -174,6 +174,30 @@ export async function createCreatedPresetFolder(name: string): Promise<CreatedPr
   return folder
 }
 
+export async function updateCreatedPresetFolder(id: string, name: string): Promise<CreatedPresetFolder> {
+  const cleanName = name.trim()
+  if (!cleanName) throw new Error('Enter a folder name.')
+  const folders = await readCreatedPresetFolders()
+  const current = folders.find((folder) => folder.id === id)
+  if (!current) throw new Error('Folder not found.')
+  if (folders.some((folder) => folder.id !== id && folder.name.toLocaleLowerCase() === cleanName.toLocaleLowerCase())) {
+    throw new Error('A folder with that name already exists.')
+  }
+  const updated = { ...current, name: cleanName }
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE, 'readwrite')
+    tx.objectStore(FOLDER_STORE).put(updated)
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not update folder')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not update folder')) }
+  })
+  const saved = await readCreatedPresetFolders()
+  const verified = saved.find((folder) => folder.id === id)
+  if (!verified || verified.name !== cleanName) throw new Error('Folder changes could not be verified after saving.')
+  return verified
+}
+
 export async function deleteCreatedPresetFolder(id: string): Promise<void> {
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
