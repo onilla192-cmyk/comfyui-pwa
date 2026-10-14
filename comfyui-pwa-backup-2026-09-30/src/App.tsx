@@ -3071,6 +3071,90 @@ function ImagePicker({ label, image, busy, disabled, glow, onChange, onClear }: 
   )
 }
 
+function findIndexedDbImageSource(value: unknown, depth = 0, seen = new Set<object>()): string | Blob | ArrayBuffer | null {
+  if (depth > 6 || value == null) return null
+  if (value instanceof Blob) return value
+  if (value instanceof ArrayBuffer) return value
+  if (typeof value === 'string') return value.startsWith('data:image/') ? value : null
+  if (typeof value !== 'object' || seen.has(value)) return null
+  seen.add(value)
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const source = findIndexedDbImageSource(entry, depth + 1, seen)
+      if (source) return source
+    }
+    return null
+  }
+  const record = value as Record<string, unknown>
+  for (const key of ['dataUrl', 'src', 'data', 'thumbnail', 'preview', 'image', 'images']) {
+    if (!(key in record)) continue
+    const source = findIndexedDbImageSource(record[key], depth + 1, seen)
+    if (source) return source
+  }
+  return null
+}
+
+function IndexedDbRecordThumbnail({
+  databaseName,
+  storeName,
+  record,
+  inspectRecord,
+  canShowImages,
+}: {
+  databaseName: string
+  storeName: string
+  record: { key: string; rawKey: IDBValidKey }
+  inspectRecord: (databaseName: string, storeName: string, key: IDBValidKey) => Promise<unknown>
+  canShowImages: boolean
+}) {
+  const containerRef = useRef<HTMLSpanElement>(null)
+  const inspectRecordRef = useRef(inspectRecord)
+  inspectRecordRef.current = inspectRecord
+  const [src, setSrc] = useState('')
+  useEffect(() => {
+    if (!canShowImages) return
+    let active = true
+    let objectUrl = ''
+    let started = false
+    const loadPreview = () => {
+      if (started) return
+      started = true
+      void inspectRecordRef.current(databaseName, storeName, record.rawKey).then((value) => {
+        if (!active) return
+        const source = findIndexedDbImageSource(value)
+        if (typeof source === 'string') setSrc(source)
+        else if (source) {
+          objectUrl = URL.createObjectURL(source instanceof Blob ? source : new Blob([source]))
+          setSrc(objectUrl)
+        }
+      }).catch(() => {})
+    }
+    const container = containerRef.current
+    if (!container || typeof IntersectionObserver === 'undefined') loadPreview()
+    else {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect()
+          loadPreview()
+        }
+      }, { rootMargin: '160px' })
+      observer.observe(container)
+      return () => {
+        active = false
+        observer.disconnect()
+        if (objectUrl) URL.revokeObjectURL(objectUrl)
+      }
+    }
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [canShowImages, databaseName, record.rawKey, storeName])
+  return <span ref={containerRef} className="indexeddb-record-thumb">
+    {src ? <img src={src} alt="" loading="lazy" /> : <span>{canShowImages ? 'IMG' : 'DB'}</span>}
+  </span>
+}
+
 function IndexedDbInspector({
   onClose,
   inspect,
@@ -3166,10 +3250,11 @@ function IndexedDbInspector({
     setRecordLoading(true)
     try {
       const value = await inspectRecord(selectedStore.databaseName, selectedStore.storeName, key.rawKey)
-      if (value instanceof Blob) {
-        setRecordPreviewUrl(URL.createObjectURL(value))
-      } else if (value instanceof ArrayBuffer) {
-        setRecordPreviewUrl(URL.createObjectURL(new Blob([value])))
+      const imageSource = findIndexedDbImageSource(value)
+      if (imageSource instanceof Blob) {
+        setRecordPreviewUrl(URL.createObjectURL(imageSource))
+      } else if (imageSource instanceof ArrayBuffer) {
+        setRecordPreviewUrl(URL.createObjectURL(new Blob([imageSource])))
       }
       setSelectedRecord({ key: key.key, value })
     } catch (e) {
@@ -3183,7 +3268,7 @@ function IndexedDbInspector({
 
   const isImageRecord = selectedStore?.storeName.toLowerCase().includes('imagedata') || selectedStore?.storeName.toLowerCase().includes('image')
 
-  return <div className="indexeddb-inspector-backdrop" onClick={onClose}>
+  return createPortal(<div className="indexeddb-inspector-backdrop" onClick={onClose}>
     <section className="indexeddb-inspector" onClick={(e) => e.stopPropagation()}>
       <header className="indexeddb-inspector-header">
         <div>
@@ -3196,7 +3281,7 @@ function IndexedDbInspector({
         </div>
       </header>
 
-      <div className="indexeddb-inspector-body">
+      <div className={`indexeddb-inspector-body${selectedStore ? ' has-store' : ' overview'}`}>
         {selectedStore ? (
           <>
             <div className="indexeddb-records-header">
@@ -3218,19 +3303,16 @@ function IndexedDbInspector({
                 }}>← Records</button>
                 <div className="indexeddb-record-title">{selectedRecord.key}</div>
                 {recordLoading ? <div className="indexeddb-inspector-empty">Reading record…</div> : (() => {
-                  const value = selectedRecord.value as { src?: unknown; data?: unknown; mimeType?: unknown } | null
-                  const src = typeof value?.src === 'string'
-                    ? value.src
-                    : typeof value?.data === 'string' && value.data.startsWith('data:image/')
-                      ? value.data
-                      : recordPreviewUrl
-                  const blob = value instanceof Blob ? value : null
+                  const value = selectedRecord.value
+                  const imageSource = findIndexedDbImageSource(value)
+                  const src = typeof imageSource === 'string' ? imageSource : recordPreviewUrl
+                  const blob = imageSource instanceof Blob ? imageSource : null
                   return src ? (
                     <div className="indexeddb-image-preview">
                       <img src={src} alt={selectedRecord.key} />
                       <div className="indexeddb-image-meta">
-                        <span>Image data</span>
-                        <small>{blob ? `${blob.type || 'image'} · ${Math.round(blob.size / 1024)} KB · Blob stored in IndexedDB` : 'Image source stored in IndexedDB'}</small>
+                        <span>Image preview</span>
+                        <small>{blob ? `${blob.type || 'image'} · ${Math.round(blob.size / 1024)} KB · Stored in IndexedDB` : 'Image source stored in IndexedDB'}</small>
                       </div>
                     </div>
                   ) : (
@@ -3257,7 +3339,7 @@ function IndexedDbInspector({
                   <div className="indexeddb-record-list">
                     {storeKeys.map((record) => (
                       <button type="button" className="indexeddb-record-row" key={record.key} onClick={() => void openRecord(record)}>
-                        {isImageRecord ? <span className="indexeddb-record-thumb"><span>IMG</span></span> : <span className="indexeddb-record-generic">DB</span>}
+                        <IndexedDbRecordThumbnail databaseName={selectedStore.databaseName} storeName={selectedStore.storeName} record={record} inspectRecord={inspectRecord} canShowImages={Boolean(isImageRecord || selectedStore.databaseName.toLowerCase().includes('created-presets'))} />
                         <span className="indexeddb-record-key">{record.key}</span>
                         <span className="indexeddb-record-chevron">›</span>
                       </button>
@@ -3279,5 +3361,5 @@ function IndexedDbInspector({
         )}
       </div>
     </section>
-  </div>
+  </div>, document.body)
 }
