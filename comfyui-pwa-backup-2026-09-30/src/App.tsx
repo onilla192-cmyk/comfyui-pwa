@@ -8,7 +8,7 @@ import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 import { QwenChatPage } from './components/QwenChatPage'
 import { importPromptVaultItems } from './promptVaultDb'
-import { readCreatedPresets, createCreatedPreset, updateCreatedPreset, deleteCreatedPreset, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type PresetThumbnail } from './createdPresetsDb'
+import { readCreatedPresets, readCreatedPresetFolders, createCreatedPreset, createCreatedPresetFolder, updateCreatedPreset, deleteCreatedPreset, deleteCreatedPresetFolder, moveCreatedPresetsToFolder, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type CreatedPresetFolder, type PresetThumbnail } from './createdPresetsDb'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -19,7 +19,7 @@ interface PromptLabel { id: string; name: string; text: string; createdAt: numbe
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
 interface HookPrompt { id: string; name: string; text: string; enabled: boolean }
 interface ErrorLogEntry { id: string; timestamp: number; message: string }
-interface CreatedPresetEditor { mode: 'create' | 'edit'; id: string | null; title: string; prompt: string; thumbnail: PresetThumbnail | null }
+interface CreatedPresetEditor { mode: 'create' | 'edit'; id: string | null; title: string; prompt: string; thumbnail: PresetThumbnail | null; folderId: string | null }
 
 const MAX_PRESET_THUMBNAIL_BYTES = 20 * 1024 * 1024
 const MAX_PRESET_THUMBNAIL_PIXELS = 24_000_000
@@ -229,6 +229,12 @@ export default function App() {
   const nextPresetColumns: 1 | 2 | 3 = presetColumns === 3 ? 1 : (presetColumns + 1) as 1 | 2 | 3
   const [presetActionsExpanded, setPresetActionsExpanded] = useState(false)
   const [createdPresetEditor, setCreatedPresetEditor] = useState<CreatedPresetEditor | null>(null)
+  const [createdPresetFolders, setCreatedPresetFolders] = useState<CreatedPresetFolder[]>([])
+  const [activePresetFolderId, setActivePresetFolderId] = useState<string | null>(null)
+  const [presetMoveMode, setPresetMoveMode] = useState(false)
+  const [selectedPresetIds, setSelectedPresetIds] = useState<string[]>([])
+  const [moveDestinationOpen, setMoveDestinationOpen] = useState(false)
+  const [presetFolderName, setPresetFolderName] = useState<string | null>(null)
   const presetCardHoldTimer = useRef<number | null>(null)
   const presetCardDidHold = useRef(false)
   const presetCardPressStart = useRef<{ x: number; y: number } | null>(null)
@@ -486,10 +492,12 @@ export default function App() {
 
   const refreshCreatedPresets = async () => {
     try {
-      const presets = await readCreatedPresets()
+      const [presets, folders] = await Promise.all([readCreatedPresets(), readCreatedPresetFolders()])
       setCreatedPresets(presets)
+      setCreatedPresetFolders(folders)
     } catch {
       setCreatedPresets([])
+      setCreatedPresetFolders([])
     }
   }
 
@@ -501,10 +509,10 @@ export default function App() {
     if (!createdPresetEditor) return
     try {
       if (createdPresetEditor.mode === 'create') {
-        const created = await createCreatedPreset(createdPresetEditor.title, createdPresetEditor.prompt, createdPresetEditor.thumbnail)
+        const created = await createCreatedPreset(createdPresetEditor.title, createdPresetEditor.prompt, createdPresetEditor.thumbnail, createdPresetEditor.folderId)
         setCreatedPresets((current) => [...current, created].sort((a, b) => a.createdAt - b.createdAt))
       } else if (createdPresetEditor.id) {
-        const updated = await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt, createdPresetEditor.thumbnail)
+        const updated = await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt, createdPresetEditor.thumbnail, createdPresetEditor.folderId)
         setCreatedPresets((current) => current.map((preset) => preset.id === updated.id ? updated : preset))
       } else {
         throw new Error('No preset was selected for editing.')
@@ -524,6 +532,47 @@ export default function App() {
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Could not delete preset.')
     }
+  }
+
+  async function savePresetFolder() {
+    if (presetFolderName === null) return
+    try {
+      await createCreatedPresetFolder(presetFolderName)
+      setPresetFolderName(null)
+      await refreshCreatedPresets()
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not create folder.')
+    }
+  }
+
+  async function deletePresetFolder(folder: CreatedPresetFolder) {
+    try {
+      await deleteCreatedPresetFolder(folder.id)
+      setCreatedPresetFolders((current) => current.filter((item) => item.id !== folder.id))
+      setCreatedPresets((current) => current.map((preset) => preset.folderId === folder.id ? { ...preset, folderId: undefined } : preset))
+      if (activePresetFolderId === folder.id) setActivePresetFolderId(null)
+      setSelectedPresetIds([])
+      setPresetMoveMode(false)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not delete folder.')
+    }
+  }
+
+  async function moveSelectedPresets(folderId: string | null) {
+    if (!selectedPresetIds.length) return
+    try {
+      await moveCreatedPresetsToFolder(selectedPresetIds, folderId)
+      await refreshCreatedPresets()
+      setSelectedPresetIds([])
+      setPresetMoveMode(false)
+      setMoveDestinationOpen(false)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not move presets.')
+    }
+  }
+
+  function togglePresetSelection(id: string) {
+    setSelectedPresetIds((current) => current.includes(id) ? current.filter((selected) => selected !== id) : [...current, id])
   }
 
   const promptBuilderHasValues = promptBuilderLabels.some((label) => promptBuilderValues[label]?.trim())
@@ -1195,6 +1244,10 @@ export default function App() {
   }
 
   function handlePresetCardPointerDown(event: ReactPointerEvent<HTMLButtonElement>, preset: CreatedPreset) {
+    if (presetMoveMode) {
+      presetCardDidHold.current = false
+      return
+    }
     if (event.pointerType === 'mouse' && event.button !== 0) return
     presetCardDidHold.current = false
     presetCardPressStart.current = { x: event.clientX, y: event.clientY }
@@ -1210,6 +1263,7 @@ export default function App() {
         title: preset.title,
         prompt: preset.prompt,
         thumbnail: preset.thumbnail ?? null,
+        folderId: preset.folderId ?? null,
       })
       setPresetActionsExpanded(false)
     }, 650)
@@ -1238,6 +1292,10 @@ export default function App() {
       event.preventDefault()
       event.stopPropagation()
       presetCardDidHold.current = false
+      return
+    }
+    if (presetMoveMode) {
+      togglePresetSelection(preset.id)
       return
     }
     setPrompt(preset.prompt)
@@ -1429,6 +1487,11 @@ export default function App() {
   const activeItems = historySection === 'history'
     ? results.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
     : trash.slice((safeHistoryPage - 1) * HISTORY_PAGE_SIZE, safeHistoryPage * HISTORY_PAGE_SIZE)
+  const activePresetFolder = createdPresetFolders.find((folder) => folder.id === activePresetFolderId) ?? null
+  const knownPresetFolderIds = new Set(createdPresetFolders.map((folder) => folder.id))
+  const visiblePresets = createdPresets.filter((preset) => activePresetFolderId
+    ? preset.folderId === activePresetFolderId
+    : !preset.folderId || !knownPresetFolderIds.has(preset.folderId))
 
   return <div className="app">
     {mainSidebarOpen && (
@@ -2215,10 +2278,10 @@ export default function App() {
               <div className="preset-popup-heading">
                 <span className="preset-popup-kicker">PROMPT LIBRARY</span>
                 <div className="preset-popup-title-row">
-                  <h2>Created Presets</h2>
-                  <span className="preset-popup-count">{createdPresets.length} saved</span>
+                  <h2>{activePresetFolder?.name ?? 'Created Presets'}</h2>
+                  <span className="preset-popup-count">{activePresetFolder ? visiblePresets.length + ' prompts' : createdPresets.length + ' saved'}</span>
                 </div>
-                <span className="preset-popup-subtitle">Your saved prompts, ready to use again.</span>
+                <span className="preset-popup-subtitle">{activePresetFolder ? 'Folder · your saved prompts.' : 'Your saved prompts, ready to use again.'}</span>
               </div>
             </div>
             <div
@@ -2226,10 +2289,47 @@ export default function App() {
               data-columns={presetColumns}
               style={{ gridTemplateColumns: `repeat(${presetColumns}, minmax(0, 1fr))` }}
             >
-              {createdPresets.length ? createdPresets.map((preset) => (
+              {presetMoveMode && (
+                <div className="preset-move-hint">
+                  {selectedPresetIds.length
+                    ? `${selectedPresetIds.length} selected · Tap the folder button below to choose a destination.`
+                    : 'Select one or more presets to move. Tap the folder button again when you are ready.'}
+                </div>
+              )}
+              {activePresetFolder ? (
+                <div className="preset-folder-current">
+                  <button type="button" className="preset-folder-back" onClick={() => setActivePresetFolderId(null)}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5-7 7 7 7M8 12h12" /></svg>
+                    <span>All presets</span>
+                  </button>
+                  <div className="preset-folder-current-name">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /></svg>
+                    <strong>{activePresetFolder.name}</strong>
+                  </div>
+                  <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(activePresetFolder)} aria-label={`Delete ${activePresetFolder.name} folder`} title="Delete folder">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m3 3v7m6-7v7" /></svg>
+                  </button>
+                </div>
+              ) : createdPresetFolders.length > 0 ? (
+                <div className="preset-folder-grid" aria-label="Preset folders">
+                  {createdPresetFolders.map((folder) => (
+                    <div className="preset-folder-card" key={folder.id}>
+                      <button type="button" className="preset-folder-open" onClick={() => { setActivePresetFolderId(folder.id); setPresetMoveMode(false); setSelectedPresetIds([]) }}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /></svg>
+                        <span><strong>{folder.name}</strong><small>{createdPresets.filter((preset) => preset.folderId === folder.id).length} presets</small></span>
+                        <svg className="preset-folder-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+                      </button>
+                      <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(folder)} aria-label={`Delete ${folder.name} folder`} title="Delete folder">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m3 3v7m6-7v7" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              {visiblePresets.length ? visiblePresets.map((preset) => (
                 <button
                   type="button"
-                  className="preset-popup-item"
+                  className={'preset-popup-item' + (presetMoveMode ? ' preset-move-selecting' : '') + (selectedPresetIds.includes(preset.id) ? ' preset-move-selected' : '')}
                   key={preset.id}
                   onPointerDown={(event) => handlePresetCardPointerDown(event, preset)}
                   onPointerMove={handlePresetCardPointerMove}
@@ -2261,9 +2361,10 @@ export default function App() {
                     <strong>{preset.title}</strong>
                     <span className="preset-popup-prompt">{preset.prompt}</span>
                   </div>
+                  {presetMoveMode && <span className="preset-selection-mark" aria-hidden="true">{selectedPresetIds.includes(preset.id) ? '✓' : ''}</span>}
                 </button>
               )) : (
-                <div className="preset-popup-empty">No created presets. Create one from the Preset Actions menu.</div>
+                <div className="preset-popup-empty">{activePresetFolder ? 'This folder is empty. Move presets here or create a preset in this folder.' : createdPresetFolders.length ? 'No presets in the main list yet.' : 'No created presets. Create one from the Preset Actions menu.'}</div>
               )}
             </div>
             <footer className="preset-popup-footer">
@@ -2271,11 +2372,32 @@ export default function App() {
                 <button
                   type="button"
                   className="preset-create-button"
-                  onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}
+                  onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null, folderId: activePresetFolderId }); setPresetActionsExpanded(false) }}
                   aria-label="New preset"
                   title="New preset"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                </button>
+                <button
+                  type="button"
+                  className={'preset-move-button' + (presetMoveMode ? ' active' : '')}
+                  onClick={() => {
+                    setPresetActionsExpanded(false)
+                    if (!presetMoveMode) {
+                      setPresetMoveMode(true)
+                      setSelectedPresetIds([])
+                    } else if (selectedPresetIds.length) {
+                      setMoveDestinationOpen(true)
+                    } else {
+                      setPresetMoveMode(false)
+                    }
+                  }}
+                  aria-label={presetMoveMode ? selectedPresetIds.length ? `Choose a folder for ${selectedPresetIds.length} selected presets` : 'Cancel moving presets' : 'Move presets'}
+                  aria-pressed={presetMoveMode}
+                  title={presetMoveMode ? selectedPresetIds.length ? 'Choose destination' : 'Cancel move' : 'Move presets'}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /><path d="M8 13h8m-3-3 3 3-3 3" /></svg>
+                  {selectedPresetIds.length > 0 && <span className="preset-move-count">{selectedPresetIds.length}</span>}
                 </button>
                 <button
                   type="button"
@@ -2305,7 +2427,8 @@ export default function App() {
                 </button>
                 {presetActionsExpanded && (
                   <div className="preset-actions-panel">
-                    <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}>Create Preset</button>
+                    <button type="button" onClick={() => { setPresetFolderName(''); setPresetActionsExpanded(false) }}>Create Folder</button>
+                    <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null, folderId: activePresetFolderId }); setPresetActionsExpanded(false) }}>Create Preset</button>
                     <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Edit Preset</button>
                     <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Delete Preset</button>
                     <button type="button" onClick={() => { if (!createdPresets.length) return; exportCreatedPresets(createdPresets); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Export Presets</button>
@@ -2329,6 +2452,47 @@ export default function App() {
         </div>
       )}
 
+      {presetFolderName !== null && (
+        <div className="preset-management-backdrop" onClick={() => setPresetFolderName(null)}>
+          <section className="preset-management-panel preset-folder-editor" onClick={(event) => event.stopPropagation()}>
+            <div className="preset-management-header">
+              <div><h2>Create Folder</h2><span>Folders stay at the top of Created Presets.</span></div>
+              <button type="button" className="close-btn" onClick={() => setPresetFolderName(null)} aria-label="Close folder editor">×</button>
+            </div>
+            <label className="preset-management-field">
+              <span>Folder name</span>
+              <input autoFocus value={presetFolderName} onChange={(event) => setPresetFolderName(event.target.value)} placeholder="Folder name" onKeyDown={(event) => { if (event.key === 'Enter' && presetFolderName.trim()) void savePresetFolder() }} />
+            </label>
+            <div className="preset-management-actions">
+              <button type="button" onClick={() => setPresetFolderName(null)}>Cancel</button>
+              <button type="button" className="primary" disabled={!presetFolderName.trim()} onClick={() => void savePresetFolder()}>Create Folder</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {moveDestinationOpen && (
+        <div className="preset-management-backdrop" onClick={() => setMoveDestinationOpen(false)}>
+          <section className="preset-management-panel preset-folder-move-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="preset-management-header">
+              <div><h2>Move {selectedPresetIds.length} preset{selectedPresetIds.length === 1 ? '' : 's'}</h2><span>Choose a folder or return them to the main list.</span></div>
+              <button type="button" className="close-btn" onClick={() => setMoveDestinationOpen(false)} aria-label="Close folder picker">×</button>
+            </div>
+            <div className="preset-management-list preset-folder-destination-list">
+              <button type="button" className="preset-management-option" onClick={() => void moveSelectedPresets(null)}>
+                <span>Main Created Presets</span><span>Move here</span>
+              </button>
+              {createdPresetFolders.map((folder) => (
+                <button key={folder.id} type="button" className="preset-management-option" onClick={() => void moveSelectedPresets(folder.id)}>
+                  <span>{folder.name}</span><span>Move here</span>
+                </button>
+              ))}
+              {!createdPresetFolders.length && <div className="preset-folder-no-destinations">No folders yet. Create one from the More menu.</div>}
+            </div>
+          </section>
+        </div>
+      )}
+
       {createdPresetEditor && (
         <div className="preset-management-backdrop" onClick={() => setCreatedPresetEditor(null)}>
           <section className="preset-management-panel" onClick={(event) => event.stopPropagation()}>
@@ -2346,6 +2510,14 @@ export default function App() {
             <label className="preset-management-field">
               <span>Prompt</span>
               <textarea value={createdPresetEditor.prompt} onChange={(event) => setCreatedPresetEditor((current) => current ? { ...current, prompt: event.target.value } : current)} placeholder="Enter the prompt for this preset..." rows={8} />
+            </label>
+            <label className="preset-management-field">
+              <span>Folder</span>
+              <select value={createdPresetEditor.folderId ?? ''} onChange={(event) => setCreatedPresetEditor((current) => current ? { ...current, folderId: event.target.value || null } : current)}>
+                <option value="">Main Created Presets</option>
+                {createdPresetFolders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+              </select>
+              <small>Folders are shown without thumbnails.</small>
             </label>
             <div className="preset-management-field">
               <span>Thumbnail</span>
@@ -2422,7 +2594,7 @@ export default function App() {
                   className={createdPresetManagerMode === 'delete' ? 'preset-management-option delete' : 'preset-management-option'}
                   onClick={() => {
                     if (createdPresetManagerMode === 'edit') {
-                      setCreatedPresetEditor({ mode: 'edit', id: preset.id, title: preset.title, prompt: preset.prompt, thumbnail: preset.thumbnail ?? null })
+                      setCreatedPresetEditor({ mode: 'edit', id: preset.id, title: preset.title, prompt: preset.prompt, thumbnail: preset.thumbnail ?? null, folderId: preset.folderId ?? null })
                       setCreatedPresetManagerMode(null)
                     } else {
                       setCreatedPresetDeleteId(preset.id)

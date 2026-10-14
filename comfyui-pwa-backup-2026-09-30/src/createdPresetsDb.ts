@@ -4,6 +4,13 @@ export interface CreatedPreset {
   prompt: string
   createdAt: number
   thumbnail?: PresetThumbnail
+  folderId?: string
+}
+
+export interface CreatedPresetFolder {
+  id: string
+  name: string
+  createdAt: number
 }
 
 export interface PresetThumbnail {
@@ -25,16 +32,19 @@ function isPresetThumbnail(value: unknown): value is PresetThumbnail {
 }
 
 const DB_NAME = 'comfyui-pwa-created-presets'
+const DB_VERSION = 2
 const PRESET_STORE = 'presets'
+const FOLDER_STORE = 'folders'
 const LEGACY_PRESETS_KEY = 'comfyui-pwa-created-presets'
 const LEGACY_PRESETS_ARCHIVE_KEY = 'comfyui-pwa-created-presets-archive'
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME)
+    const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onupgradeneeded = () => {
       const db = request.result
       if (!db.objectStoreNames.contains(PRESET_STORE)) db.createObjectStore(PRESET_STORE, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(FOLDER_STORE)) db.createObjectStore(FOLDER_STORE, { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error || new Error('Could not open preset storage'))
@@ -110,6 +120,7 @@ async function readCreatedPresetsInternal(): Promise<CreatedPreset[]> {
         prompt: value.prompt as string,
         createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
         ...(isPresetThumbnail(value.thumbnail) ? { thumbnail: value.thumbnail } : {}),
+        ...(typeof value.folderId === 'string' && value.folderId ? { folderId: value.folderId } : {}),
       }))
       resolve(presets.sort((a, b) => a.createdAt - b.createdAt))
     }
@@ -122,23 +133,121 @@ export async function readCreatedPresets(): Promise<CreatedPreset[]> {
   return readCreatedPresetsInternal()
 }
 
-export async function createCreatedPreset(title: string, prompt: string, thumbnail?: PresetThumbnail | null): Promise<CreatedPreset> {
+export async function readCreatedPresetFolders(): Promise<CreatedPresetFolder[]> {
+  const db = await openDb()
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(FOLDER_STORE, 'readonly').objectStore(FOLDER_STORE).getAll()
+    request.onsuccess = () => {
+      db.close()
+      const folders = (Array.isArray(request.result) ? request.result : [])
+        .filter((value): value is { id: string; name: string; createdAt?: number } =>
+          !!value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'string' &&
+          typeof (value as { name?: unknown }).name === 'string'
+        )
+        .map((value) => ({ id: value.id, name: value.name, createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now() }))
+      resolve(folders.sort((a, b) => a.createdAt - b.createdAt))
+    }
+    request.onerror = () => { db.close(); reject(request.error || new Error('Could not read preset folders')) }
+  })
+}
+
+export async function createCreatedPresetFolder(name: string): Promise<CreatedPresetFolder> {
+  const cleanName = name.trim()
+  if (!cleanName) throw new Error('Enter a folder name.')
+  const existing = await readCreatedPresetFolders()
+  if (existing.some((folder) => folder.name.toLowerCase() === cleanName.toLowerCase())) {
+    throw new Error('A folder with that name already exists.')
+  }
+  const folder: CreatedPresetFolder = {
+    id: 'preset-folder-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+    name: cleanName,
+    createdAt: Date.now(),
+  }
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(FOLDER_STORE, 'readwrite')
+    tx.objectStore(FOLDER_STORE).add(folder)
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not create folder')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not create folder')) }
+  })
+  return folder
+}
+
+export async function deleteCreatedPresetFolder(id: string): Promise<void> {
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction([PRESET_STORE, FOLDER_STORE], 'readwrite')
+    const presets = tx.objectStore(PRESET_STORE)
+    const request = presets.getAll()
+    request.onsuccess = () => {
+      const values = Array.isArray(request.result) ? request.result : []
+      values.forEach((value) => {
+        if (!value || typeof value !== 'object' || (value as { folderId?: unknown }).folderId !== id) return
+        const preset = { ...(value as Record<string, unknown>) }
+        delete preset.folderId
+        presets.put(preset)
+      })
+      tx.objectStore(FOLDER_STORE).delete(id)
+    }
+    request.onerror = () => { try { tx.abort() } catch {} }
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not delete folder')) }
+    tx.onabort = () => { db.close(); reject(tx.error || request.error || new Error('Could not delete folder')) }
+  })
+}
+
+export async function moveCreatedPresetsToFolder(ids: string[], folderId: string | null): Promise<void> {
+  const targetIds = new Set(ids)
+  if (!targetIds.size) return
+  await verifyPresetFolder(folderId)
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(PRESET_STORE, 'readwrite')
+    const store = tx.objectStore(PRESET_STORE)
+    const request = store.getAll()
+    request.onsuccess = () => {
+      const values = Array.isArray(request.result) ? request.result : []
+      values.forEach((value) => {
+        if (!value || typeof value !== 'object' || !targetIds.has((value as { id?: string }).id || '')) return
+        const preset = { ...(value as Record<string, unknown>) }
+        if (folderId) preset.folderId = folderId
+        else delete preset.folderId
+        store.put(preset)
+      })
+    }
+    request.onerror = () => { try { tx.abort() } catch {} }
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not move presets')) }
+    tx.onabort = () => { db.close(); reject(tx.error || request.error || new Error('Could not move presets')) }
+  })
+}
+
+async function verifyPresetFolder(folderId?: string | null): Promise<void> {
+  if (!folderId) return
+  const folders = await readCreatedPresetFolders()
+  if (!folders.some((folder) => folder.id === folderId)) throw new Error('The selected folder no longer exists.')
+}
+
+export async function createCreatedPreset(title: string, prompt: string, thumbnail?: PresetThumbnail | null, folderId?: string | null): Promise<CreatedPreset> {
   const cleanTitle = title.trim()
   const cleanPrompt = prompt.trim()
   if (!cleanTitle || !cleanPrompt) throw new Error('Preset title and prompt are required.')
+  await verifyPresetFolder(folderId)
   const existing = await readCreatedPresets()
   if (existing.some((p) => p.title.toLowerCase() === cleanTitle.toLowerCase())) {
     throw new Error('A preset with that title already exists.')
   }
-  const preset: CreatedPreset = { id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2), title: cleanTitle, prompt: cleanPrompt, createdAt: Date.now(), ...(thumbnail ? { thumbnail } : {}) }
+  const preset: CreatedPreset = { id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2), title: cleanTitle, prompt: cleanPrompt, createdAt: Date.now(), ...(thumbnail ? { thumbnail } : {}), ...(folderId ? { folderId } : {}) }
   await putCreatedPreset(preset)
   return preset
 }
 
-export async function updateCreatedPreset(id: string, title: string, prompt: string, thumbnail?: PresetThumbnail | null): Promise<CreatedPreset> {
+export async function updateCreatedPreset(id: string, title: string, prompt: string, thumbnail?: PresetThumbnail | null, folderId?: string | null): Promise<CreatedPreset> {
   const cleanTitle = title.trim()
   const cleanPrompt = prompt.trim()
   if (!cleanTitle || !cleanPrompt) throw new Error('Preset title and prompt are required.')
+  await verifyPresetFolder(folderId)
   const existing = await readCreatedPresets()
   if (existing.some((p) => p.id !== id && p.title.toLowerCase() === cleanTitle.toLowerCase())) {
     throw new Error('A preset with that title already exists.')
@@ -146,6 +255,10 @@ export async function updateCreatedPreset(id: string, title: string, prompt: str
   const current = existing.find((p) => p.id === id)
   if (!current) throw new Error('Preset not found.')
   const updated = { ...current, title: cleanTitle, prompt: cleanPrompt }
+  if (folderId !== undefined) {
+    if (folderId) updated.folderId = folderId
+    else delete updated.folderId
+  }
   if (thumbnail !== undefined) {
     if (thumbnail) updated.thumbnail = thumbnail
     else delete updated.thumbnail
