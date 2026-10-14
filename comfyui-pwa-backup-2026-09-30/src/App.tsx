@@ -8,7 +8,7 @@ import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 import { QwenChatPage } from './components/QwenChatPage'
 import { getPromptVaultImage, importPromptVaultItems } from './promptVaultDb'
-import { readCreatedPresets, readCreatedPresetFolders, createCreatedPreset, createCreatedPresets, createCreatedPresetFolder, updateCreatedPreset, deleteCreatedPresets, deleteCreatedPresetFolder, moveCreatedPresetsToFolder, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type CreatedPresetFolder, type PresetThumbnail } from './createdPresetsDb'
+import { readCreatedPresets, readCreatedPresetFolders, createCreatedPreset, createCreatedPresets, createCreatedPresetFolder, updateCreatedPreset, updateCreatedPresetFolder, deleteCreatedPresets, deleteCreatedPresetFolder, moveCreatedPresetsToFolder, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type CreatedPresetFolder, type PresetThumbnail } from './createdPresetsDb'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -237,9 +237,16 @@ export default function App() {
   const [selectedPresetIds, setSelectedPresetIds] = useState<string[]>([])
   const [moveDestinationOpen, setMoveDestinationOpen] = useState(false)
   const [presetFolderName, setPresetFolderName] = useState<string | null>(null)
+  const [presetFolderEditor, setPresetFolderEditor] = useState<{ id: string; name: string } | null>(null)
+  const [presetDeleteConfirmation, setPresetDeleteConfirmation] = useState<CreatedPreset | null>(null)
+  const [folderDeleteConfirmation, setFolderDeleteConfirmation] = useState<CreatedPresetFolder | null>(null)
+  const [folderDeleting, setFolderDeleting] = useState(false)
   const presetCardHoldTimer = useRef<number | null>(null)
   const presetCardDidHold = useRef(false)
   const presetCardPressStart = useRef<{ x: number; y: number } | null>(null)
+  const presetFolderHoldTimer = useRef<number | null>(null)
+  const presetFolderDidHold = useRef(false)
+  const presetFolderPressStart = useRef<{ x: number; y: number } | null>(null)
   const [presetThumbnailProcessing, setPresetThumbnailProcessing] = useState(false)
   const [createdPresetManagerMode, setCreatedPresetManagerMode] = useState<'edit' | null>(null)
   const [createdPresets, setCreatedPresets] = useState<CreatedPreset[]>([])
@@ -635,7 +642,20 @@ export default function App() {
     }
   }
 
+  async function saveEditedPresetFolder() {
+    if (!presetFolderEditor) return
+    try {
+      const updated = await updateCreatedPresetFolder(presetFolderEditor.id, presetFolderEditor.name)
+      setCreatedPresetFolders((current) => current.map((folder) => folder.id === updated.id ? updated : folder))
+      setPresetFolderEditor(null)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not update folder.')
+    }
+  }
+
   async function deletePresetFolder(folder: CreatedPresetFolder) {
+    if (folderDeleting) return
+    setFolderDeleting(true)
     try {
       await deleteCreatedPresetFolder(folder.id)
       setCreatedPresetFolders((current) => current.filter((item) => item.id !== folder.id))
@@ -644,8 +664,28 @@ export default function App() {
       setSelectedPresetIds([])
       setPresetMoveMode(false)
       setPresetDeleteMode(false)
+      setPresetFolderEditor(null)
+      setFolderDeleteConfirmation(null)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Could not delete folder.')
+    } finally {
+      setFolderDeleting(false)
+    }
+  }
+
+  async function confirmDeleteEditedPreset() {
+    const preset = presetDeleteConfirmation
+    if (!preset || presetDeleting) return
+    setPresetDeleting(true)
+    try {
+      await deleteCreatedPresets([preset.id])
+      setCreatedPresets((current) => current.filter((item) => item.id !== preset.id))
+      if (createdPresetEditor?.id === preset.id) setCreatedPresetEditor(null)
+      setPresetDeleteConfirmation(null)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not delete preset.')
+    } finally {
+      setPresetDeleting(false)
     }
   }
 
@@ -1335,6 +1375,51 @@ export default function App() {
     rebuildPromptFromLabels(activePromptLabelIds.filter((labelId) => labelId !== id))
   }
 
+  function handlePresetFolderPointerDown(event: ReactPointerEvent<HTMLButtonElement>, folder: CreatedPresetFolder) {
+    presetFolderDidHold.current = false
+    if (presetMoveMode || presetDeleteMode || (event.pointerType === 'mouse' && event.button !== 0)) return
+    presetFolderPressStart.current = { x: event.clientX, y: event.clientY }
+    if (presetFolderHoldTimer.current !== null) window.clearTimeout(presetFolderHoldTimer.current)
+    presetFolderHoldTimer.current = window.setTimeout(() => {
+      presetFolderHoldTimer.current = null
+      presetFolderDidHold.current = true
+      presetFolderPressStart.current = null
+      if (navigator.vibrate) navigator.vibrate(25)
+      setPresetFolderEditor({ id: folder.id, name: folder.name })
+      setPresetActionsExpanded(false)
+    }, 650)
+  }
+
+  function handlePresetFolderPointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+    const start = presetFolderPressStart.current
+    if (!start || presetFolderHoldTimer.current === null) return
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) {
+      window.clearTimeout(presetFolderHoldTimer.current)
+      presetFolderHoldTimer.current = null
+      presetFolderPressStart.current = null
+    }
+  }
+
+  function handlePresetFolderPointerEnd() {
+    if (presetFolderHoldTimer.current !== null) {
+      window.clearTimeout(presetFolderHoldTimer.current)
+      presetFolderHoldTimer.current = null
+    }
+    presetFolderPressStart.current = null
+  }
+
+  function handlePresetFolderClick(event: ReactMouseEvent<HTMLButtonElement>, folder: CreatedPresetFolder) {
+    if (presetFolderDidHold.current) {
+      event.preventDefault()
+      event.stopPropagation()
+      presetFolderDidHold.current = false
+      return
+    }
+    setActivePresetFolderId(folder.id)
+    setPresetMoveMode(false)
+    setSelectedPresetIds([])
+  }
+
   function handlePresetCardPointerDown(event: ReactPointerEvent<HTMLButtonElement>, preset: CreatedPreset) {
     if (presetMoveMode || presetDeleteMode) {
       presetCardDidHold.current = false
@@ -1584,6 +1669,9 @@ export default function App() {
   const visiblePresets = createdPresets.filter((preset) => activePresetFolderId
     ? preset.folderId === activePresetFolderId
     : !preset.folderId || !knownPresetFolderIds.has(preset.folderId))
+  const editedPreset = createdPresetEditor?.mode === 'edit'
+    ? createdPresets.find((preset) => preset.id === createdPresetEditor.id) ?? null
+    : null
 
   return <div className="app">
     {mainSidebarOpen && (
@@ -2414,26 +2502,52 @@ export default function App() {
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5-7 7 7 7M8 12h12" /></svg>
                     <span>All presets</span>
                   </button>
-                  <div className="preset-folder-current-name">
+                  <button
+                    type="button"
+                    className="preset-folder-current-name"
+                    disabled={presetDeleteMode || presetMoveMode}
+                    onPointerDown={(event) => handlePresetFolderPointerDown(event, activePresetFolder)}
+                    onPointerMove={handlePresetFolderPointerMove}
+                    onPointerUp={handlePresetFolderPointerEnd}
+                    onPointerCancel={handlePresetFolderPointerEnd}
+                    onPointerLeave={handlePresetFolderPointerEnd}
+                    onContextMenu={(event) => event.preventDefault()}
+                    onClick={(event) => {
+                      if (presetFolderDidHold.current) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        presetFolderDidHold.current = false
+                        return
+                      }
+                      setPresetFolderEditor({ id: activePresetFolder.id, name: activePresetFolder.name })
+                    }}
+                    aria-label={`Edit ${activePresetFolder.name} folder`}
+                    title="Tap to edit or press and hold"
+                  >
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /></svg>
                     <strong>{activePresetFolder.name}</strong>
-                  </div>
-                  {!presetDeleteMode && <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(activePresetFolder)} aria-label={`Delete ${activePresetFolder.name} folder`} title="Delete folder">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m3 3v7m6-7v7" /></svg>
-                  </button>}
+                  </button>
                 </div>
               ) : createdPresetFolders.length > 0 ? (
                 <div className="preset-folder-grid" aria-label="Preset folders">
                   {createdPresetFolders.map((folder) => (
                     <div className="preset-folder-card" key={folder.id}>
-                      <button type="button" className="preset-folder-open" onClick={() => { setActivePresetFolderId(folder.id); setPresetMoveMode(false); setSelectedPresetIds([]) }}>
+                      <button
+                        type="button"
+                        className="preset-folder-open"
+                        onPointerDown={(event) => handlePresetFolderPointerDown(event, folder)}
+                        onPointerMove={handlePresetFolderPointerMove}
+                        onPointerUp={handlePresetFolderPointerEnd}
+                        onPointerCancel={handlePresetFolderPointerEnd}
+                        onPointerLeave={handlePresetFolderPointerEnd}
+                        onContextMenu={(event) => event.preventDefault()}
+                        onClick={(event) => handlePresetFolderClick(event, folder)}
+                        title="Tap to open or press and hold to edit"
+                      >
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" /></svg>
                         <span><strong>{folder.name}</strong><small>{createdPresets.filter((preset) => preset.folderId === folder.id).length} presets</small></span>
                         <svg className="preset-folder-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
                       </button>
-                      {!presetDeleteMode && <button type="button" className="preset-folder-delete" onClick={() => void deletePresetFolder(folder)} aria-label={`Delete ${folder.name} folder`} title="Delete folder">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m3 3v7m6-7v7" /></svg>
-                      </button>}
                     </div>
                   ))}
                 </div>
@@ -2587,6 +2701,47 @@ export default function App() {
         </div>
       )}
 
+      {presetFolderEditor && (
+        <div className="preset-management-backdrop" onClick={() => setPresetFolderEditor(null)}>
+          <section className="preset-management-panel preset-folder-editor" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Edit preset folder">
+            <div className="preset-management-header">
+              <div><h2>Edit Folder</h2><span>Change its name or delete the folder.</span></div>
+              <button type="button" className="close-btn" onClick={() => setPresetFolderEditor(null)} aria-label="Close folder editor">×</button>
+            </div>
+            <label className="preset-management-field">
+              <span>Folder name</span>
+              <input autoFocus value={presetFolderEditor.name} onChange={(event) => setPresetFolderEditor((current) => current ? { ...current, name: event.target.value } : current)} placeholder="Folder name" onKeyDown={(event) => { if (event.key === 'Enter' && presetFolderEditor.name.trim()) void saveEditedPresetFolder() }} />
+            </label>
+            <div className="preset-management-actions preset-folder-editor-actions">
+              <button type="button" className="danger" onClick={() => {
+                const folder = createdPresetFolders.find((item) => item.id === presetFolderEditor.id)
+                if (folder) setFolderDeleteConfirmation(folder)
+              }}>Delete Folder</button>
+              <div className="preset-management-action-group">
+                <button type="button" onClick={() => setPresetFolderEditor(null)}>Cancel</button>
+                <button type="button" className="primary" disabled={!presetFolderEditor.name.trim()} onClick={() => void saveEditedPresetFolder()}>Save Changes</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {folderDeleteConfirmation && (
+        <div className="preset-confirm-backdrop" onClick={() => { if (!folderDeleting) setFolderDeleteConfirmation(null) }}>
+          <section className="preset-confirm-panel" onClick={(event) => event.stopPropagation()} role="alertdialog" aria-modal="true" aria-labelledby="preset-folder-delete-title">
+            <div className="preset-confirm-icon" aria-hidden="true">!</div>
+            <h2 id="preset-folder-delete-title">Delete “{folderDeleteConfirmation.name}”?</h2>
+            <p>The folder will be removed and its presets will return to the main Created Presets page.</p>
+            <div className="preset-confirm-actions">
+              <button type="button" onClick={() => setFolderDeleteConfirmation(null)} disabled={folderDeleting}>Cancel</button>
+              <button type="button" className="danger" onClick={() => void deletePresetFolder(folderDeleteConfirmation)} disabled={folderDeleting}>
+                {folderDeleting ? 'Deleting…' : 'Delete Folder'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {moveDestinationOpen && (
         <div className="preset-management-backdrop" onClick={() => setMoveDestinationOpen(false)}>
           <section className="preset-management-panel preset-folder-move-panel" onClick={(event) => event.stopPropagation()}>
@@ -2682,10 +2837,29 @@ export default function App() {
                 </div>
               </div>
             </div>
-            <div className="preset-management-actions">
-              <button type="button" onClick={() => setCreatedPresetEditor(null)}>Cancel</button>
-              <button type="button" className="primary" disabled={presetThumbnailProcessing || !createdPresetEditor.title.trim() || !createdPresetEditor.prompt.trim()} onClick={() => void saveCreatedPresetFromPage()}>
-                {createdPresetEditor.mode === 'create' ? 'Save Preset' : 'Save Changes'}
+            <div className={'preset-management-actions' + (editedPreset ? ' preset-editor-actions' : '')}>
+              {editedPreset && <button type="button" className="danger" onClick={() => setPresetDeleteConfirmation(editedPreset)} disabled={presetDeleting}>Delete</button>}
+              <div className="preset-management-action-group">
+                <button type="button" onClick={() => setCreatedPresetEditor(null)}>Cancel</button>
+                <button type="button" className="primary" disabled={presetThumbnailProcessing || !createdPresetEditor.title.trim() || !createdPresetEditor.prompt.trim()} onClick={() => void saveCreatedPresetFromPage()}>
+                  {createdPresetEditor.mode === 'create' ? 'Save Preset' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {presetDeleteConfirmation && (
+        <div className="preset-confirm-backdrop" onClick={() => { if (!presetDeleting) setPresetDeleteConfirmation(null) }}>
+          <section className="preset-confirm-panel" onClick={(event) => event.stopPropagation()} role="alertdialog" aria-modal="true" aria-labelledby="preset-delete-title">
+            <div className="preset-confirm-icon" aria-hidden="true">!</div>
+            <h2 id="preset-delete-title">Delete “{presetDeleteConfirmation.title}”?</h2>
+            <p>This permanently deletes the preset. Are you sure you want to continue?</p>
+            <div className="preset-confirm-actions">
+              <button type="button" onClick={() => setPresetDeleteConfirmation(null)} disabled={presetDeleting}>Cancel</button>
+              <button type="button" className="danger" onClick={() => void confirmDeleteEditedPreset()} disabled={presetDeleting}>
+                {presetDeleting ? 'Deleting…' : 'Delete Preset'}
               </button>
             </div>
           </section>
