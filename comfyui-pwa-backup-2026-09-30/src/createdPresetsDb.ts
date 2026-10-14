@@ -3,6 +3,25 @@ export interface CreatedPreset {
   title: string
   prompt: string
   createdAt: number
+  thumbnail?: PresetThumbnail
+}
+
+export interface PresetThumbnail {
+  dataUrl: string
+  width: number
+  height: number
+  type: string
+  size: number
+}
+
+function isPresetThumbnail(value: unknown): value is PresetThumbnail {
+  if (!value || typeof value !== 'object') return false
+  const thumbnail = value as Partial<PresetThumbnail>
+  return typeof thumbnail.dataUrl === 'string' && thumbnail.dataUrl.startsWith('data:image/') &&
+    typeof thumbnail.width === 'number' && thumbnail.width > 0 &&
+    typeof thumbnail.height === 'number' && thumbnail.height > 0 &&
+    typeof thumbnail.type === 'string' && thumbnail.type.startsWith('image/') &&
+    typeof thumbnail.size === 'number' && thumbnail.size >= 0
 }
 
 const DB_NAME = 'comfyui-pwa-created-presets'
@@ -53,6 +72,7 @@ async function importLegacyPresetRecords(): Promise<void> {
           title: item.title,
           prompt: item.prompt,
           createdAt: typeof item.createdAt === 'number' ? item.createdAt : Date.now(),
+          ...(isPresetThumbnail(item.thumbnail) ? { thumbnail: item.thumbnail } : {}),
         })
       })
     } catch {}
@@ -81,9 +101,17 @@ async function readCreatedPresetsInternal(): Promise<CreatedPreset[]> {
     request.onsuccess = () => {
       db.close()
       const values = Array.isArray(request.result) ? request.result : []
-      resolve(values.filter((v): v is CreatedPreset =>
-        !!v && typeof v.id === 'string' && typeof v.title === 'string' && typeof v.prompt === 'string'
-      ).sort((a, b) => a.createdAt - b.createdAt))
+      const presets = values.filter((v): v is Record<string, unknown> =>
+        !!v && typeof v === 'object' && typeof (v as Record<string, unknown>).id === 'string' &&
+        typeof (v as Record<string, unknown>).title === 'string' && typeof (v as Record<string, unknown>).prompt === 'string'
+      ).map((value): CreatedPreset => ({
+        id: value.id as string,
+        title: value.title as string,
+        prompt: value.prompt as string,
+        createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+        ...(isPresetThumbnail(value.thumbnail) ? { thumbnail: value.thumbnail } : {}),
+      }))
+      resolve(presets.sort((a, b) => a.createdAt - b.createdAt))
     }
     request.onerror = () => { db.close(); reject(request.error || new Error('Could not read Created Presets')) }
   })
@@ -94,7 +122,7 @@ export async function readCreatedPresets(): Promise<CreatedPreset[]> {
   return readCreatedPresetsInternal()
 }
 
-export async function createCreatedPreset(title: string, prompt: string): Promise<CreatedPreset> {
+export async function createCreatedPreset(title: string, prompt: string, thumbnail?: PresetThumbnail | null): Promise<CreatedPreset> {
   const cleanTitle = title.trim()
   const cleanPrompt = prompt.trim()
   if (!cleanTitle || !cleanPrompt) throw new Error('Preset title and prompt are required.')
@@ -102,12 +130,12 @@ export async function createCreatedPreset(title: string, prompt: string): Promis
   if (existing.some((p) => p.title.toLowerCase() === cleanTitle.toLowerCase())) {
     throw new Error('A preset with that title already exists.')
   }
-  const preset: CreatedPreset = { id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2), title: cleanTitle, prompt: cleanPrompt, createdAt: Date.now() }
+  const preset: CreatedPreset = { id: 'preset-' + Date.now() + '-' + Math.random().toString(36).slice(2), title: cleanTitle, prompt: cleanPrompt, createdAt: Date.now(), ...(thumbnail ? { thumbnail } : {}) }
   await putCreatedPreset(preset)
   return preset
 }
 
-export async function updateCreatedPreset(id: string, title: string, prompt: string): Promise<CreatedPreset> {
+export async function updateCreatedPreset(id: string, title: string, prompt: string, thumbnail?: PresetThumbnail | null): Promise<CreatedPreset> {
   const cleanTitle = title.trim()
   const cleanPrompt = prompt.trim()
   if (!cleanTitle || !cleanPrompt) throw new Error('Preset title and prompt are required.')
@@ -118,6 +146,10 @@ export async function updateCreatedPreset(id: string, title: string, prompt: str
   const current = existing.find((p) => p.id === id)
   if (!current) throw new Error('Preset not found.')
   const updated = { ...current, title: cleanTitle, prompt: cleanPrompt }
+  if (thumbnail !== undefined) {
+    if (thumbnail) updated.thumbnail = thumbnail
+    else delete updated.thumbnail
+  }
   await putCreatedPreset(updated)
   const saved = await readCreatedPresetsInternal()
   const verified = saved.find((preset) => preset.id === id)
@@ -219,7 +251,7 @@ export async function importCreatedPresets(file: File): Promise<number> {
   if (!source) throw new Error('This file does not contain a presets list.')
   const imported = source.filter((v): v is Record<string, unknown> => !!v && typeof v === 'object')
     .filter(v => typeof v.title === 'string' && v.title.trim() && typeof v.prompt === 'string' && v.prompt.trim())
-    .map((v, i) => ({ id: typeof v.id === 'string' && v.id.trim() ? v.id : 'preset-imported-' + Date.now() + '-' + i + '-' + Math.random().toString(36).slice(2), title: (v.title as string).trim(), prompt: (v.prompt as string).trim(), createdAt: typeof v.createdAt === 'number' ? v.createdAt : Date.now() }))
+    .map((v, i) => ({ id: typeof v.id === 'string' && v.id.trim() ? v.id : 'preset-imported-' + Date.now() + '-' + i + '-' + Math.random().toString(36).slice(2), title: (v.title as string).trim(), prompt: (v.prompt as string).trim(), createdAt: typeof v.createdAt === 'number' ? v.createdAt : Date.now(), ...(isPresetThumbnail(v.thumbnail) ? { thumbnail: v.thumbnail } : {}) }))
   if (!imported.length) throw new Error('No valid presets were found in the selected file.')
   const existing = await readCreatedPresets()
   const ids = new Set(existing.map(p => p.id))

@@ -8,7 +8,7 @@ import { DatasetPage } from './components/DatasetPage'
 import { PromptVaultPage, type PromptVaultItem } from './components/PromptVaultPage'
 import { QwenChatPage } from './components/QwenChatPage'
 import { importPromptVaultItems } from './promptVaultDb'
-import { readCreatedPresets, createCreatedPreset, updateCreatedPreset, deleteCreatedPreset, exportCreatedPresets, importCreatedPresets, type CreatedPreset } from './createdPresetsDb'
+import { readCreatedPresets, createCreatedPreset, updateCreatedPreset, deleteCreatedPreset, exportCreatedPresets, importCreatedPresets, type CreatedPreset, type PresetThumbnail } from './createdPresetsDb'
 
 type Status = 'idle' | 'queued' | 'running' | 'done' | 'error' | 'cancelling'
 interface ResultImage { id: string; url: string; promptId: string; prompt?: string; negativePrompt?: string; cfg?: number; steps?: number; megapixels?: number; width?: number; height?: number; createdAt?: number }
@@ -19,6 +19,47 @@ interface PromptLabel { id: string; name: string; text: string; createdAt: numbe
 interface MasterPrompt { id: string; name: string; text: string; enabled: boolean }
 interface HookPrompt { id: string; name: string; text: string; enabled: boolean }
 interface ErrorLogEntry { id: string; timestamp: number; message: string }
+interface CreatedPresetEditor { mode: 'create' | 'edit'; id: string | null; title: string; prompt: string; thumbnail: PresetThumbnail | null }
+
+const MAX_PRESET_THUMBNAIL_BYTES = 20 * 1024 * 1024
+const MAX_PRESET_THUMBNAIL_PIXELS = 24_000_000
+
+async function compressPresetThumbnail(file: File): Promise<PresetThumbnail> {
+  if (!file.type.startsWith('image/')) throw new Error('Choose an image file for the thumbnail.')
+  if (file.size > MAX_PRESET_THUMBNAIL_BYTES) throw new Error('Choose an image smaller than 20 MB.')
+
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file)
+  } catch {
+    throw new Error('This image could not be opened. Try a PNG, JPEG, or WebP image.')
+  }
+  try {
+    const { width, height } = bitmap
+    if (!width || !height || width * height > MAX_PRESET_THUMBNAIL_PIXELS) {
+      throw new Error('Choose an image with dimensions up to 24 megapixels.')
+    }
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Could not prepare the thumbnail for compression.')
+    context.drawImage(bitmap, 0, 0, width, height)
+    const compressedBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Could not compress the thumbnail.')), 'image/webp', 0.82)
+    })
+    const savedBlob = compressedBlob.size < file.size ? compressedBlob : file
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Could not read the thumbnail.'))
+      reader.onerror = () => reject(reader.error || new Error('Could not read the thumbnail.'))
+      reader.readAsDataURL(savedBlob)
+    })
+    return { dataUrl, width, height, type: savedBlob.type || file.type, size: savedBlob.size }
+  } finally {
+    bitmap.close()
+  }
+}
 
 const ASPECT_RATIOS = ['1:1 (Square)', '4:3', '3:2', '16:9', '2:3', '3:4', '9:16', '21:9', '9:21']
 const SCHEDULERS = ['normal', 'karras', 'exponential', 'sgm_uniform', 'simple', 'ddim_uniform', 'beta']
@@ -183,11 +224,13 @@ export default function App() {
   const [resultsOpen, setResultsOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
   const [presetActionsExpanded, setPresetActionsExpanded] = useState(false)
-  const [createdPresetEditor, setCreatedPresetEditor] = useState<{ mode: 'create' | 'edit'; id: string | null; title: string; prompt: string } | null>(null)
+  const [createdPresetEditor, setCreatedPresetEditor] = useState<CreatedPresetEditor | null>(null)
+  const [presetThumbnailProcessing, setPresetThumbnailProcessing] = useState(false)
   const [createdPresetDeleteId, setCreatedPresetDeleteId] = useState<string | null>(null)
   const [createdPresetManagerMode, setCreatedPresetManagerMode] = useState<'edit' | 'delete' | null>(null)
   const [createdPresets, setCreatedPresets] = useState<CreatedPreset[]>([])
   const presetImportInputRef = useRef<HTMLInputElement | null>(null)
+  const presetThumbnailInputRef = useRef<HTMLInputElement | null>(null)
   const historyImportInputRef = useRef<HTMLInputElement | null>(null)
   const [completedPromptId, setCompletedPromptId] = useState<string | null>(null)
   const [completedImageVisible, setCompletedImageVisible] = useState(true)
@@ -451,10 +494,10 @@ export default function App() {
     if (!createdPresetEditor) return
     try {
       if (createdPresetEditor.mode === 'create') {
-        const created = await createCreatedPreset(createdPresetEditor.title, createdPresetEditor.prompt)
+        const created = await createCreatedPreset(createdPresetEditor.title, createdPresetEditor.prompt, createdPresetEditor.thumbnail)
         setCreatedPresets((current) => [...current, created].sort((a, b) => a.createdAt - b.createdAt))
       } else if (createdPresetEditor.id) {
-        const updated = await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt)
+        const updated = await updateCreatedPreset(createdPresetEditor.id, createdPresetEditor.title, createdPresetEditor.prompt, createdPresetEditor.thumbnail)
         setCreatedPresets((current) => current.map((preset) => preset.id === updated.id ? updated : preset))
       } else {
         throw new Error('No preset was selected for editing.')
@@ -2127,7 +2170,7 @@ export default function App() {
               </div>
               {presetActionsExpanded && (
                 <div className="preset-actions-panel">
-                  <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '' }); setPresetActionsExpanded(false) }}>Create Preset</button>
+                  <button type="button" onClick={() => { setCreatedPresetEditor({ mode: 'create', id: null, title: '', prompt: '', thumbnail: null }); setPresetActionsExpanded(false) }}>Create Preset</button>
                   <button type="button" onClick={() => { if (!createdPresets.length) return; const p = createdPresets[0]; setCreatedPresetManagerMode('edit'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Edit Preset</button>
                   <button type="button" onClick={() => { if (!createdPresets.length) return; setCreatedPresetManagerMode('delete'); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Delete Preset</button>
                   <button type="button" onClick={() => { if (!createdPresets.length) return; exportCreatedPresets(createdPresets); setPresetActionsExpanded(false) }} disabled={!createdPresets.length}>Export Presets</button>
@@ -2158,6 +2201,17 @@ export default function App() {
                     setPresetsOpen(false)
                   }}
                 >
+                  {preset.thumbnail && (
+                    <img
+                      className="preset-popup-thumbnail"
+                      src={preset.thumbnail.dataUrl}
+                      alt=""
+                      width={preset.thumbnail.width}
+                      height={preset.thumbnail.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
                   <strong>{preset.title}</strong>
                   <span>{preset.prompt}</span>
                 </button>
@@ -2187,9 +2241,56 @@ export default function App() {
               <span>Prompt</span>
               <textarea value={createdPresetEditor.prompt} onChange={(event) => setCreatedPresetEditor((current) => current ? { ...current, prompt: event.target.value } : current)} placeholder="Enter the prompt for this preset..." rows={8} />
             </label>
+            <div className="preset-management-field">
+              <span>Thumbnail</span>
+              <input
+                ref={presetThumbnailInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0]
+                  event.currentTarget.value = ''
+                  if (!file) return
+                  setPresetThumbnailProcessing(true)
+                  void compressPresetThumbnail(file)
+                    .then((thumbnail) => setCreatedPresetEditor((current) => current ? { ...current, thumbnail } : current))
+                    .catch((error) => window.alert(error instanceof Error ? error.message : 'Could not upload the thumbnail.'))
+                    .finally(() => setPresetThumbnailProcessing(false))
+                }}
+              />
+              <div className="preset-thumbnail-editor">
+                {createdPresetEditor.thumbnail ? (
+                  <img
+                    src={createdPresetEditor.thumbnail.dataUrl}
+                    alt="Thumbnail preview"
+                    width={createdPresetEditor.thumbnail.width}
+                    height={createdPresetEditor.thumbnail.height}
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="preset-thumbnail-empty">No thumbnail attached</div>
+                )}
+                <div className="preset-thumbnail-controls">
+                  <div className="preset-thumbnail-buttons">
+                    <button type="button" onClick={() => presetThumbnailInputRef.current?.click()} disabled={presetThumbnailProcessing}>
+                      {presetThumbnailProcessing ? 'Compressing…' : createdPresetEditor.thumbnail ? 'Change Image' : 'Upload Image'}
+                    </button>
+                    {createdPresetEditor.thumbnail && (
+                      <button type="button" onClick={() => setCreatedPresetEditor((current) => current ? { ...current, thumbnail: null } : current)}>Remove</button>
+                    )}
+                  </div>
+                  <small>
+                    {createdPresetEditor.thumbnail
+                      ? `${createdPresetEditor.thumbnail.width} × ${createdPresetEditor.thumbnail.height} px · ${Math.max(1, Math.round(createdPresetEditor.thumbnail.size / 1024))} KB`
+                      : 'Images are compressed on upload while keeping their original proportions.'}
+                  </small>
+                </div>
+              </div>
+            </div>
             <div className="preset-management-actions">
               <button type="button" onClick={() => setCreatedPresetEditor(null)}>Cancel</button>
-              <button type="button" className="primary" disabled={!createdPresetEditor.title.trim() || !createdPresetEditor.prompt.trim()} onClick={() => void saveCreatedPresetFromPage()}>
+              <button type="button" className="primary" disabled={presetThumbnailProcessing || !createdPresetEditor.title.trim() || !createdPresetEditor.prompt.trim()} onClick={() => void saveCreatedPresetFromPage()}>
                 {createdPresetEditor.mode === 'create' ? 'Save Preset' : 'Save Changes'}
               </button>
             </div>
@@ -2215,7 +2316,7 @@ export default function App() {
                   className={createdPresetManagerMode === 'delete' ? 'preset-management-option delete' : 'preset-management-option'}
                   onClick={() => {
                     if (createdPresetManagerMode === 'edit') {
-                      setCreatedPresetEditor({ mode: 'edit', id: preset.id, title: preset.title, prompt: preset.prompt })
+                      setCreatedPresetEditor({ mode: 'edit', id: preset.id, title: preset.title, prompt: preset.prompt, thumbnail: preset.thumbnail ?? null })
                       setCreatedPresetManagerMode(null)
                     } else {
                       setCreatedPresetDeleteId(preset.id)
