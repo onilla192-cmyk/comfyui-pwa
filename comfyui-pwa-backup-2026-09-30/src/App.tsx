@@ -223,6 +223,10 @@ export default function App() {
   const [ideasOpen, setIdeasOpen] = useState(false)
   const [resultsOpen, setResultsOpen] = useState(false)
   const [presetsOpen, setPresetsOpen] = useState(false)
+  const [presetColumns, setPresetColumns] = useState<1 | 2 | 3>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches ? 1 : 3
+  )
+  const nextPresetColumns: 1 | 2 | 3 = presetColumns === 3 ? 1 : (presetColumns + 1) as 1 | 2 | 3
   const [presetActionsExpanded, setPresetActionsExpanded] = useState(false)
   const [createdPresetEditor, setCreatedPresetEditor] = useState<CreatedPresetEditor | null>(null)
   const [presetThumbnailProcessing, setPresetThumbnailProcessing] = useState(false)
@@ -2169,6 +2173,20 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  className="preset-column-toggle"
+                  onClick={() => setPresetColumns((columns) => columns === 3 ? 1 : (columns + 1) as 1 | 2 | 3)}
+                  aria-label={`Currently ${presetColumns} ${presetColumns === 1 ? 'column' : 'columns'}. Change to ${nextPresetColumns} ${nextPresetColumns === 1 ? 'column' : 'columns'}.`}
+                  title="Cycle through 1, 2, and 3 columns"
+                >
+                  <svg viewBox="0 0 20 18" aria-hidden="true">
+                    <rect x="1" y="2" width="5" height="14" rx="1.3" />
+                    <rect x="7.5" y="2" width="5" height="14" rx="1.3" />
+                    <rect x="14" y="2" width="5" height="14" rx="1.3" />
+                  </svg>
+                  <span>{presetColumns} col{presetColumns === 1 ? '' : 's'}</span>
+                </button>
+                <button
+                  type="button"
                   className={'preset-actions-chevron' + (presetActionsExpanded ? ' active' : '')}
                   onClick={() => setPresetActionsExpanded((open) => !open)}
                   aria-label={presetActionsExpanded ? 'Close preset menu' : 'More preset actions'}
@@ -2200,7 +2218,11 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="preset-popup-list">
+            <div
+              className="preset-popup-list"
+              data-columns={presetColumns}
+              style={{ gridTemplateColumns: `repeat(${presetColumns}, minmax(0, 1fr))` }}
+            >
               {createdPresets.length ? createdPresets.map((preset) => (
                 <button
                   type="button"
