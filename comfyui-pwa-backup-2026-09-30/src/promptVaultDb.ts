@@ -70,6 +70,19 @@ async function putImage(key: string, blob: Blob): Promise<void> {
   if (!saved) throw new Error('Prompt Vault image verification failed.')
 }
 
+async function putImages(images: Array<{ key: string; blob: Blob }>): Promise<void> {
+  if (!images.length) return
+  const db = await openDb()
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(IMAGES_STORE, 'readwrite')
+    const store = tx.objectStore(IMAGES_STORE)
+    images.forEach(({ key, blob }) => store.put(blob, key))
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not copy Prompt Vault images.')) }
+    tx.onabort = () => { db.close(); reject(tx.error || new Error('Prompt Vault image transfer was aborted.')) }
+  })
+}
+
 async function deleteImage(key: string): Promise<void> {
   const db = await openDb()
   await new Promise<void>((resolve, reject) => {
@@ -193,26 +206,23 @@ export async function getPromptVaultImage(cacheKey: string): Promise<Blob | null
 
 export async function importPromptVaultItems(items: PromptVaultItem[]): Promise<void> {
   await migrateLegacyStorage()
-  const copied = new Set<string>()
-  for (const item of items) {
-    for (const ref of item.imageRefs || []) {
-      if (copied.has(ref.cacheKey)) continue
-      const { getCachedFile } = await import('./imageCache')
-      const blob = await getCachedFile(ref.cacheKey)
-      if (!blob) throw new Error(`Prompt Vault image is missing: ${ref.cacheKey}`)
-      await putImage(ref.cacheKey, blob)
-      copied.add(ref.cacheKey)
-    }
-  }
+  const refs = new Map<string, PromptVaultImageRef>()
+  for (const item of items) for (const ref of item.imageRefs || []) refs.set(ref.cacheKey, ref)
+  const { getCachedFile, deleteCachedFiles } = await import('./imageCache')
+  const copied = await Promise.all([...refs.entries()].map(async ([cacheKey]) => {
+    const blob = await getCachedFile(cacheKey)
+    if (!blob) throw new Error(`Prompt Vault image is missing: ${cacheKey}`)
+    return { key: cacheKey, blob }
+  }))
+  await putImages(copied)
 
   const existing = await readPromptVault()
   const existingIds = new Set([...existing.items, ...existing.archived].map((item) => item.id))
   const newItems = items.filter((item) => !existingIds.has(item.id))
   if (newItems.length) await savePromptVaultItems([...existing.items, ...newItems], existing.archived)
 
-  if (copied.size) {
-    const { deleteCachedFiles } = await import('./imageCache')
-    await deleteCachedFiles([...copied])
+  if (copied.length) {
+    await deleteCachedFiles(copied.map(({ key }) => key))
   }
 }
 

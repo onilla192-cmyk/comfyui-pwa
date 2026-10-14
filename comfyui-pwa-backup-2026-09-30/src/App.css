@@ -9422,6 +9422,9 @@ body:has(.dataset-page) .dataset-content-actions > .dataset-danger{
 .dataset-move-choice-actions button:last-child{border-color:#7860dd;background:#6550c9}
 .dataset-move-choice-actions button:active,.dataset-move-choice-cancel:active{transform:scale(.98)}
 .dataset-move-choice-cancel{width:100%;margin-top:10px;min-height:42px;color:#b1b8c6;background:transparent}
+.dataset-content-actions .dataset-select-all{border-color:#7060ce !important;background:linear-gradient(145deg,#594ca5,#39366d) !important;color:#f5f1ff !important}
+.dataset-content-actions .dataset-select-all:disabled{opacity:.42 !important}
+.dataset-move-choice-actions button:disabled,.dataset-move-choice-cancel:disabled{opacity:.55;cursor:wait}
 @media(max-width:420px){
   .dataset-move-choice-backdrop{padding:14px}
   .dataset-move-choice{padding:18px;border-radius:16px}
