@@ -53,7 +53,7 @@
 @media(max-width:600px){
 .qwen-chat-header-title{max-width:45vw}
 .qwen-chat-list{top:calc(72px + max(10px,env(safe-area-inset-top)));width:min(330px,92vw)}
-.qwen-chat-list-backdrop{top:calc(72px + max(10px,env(safe-area-inset-top)))
+.qwen-chat-list-backdrop{top:calc(72px + max(10px,env(safe-area-inset-top)))}
 .qwen-chat-chats-btn{padding:0 10px}
 .qwen-chat-chats-btn span:last-child{display:none}
 }
