@@ -9754,6 +9754,9 @@ body:has(.preset-popup-backdrop) {
 .preset-popup-footer .preset-column-toggle:focus-visible,
 .preset-popup-footer .preset-actions-chevron:focus-visible,
 .preset-popup-footer .preset-popup-close:focus-visible { outline:3px solid rgba(174,160,255,.75); outline-offset:4px; }
+.preset-popup-footer .preset-create-button:disabled,
+.preset-popup-footer .preset-move-button:disabled,
+.preset-popup-footer .preset-actions-chevron:disabled { opacity:.42; cursor:not-allowed; transform:none; }
 .preset-popup-footer .preset-actions-panel {
   top:auto;
   right:0;
@@ -9787,7 +9790,7 @@ body:has(.preset-popup-backdrop) {
   scrollbar-color:#454956 transparent;
 }
 .preset-management-field select { width:100%; box-sizing:border-box; border:1px solid #4a4e57; border-radius:10px; background:#111318; color:#f3f4f6; padding:12px; font:inherit; }
-.preset-folder-grid,.preset-folder-current,.preset-move-hint { grid-column:1 / -1; }
+.preset-folder-grid,.preset-folder-current,.preset-move-hint,.preset-delete-toolbar { grid-column:1 / -1; }
 .preset-folder-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr)); gap:12px; margin-bottom:3px; }
 .preset-folder-card { min-width:0; display:flex; align-items:center; gap:8px; padding:7px 8px 7px 12px; border:1px solid #3b3e4b; border-radius:15px; background:linear-gradient(145deg,#232532,#1a1c25); box-shadow:0 6px 18px rgba(0,0,0,.14); }
 .preset-folder-open { flex:1; min-width:0; min-height:52px; display:flex; align-items:center; gap:12px; padding:0; border:0; background:transparent; color:#f0eff8; text-align:left; font:inherit; cursor:pointer; }
@@ -9805,6 +9808,17 @@ body:has(.preset-popup-backdrop) {
 .preset-folder-current-name { min-width:0; flex:1; display:flex; align-items:center; gap:9px; overflow:hidden; }
 .preset-folder-current-name strong { overflow:hidden; color:#f0eef9; font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
 .preset-move-hint { padding:11px 14px; border:1px solid rgba(169,157,240,.25); border-radius:12px; background:rgba(126,107,220,.09); color:#c3baf1; font-size:12px; line-height:1.45; }
+.preset-delete-toolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 15px; border:1px solid rgba(244,115,131,.28); border-radius:14px; background:linear-gradient(120deg,rgba(90,39,53,.3),rgba(32,31,42,.86)); }
+.preset-delete-toolbar-copy { min-width:0; display:flex; flex-direction:column; gap:4px; }
+.preset-delete-toolbar-copy strong { color:#f4edf1; font-size:13px; }
+.preset-delete-toolbar-copy span { color:#b6a8b0; font-size:11px; line-height:1.4; }
+.preset-delete-toolbar-actions { display:flex; flex:0 0 auto; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.preset-delete-toolbar-actions button { min-height:44px; padding:0 14px; border:1px solid #49414a; border-radius:10px; background:#24232b; color:#e8e5eb; font:inherit; font-size:12px; font-weight:700; cursor:pointer; transition:background .16s ease,border-color .16s ease,opacity .16s ease; }
+.preset-delete-toolbar-actions button:hover:not(:disabled) { border-color:#777080; background:#302d37; }
+.preset-delete-toolbar-actions .preset-delete-selected,.preset-delete-toolbar-actions .preset-delete-all { border-color:#8b4050; background:#522735; color:#ffe8eb; }
+.preset-delete-toolbar-actions .preset-delete-all { border-color:#a44453; background:#7b2938; }
+.preset-delete-toolbar-actions .preset-delete-selected:hover:not(:disabled),.preset-delete-toolbar-actions .preset-delete-all:hover:not(:disabled) { border-color:#e07383; background:#933647; }
+.preset-delete-toolbar-actions button:disabled { opacity:.48; cursor:not-allowed; }
 .preset-folder-no-destinations { padding:16px; border:1px dashed #444656; border-radius:10px; color:#9da2b2; font-size:13px; text-align:center; }
 .preset-popup-item {
   position:relative;
@@ -9939,6 +9953,9 @@ body:has(.preset-popup-backdrop) {
   .preset-popup-list { grid-auto-rows: max-content; row-gap:16px; padding:20px 16px 24px; }
   .preset-popup-item:hover { transform:none; }
   .preset-popup-card-body { padding:14px 15px 12px; }
+  .preset-delete-toolbar { align-items:stretch; flex-direction:column; gap:12px; padding:12px; }
+  .preset-delete-toolbar-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+  .preset-delete-toolbar-actions button { min-width:0; padding:0 8px; line-height:1.2; }
   .preset-thumbnail-editor { flex-direction:column; }
   .preset-thumbnail-editor > img,.preset-thumbnail-empty { width:100%; max-width:none; max-height:200px; }
 }
@@ -9950,6 +9967,8 @@ body:has(.preset-popup-backdrop) {
   .preset-popup-footer .preset-column-toggle,
   .preset-popup-footer .preset-actions-chevron,
   .preset-popup-footer .preset-popup-close { width:52px; min-width:52px; height:52px; min-height:52px; flex-basis:52px; }
+  .preset-delete-toolbar-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .preset-delete-toolbar-actions .preset-delete-cancel { grid-column:1 / -1; }
   .preset-popup-list[data-columns="3"] .preset-popup-card-body { padding:9px 8px 8px; }
   .preset-popup-list[data-columns="3"] .preset-popup-item strong { font-size:11px; }
   .preset-popup-list[data-columns="3"] .preset-popup-prompt { margin-top:4px; font-size:10px; line-height:1.35; -webkit-line-clamp:2; }
